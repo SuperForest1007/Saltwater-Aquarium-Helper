@@ -131,9 +131,17 @@ def analyze_element(records, element, ideal=None):
 
     # ---- L3b: 波动幅度 ----
     vol = _std(ys)
-    range_span = high - low
-    vol_ratio = vol / range_span if range_span > 0 else 0
-    volatility = "high" if vol_ratio > 0.25 else ("low" if vol_ratio < 0.08 else "normal")
+    # 波动判定: 用"标准差/当前值"的相对比例，对小数值元素(PO4/NO3)更公平
+    # 大数值元素(钙/镁几百ppm)波动几十ppm是正常的，小数值元素(0.05ppm)波动0.01也是正常的
+    rel_vol = vol / cur if cur > 0 else 0
+    if rel_vol > 0.15:        # 相对当前值波动>15%
+        volatility = "high"
+    elif rel_vol < 0.03:      # <3% 很平稳
+        volatility = "low"
+    else:
+        volatility = "normal"
+    # 波动值按量级自适应保留小数位（小数值元素显示更多位）
+    vol_display = round(vol, 3) if cur < 1 else round(vol, 1)
 
     # ---- L5: 预测 ----
     prediction = None
@@ -159,7 +167,7 @@ def analyze_element(records, element, ideal=None):
         "rate": round(abs(rate), 3), "rate_signed": round(rate, 3),
         "accelerating": accelerating, "accel": round(accel, 3),
         "anomaly": anomaly, "anomaly_cn": anomaly_cn,
-        "volatility": volatility, "vol": round(vol, 2),
+        "volatility": volatility, "vol": vol_display,
         "r2": round(r2, 3),
         "current": round(cur, 2),
         "count": len(records),
@@ -246,7 +254,7 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
             parts.append(f"✅ {low_cn}当前正常，但按每天{s['rate']:.2f}{unit}的速度消耗，{prediction['days']:.0f}天后可能低于{low}{unit}，可提前规划补充")
             prio = max(prio, 40)
         elif s["volatility"] == "high":
-            parts.append(f"📊 {low_cn}均值正常但波动偏大(±{s['vol']:.1f}{unit})，建议固定每天同一时间测试，排查波动源")
+            parts.append(f"📊 {low_cn}均值正常但波动偏大(±{s['vol']}{unit})，建议固定每天同一时间测试，排查波动源")
             prio = max(prio, 35)
         else:
             parts.append(f"✅ {low_cn}在理想范围内且趋势平稳，状态良好，按当前节奏维护即可")
@@ -269,6 +277,179 @@ def analyze_all(records_by_element):
     result = {}
     for el, recs in records_by_element.items():
         result[el] = analyze_element(recs, el)
+    return result
+
+
+# ============ A1: 滴定效果评估 ============
+def evaluate_dosing_effect(records_by_element, dosing_logs):
+    """
+    对比"滴定区间内" vs "滴定区间外"的消耗速率。
+    dosing_logs: [{element, dose_ml, action, recorded_at}, ...]
+    返回每个元素滴定前后的速率变化。
+    """
+    from datetime import datetime
+
+    def rate_in_range(recs, start, end):
+        """计算某时间范围内的线性回归斜率(每天变化)。"""
+        filtered = [(d, v) for d, v in recs if start <= d.isoformat()[:10] <= end]
+        if len(filtered) < 2:
+            return None
+        t0 = filtered[0][0]
+        xs = [(d - t0).total_seconds() / 86400.0 for d, _ in filtered]
+        ys = [v for _, v in filtered]
+        slope, _, _ = _linreg(xs, ys)
+        return slope
+
+    result = {}
+    # 按元素分组滴定日志
+    for el, recs in records_by_element.items():
+        el_logs = [l for l in dosing_logs if l.get("element") == el]
+        if len(el_logs) < 2:
+            continue  # 至少要有开始+结束才能评估
+        # 找完整区间（start→end 配对）
+        dates = sorted([(l["recorded_at"][:10], l["action"]) for l in el_logs])
+        intervals = []
+        open_start = None
+        for d, action in dates:
+            if action == "start" and open_start is None:
+                open_start = d
+            elif action == "end" and open_start is not None:
+                intervals.append((open_start, d))
+                open_start = None
+        if not intervals:
+            continue
+        # 速率显示按量级自适应小数位（小数值元素显示更多位，避免"看起来没变"）
+        def fmt_rate(v):
+            av = abs(v)
+            if av < 0.01:
+                return round(v, 5)
+            elif av < 0.1:
+                return round(v, 4)
+            return round(v, 3)
+        # 评估每个完整区间（可能多次滴定）
+        el_intervals = []
+        for idx, (start, end) in enumerate(intervals):
+            in_rate = rate_in_range(recs, start, end)
+            # 区间外速率：该区间开始前的数据
+            pre_recs = [(d, v) for d, v in recs if d.isoformat()[:10] < start]
+            pre_rate = None
+            if len(pre_recs) >= 2:
+                t0 = pre_recs[0][0]
+                xs = [(d - t0).total_seconds() / 86400.0 for d, _ in pre_recs]
+                ys = [v for _, v in pre_recs]
+                pre_rate, _, _ = _linreg(xs, ys)
+            if in_rate is None or pre_rate is None:
+                continue
+            # 效果：消耗率变化（斜率绝对值变小=消耗变慢=有效）
+            change = (abs(pre_rate) - abs(in_rate)) / abs(pre_rate) * 100 if pre_rate != 0 else 0
+            el_intervals.append({
+                "interval": f"{start} ~ {end}",
+                "pre_rate": fmt_rate(pre_rate),
+                "in_rate": fmt_rate(in_rate),
+                "improvement_pct": round(change, 1),
+                "effective": change > 10,
+            })
+        if el_intervals:
+            result[el] = el_intervals if len(el_intervals) > 1 else el_intervals[0]
+    return result
+
+
+# ============ A2: 消耗/补充平衡 ============
+def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=156):
+    """
+    估算"缸体消耗量" vs "滴定补充量"是否平衡。
+    mix_ratio: {元素: {"pw": 分析纯克, "ro": RO水毫升}} 配液比例
+    tank_liters: 缸体实际水体(升)
+    消耗量 = 由水质下降速率推得(ppm/天 → 需要补的克)
+    补充量 = 滴定量(ml/天) × 配液浓度(克/ml)
+    """
+    result = {}
+    # (添加物分子量, 元素当量) — 用于 ppm→克 换算
+    EL_COEF = {"KH": (84, 2.8), "钙": (147, 40), "镁": (204, 24)}
+
+    for el, recs in records_by_element.items():
+        if el not in EL_COEF:
+            continue
+        mol, eq = EL_COEF[el]
+        # 消耗：最近趋势的下降速率(ppm/天)
+        vals = [v for _, v in recs]
+        if len(vals) < 3:
+            continue
+        t0 = recs[0][0]
+        xs = [(d - t0).total_seconds() / 86400.0 for d, _ in recs[-5:]]
+        ys = vals[-5:]
+        slope, _, _ = _linreg(xs, ys)
+        consume_rate = -slope if slope < 0 else 0  # ppm/天下降
+
+        # 补充：该元素最近的开始滴定滴定量(ml/天)
+        el_logs = [l for l in dosing_logs if l.get("element") == el and l.get("action") == "start"]
+        dose_ml = 0
+        if el_logs:
+            latest = sorted(el_logs, key=lambda l: l["recorded_at"])[-1]
+            dose_ml = latest.get("dose_ml", 0)
+        # 配液浓度: 若给了配比则用之，否则用常见默认(0.05克/ml ≈ 50克/L)
+        if mix_ratio and el in mix_ratio:
+            pw = mix_ratio[el]["pw"]
+            ro = mix_ratio[el]["ro"]
+            conc_g_per_ml = pw / ro if ro > 0 else 0
+        else:
+            conc_g_per_ml = 0.05
+
+        # 补充量换算: ml/天 × 克/ml = 克/天
+        supply_g_per_day = dose_ml * conc_g_per_ml
+        # 消耗量换算: ppm/天 × 水体体积(L) × (分子量/当量) / 1000 = 克/天
+        consume_g_per_day = consume_rate * tank_liters * (mol / eq) / 1000
+
+        balance_pct = 0
+        if consume_g_per_day > 0:
+            balance_pct = supply_g_per_day / consume_g_per_day * 100
+
+        result[el] = {
+            "consume_g_per_day": round(consume_g_per_day, 3),
+            "supply_g_per_day": round(supply_g_per_day, 3),
+            "balance_pct": round(balance_pct, 0),  # >100=补多了, <100=不够
+            "status": "balanced" if 80 <= balance_pct <= 120 else ("over" if balance_pct > 120 else "under"),
+        }
+    return result
+
+
+# ============ B1: 测试频率健康度 ============
+def test_frequency_health(records_by_element, weeks=4):
+    """
+    评估测试频率：看"最近一条记录往前N周"内各元素测试了多少次。
+    若数据陈旧(距今天>4周)，标注"数据陈旧"而不是误报频率低。
+    """
+    from datetime import datetime, timedelta
+
+    today = datetime.now()
+    result = {}
+    for el, recs in records_by_element.items():
+        if not recs:
+            continue
+        dates = [d for d, _ in recs]
+        last_date = max(dates)
+        days_since_last = (today - last_date).total_seconds() / 86400.0
+        # 以最后一条记录为基准往回统计（避免演示数据陈旧导致误报）
+        window_end = last_date
+        window_start = window_end - timedelta(days=weeks * 7)
+        recent = [d for d in dates if window_start <= d <= window_end]
+        count = len(recent)
+        per_week = count / weeks if weeks > 0 else 0
+
+        stale = days_since_last > 14  # 超过14天没记录视为数据陈旧
+        if stale:
+            status = "stale"
+            msg = f"最后记录是{last_date.strftime('%Y-%m-%d')}(距今{days_since_last:.0f}天)，数据较旧，建议重新开始记录"
+        elif per_week >= 2:
+            status = "good"
+            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，频率良好"
+        elif per_week >= 1:
+            status = "fair"
+            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，略少，建议每周2-3次"
+        else:
+            status = "low"
+            msg = f"近{weeks}周仅测试{count}次，频率偏低，趋势判断可能不准"
+        result[el] = {"count": count, "per_week": round(per_week, 1), "status": status, "msg": msg, "stale": stale}
     return result
 
 

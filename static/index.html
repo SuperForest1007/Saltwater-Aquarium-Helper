@@ -260,6 +260,16 @@
   .wq-card .wq-trend { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
   .wq-card .wq-trend .arrow { font-size: 16px; }
   .wq-card .wq-mini { margin-top: 6px; font-size: 11px; color: var(--ink-faint); }
+
+  /* 智能建议强度标记 */
+  .advice-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #f0f6f8; }
+  .advice-item .advice-strength { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 700; }
+  .advice-strength.high { background: #c0392b; }
+  .advice-strength.mid { background: #e67e22; }
+  .advice-strength.low { background: #2e8b57; }
+  .advice-item .advice-text { flex: 1; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
+  .advice-item .advice-text b { color: var(--ink); }
+  .advice-item .advice-tag { flex-shrink: 0; font-size: 10px; color: var(--ink-faint); padding-top: 3px; }
   .dose-result .dr-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .dose-result .dr-value { font-size: 24px; font-weight: 800; color: var(--ocean-deep); }
   .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
@@ -619,6 +629,22 @@
       <div class="dose-card" id="wqSimpleAdvice">
         <div class="dc-title">💡 智能建议</div>
         <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.9;min-height:30px">暂无数据，先添加几条记录吧。</div>
+      </div>
+
+      <!-- 综合分析: 滴定效果/收支平衡/测试频率 -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px">
+        <div class="dose-card" style="margin:0">
+          <div class="dc-title">🎯 滴定效果</div>
+          <div id="wqDosingEffect" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        </div>
+        <div class="dose-card" style="margin:0">
+          <div class="dc-title">⚖️ 收支平衡</div>
+          <div id="wqBalance" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        </div>
+        <div class="dose-card" style="margin:0">
+          <div class="dc-title">📅 测试频率</div>
+          <div id="wqFrequency" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        </div>
       </div>
     </div>
 
@@ -1121,6 +1147,110 @@ async function loadWater() {
   } catch (e) { dosingLogsCache = []; }
   renderSimple();
   renderPro();
+  loadAnalysisCards();
+}
+
+/* ═══ 综合分析卡片（滴定效果/收支平衡/测试频率） ═══ */
+async function loadAnalysisCards() {
+  try {
+    // A1 滴定效果
+    const effectRes = await fetch('/api/analysis/dosing-effect');
+    const effectData = await effectRes.json();
+    renderDosingEffect(effectData.result || {});
+
+    // A2 收支平衡
+    const tank = parseFloat(document.getElementById('globalWater').value) || 156;
+    const balanceRes = await fetch('/api/analysis/balance?tank_liters=' + tank);
+    const balanceData = await balanceRes.json();
+    renderBalance(balanceData.result || {});
+
+    // B1 测试频率
+    const freqRes = await fetch('/api/analysis/frequency');
+    const freqData = await freqRes.json();
+    renderFrequency(freqData.result || {});
+  } catch (e) { /* 忽略加载失败 */ }
+}
+
+function renderDosingEffect(result) {
+  const el = document.getElementById('wqDosingEffect');
+  if (!el) return;
+  const keys = Object.keys(result);
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">无完整滴定区间，先记录开始/结束滴定</span>'; return; }
+  el.innerHTML = keys.map(k => {
+    const raw = result[k];
+    const items = Array.isArray(raw) ? raw : [raw];
+    // 按时间倒序（最近的区间在前）
+    const sorted = items.slice().sort((a, b) => (b.interval || '').localeCompare(a.interval || ''));
+    const total = sorted.length;
+    const effectiveCount = sorted.filter(x => x.effective).length;
+    // 摘要
+    const summary = total > 1
+      ? '<div style="padding:2px 0 6px;font-size:12px;color:var(--ink)"><b>' + k + '</b>：共 ' + total + ' 轮滴定，' +
+        effectiveCount + ' 轮有效，' + (total - effectiveCount) + ' 轮无明显改善</div>'
+      : '';
+    // 默认显示最近3轮，更多折叠
+    const showCount = 3;
+    const visible = sorted.slice(0, showCount);
+    const hiddenCount = total - showCount;
+    const uid = k.replace(/W/g, '');
+    function rowHtml(r, i) {
+      const icon = r.effective ? '✅' : '⚠️';
+      const color = r.effective ? '#2e8b57' : '#c0560e';
+      const preDir = r.pre_rate < 0 ? '下降' : '上升';
+      const inDir = r.in_rate < 0 ? '下降' : '上升';
+      const effectText = r.effective ? '消耗变缓，滴定有效' : '消耗速率无明显改善';
+      const label = sorted.length > 1 ? '第' + (sorted.length - i) + '轮' : '';
+      return '<div style="padding:3px 0"><b>' + k + (label ? '·' + label : '') + '</b>：' +
+        '<span style="color:' + color + '">' + icon + ' ' + effectText + '（改善 ' + r.improvement_pct + '%）</span>' +
+        '<span class="save-hint" style="display:block">滴定前每天' + preDir + ' ' + r.pre_rate + ' → 滴定中每天' + inDir + ' ' + r.in_rate + '（' + (r.interval || '') + '）</span></div>';
+    }
+    let body = summary + visible.map(rowHtml).join('');
+    if (hiddenCount > 0) {
+      body += '<div id="doseMore' + uid + '" style="display:none">' + sorted.slice(showCount).map(rowHtml).join('') + '</div>' +
+        '<button onclick="toggleDoseMore(\'' + uid + '\')" style="margin-top:4px;padding:4px 12px;background:none;border:1px solid var(--ocean);color:var(--ocean);border-radius:999px;font-size:11px;cursor:pointer" id="doseMoreBtn' + uid + '">+ ' + hiddenCount + ' 轮更早记录</button>';
+    }
+    return body;
+  }).join('');
+}
+
+/* 滴定效果折叠：展开/收起更早的记录 */
+function toggleDoseMore(uid) {
+  const more = document.getElementById('doseMore' + uid);
+  const btn = document.getElementById('doseMoreBtn' + uid);
+  if (more.style.display === 'none') {
+    more.style.display = 'block';
+    btn.textContent = '收起更早记录';
+  } else {
+    more.style.display = 'none';
+    btn.textContent = '+ ' + (more.querySelectorAll('div').length) + ' 轮更早记录';
+  }
+}
+
+function renderBalance(result) {
+  const el = document.getElementById('wqBalance');
+  if (!el) return;
+  const keys = Object.keys(result);
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">数据不足</span>'; return; }
+  el.innerHTML = keys.map(k => {
+    const r = result[k];
+    const statusMap = { balanced: ['⚖️ 平衡', '#2e8b57'], over: ['⬆️ 补充偏多', '#c0560e'], under: ['⬇️ 补充不足', '#c0392b'] };
+    const [label, color] = statusMap[r.status] || ['—', '#888'];
+    return '<div style="padding:4px 0"><b>' + k + '</b>：<span style="color:' + color + '">' + label +
+      '</span><span class="save-hint" style="display:block">补 ' + r.supply_g_per_day + 'g/天 vs 耗 ' + r.consume_g_per_day + 'g/天</span></div>';
+  }).join('');
+}
+
+function renderFrequency(result) {
+  const el = document.getElementById('wqFrequency');
+  if (!el) return;
+  const keys = Object.keys(result);
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">暂无记录</span>'; return; }
+  const statusMap = { good: ['✅', '#2e8b57'], fair: ['🟡', '#c0560e'], low: ['🔴', '#c0392b'], stale: ['📭', '#8a99a5'] };
+  el.innerHTML = keys.map(k => {
+    const r = result[k];
+    const [icon, color] = statusMap[r.status] || ['', '#888'];
+    return '<div style="padding:4px 0"><span style="color:' + color + '">' + icon + '</span> <b>' + k + '</b>：' + r.msg + '</div>';
+  }).join('');
 }
 
 let wqChartInstance = null;
@@ -1192,9 +1322,20 @@ function renderSimple() {
     if (a.advice && a.advice.summary) allAdvice.push({ el: a.display || el, summary: a.advice.summary, prio: a.advice.priority });
   }
   wrap.innerHTML = html;
-  allAdvice.sort((x, y) => y.prio - x.prio);
-  adviceBody.innerHTML = allAdvice.map(x => '<div style="padding:6px 0;border-bottom:1px solid #f0f6f8"><b>' + x.el + '：</b>' + x.summary + '</div>').join('') ||
-    '<div>所有元素状态良好 🎉</div>';
+  // 建议按固定元素顺序展示（KH→钙→镁→NO3→PO4），强度用视觉标记体现
+  function strengthOf(prio) {
+    if (prio >= 70) return { cls: 'high', label: '高', cn: '需要处理' };
+    if (prio >= 30) return { cls: 'mid', label: '中', cn: '建议关注' };
+    return { cls: 'low', label: '低', cn: '状态良好' };
+  }
+  adviceBody.innerHTML = allAdvice.map(x => {
+    const st = strengthOf(x.prio);
+    return '<div class="advice-item">' +
+      '<span class="advice-strength ' + st.cls + '" title="建议强度：' + st.cn + '">' + st.label + '</span>' +
+      '<span class="advice-text"><b>' + x.el + '：</b>' + x.summary + '</span>' +
+      '<span class="advice-tag">' + st.cn + '</span>' +
+      '</div>';
+  }).join('') || '<div style="padding:8px 0">所有元素状态良好 🎉</div>';
 }
 
 // 历史记录分页状态

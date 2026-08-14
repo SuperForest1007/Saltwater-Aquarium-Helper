@@ -15,7 +15,10 @@ from dosing_calculator import (
     ELEMENT_FACTORS, DEFAULT_MIX, mix_concentration, per_ml_effect,
     daily_dose, adjust_dose,
 )
-from water_quality import analyze_element, analyze_all, ELEMENT_IDEALS
+from water_quality import (
+    analyze_element, analyze_all, ELEMENT_IDEALS,
+    evaluate_dosing_effect, balance_audit, test_frequency_health,
+)
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
@@ -183,6 +186,39 @@ def api_water_element_analysis(element: str):
     recs = get_records(element)
     data = [(r["recorded_at"], r["value"]) for r in recs]
     return {"analysis": analyze_element(data, element)}
+
+@app.get("/api/analysis/dosing-effect")
+def api_dosing_effect():
+    """A1: 滴定效果评估。"""
+    grouped = get_records_grouped()
+    logs = get_dosing_logs()
+    data = {}
+    for el, recs in grouped.items():
+        # 转为datetime
+        from datetime import datetime
+        data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
+    return {"result": evaluate_dosing_effect(data, logs)}
+
+@app.get("/api/analysis/balance")
+def api_balance(tank_liters: float = 156):
+    """A2: 消耗/补充平衡审计。"""
+    grouped = get_records_grouped()
+    logs = get_dosing_logs()
+    from datetime import datetime
+    data = {}
+    for el, recs in grouped.items():
+        data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
+    return {"result": balance_audit(data, logs, tank_liters=tank_liters)}
+
+@app.get("/api/analysis/frequency")
+def api_frequency():
+    """B1: 测试频率健康度。"""
+    grouped = get_records_grouped()
+    from datetime import datetime
+    data = {}
+    for el, recs in grouped.items():
+        data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
+    return {"result": test_frequency_health(data)}
 
 # ---------- 前端页面 ----------
 
