@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>海水缸助手 · ReefPal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="/static/echarts.min.js"></script>
 <style>
   :root {
     --ocean: #0a6ea8;
@@ -194,6 +195,21 @@
   .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-color: #b2d3ea; color: var(--ocean-deep); font-size: 16px; }
   .dose-row .arrow { color: var(--ink-faint); font-size: 12px; padding-bottom: 14px; }
 
+  /* 通用表单控件 */
+  .ctl { padding: 9px 12px; border: 1.5px solid #d8e8ea; border-radius: 12px; font-size: 14px; color: var(--ink); background: #fff; }
+  .ctl:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
+  .ctl-btn { padding: 10px 22px; background: var(--ocean); color: #fff; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .seg-btn { padding: 7px 18px; border: none; background: transparent; color: var(--ink-soft); border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
+  .seg-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
+  .pager-btn { padding: 6px 14px; border: 1.5px solid #c8d8e6; background: #fff; color: var(--ocean-deep); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .pager-btn:hover { background: var(--ocean-soft); border-color: var(--ocean); }
+  .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .ctl-btn:hover { background: var(--ocean-deep); }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { padding: 8px; background: var(--ocean); color: #fff; font-weight: 600; font-size: 12.5px; }
+  .data-table td { padding: 7px; border: 1px solid #e3eef7; font-size: 13px; }
+  .data-table tr:hover td { background: #f5fafd; }
+
   /* 配比参考 */
   .mix-ref { margin-top: 14px; background: #f4fafd; border: 1px solid #d3e8f5; border-radius: var(--radius-sm); padding: 12px 14px; }
   .mix-ref .mr-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
@@ -208,6 +224,23 @@
 
   .dose-result { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;
     background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-radius: var(--radius-sm); padding: 14px; }
+
+  /* 水质仪表盘 */
+  .wq-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+    border: 1px solid rgba(10,110,168,.06); }
+  .wq-card .wq-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .wq-card .wq-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .wq-card .wq-status { padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .wq-status.ok { background: #d7f0e0; color: #1e7d4a; }
+  .wq-status.low { background: #ffe3dd; color: #c0392b; }
+  .wq-status.high { background: #fff0d8; color: #c0560e; }
+  .wq-status.no_data { background: #eef0f2; color: #8a99a5; }
+  .wq-card .wq-value { font-size: 34px; font-weight: 800; color: var(--ocean-deep); line-height: 1.1; }
+  .wq-card .wq-value small { font-size: 13px; color: var(--ink-faint); font-weight: 500; }
+  .wq-card .wq-range { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .wq-card .wq-trend { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--ink-soft); }
+  .wq-card .wq-trend .arrow { font-size: 16px; }
+  .wq-card .wq-mini { margin-top: 6px; font-size: 11px; color: var(--ink-faint); }
   .dose-result .dr-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .dose-result .dr-value { font-size: 24px; font-weight: 800; color: var(--ocean-deep); }
   .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
@@ -302,13 +335,14 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('calc')">🧪 元素补充</button>
+    <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
+    <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
     <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
     <button class="tab-btn" onclick="showTab('salt')">🧂 海盐</button>
   </div>
 
   <!-- 元素补充 -->
-  <div id="panel-calc" class="panel active">
+  <div id="panel-calc" class="panel">
     <div id="groupContainer"></div>
     <div class="note" style="margin-top:4px">「使用量」= 需要添加的粉末克数；「需滴配液(ml)」= 若用滴定方案里配好的补充液，需要滴入多少毫升。</div>
     <div class="note">添加前请确认实测浓度，少量多次更安全。市售补充液请按瓶身说明换算。</div>
@@ -482,6 +516,90 @@
       <div class="dc-sub" style="margin-top:10px">NO₃/PO₄ 为化盐后初始值（ppm），括号内为溶解充分后的稳定值。数据仅供参考，实际以盐袋批次为准。</div>
     </div>
   </div>
+
+  <!-- 水质记录与趋势 -->
+  <div id="panel-water" class="panel active">
+    <!-- 记录表单 -->
+    <div class="dose-card">
+      <div class="dc-title">📝 添加水质记录</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="d-field"><span class="fl">元素</span>
+          <select id="wqElement" class="ctl">
+            <option value="KH">KH 碱度 (dKH)</option>
+            <option value="钙">钙 Ca (ppm)</option>
+            <option value="镁">镁 Mg (ppm)</option>
+            <option value="NO3">硝酸盐 NO₃</option>
+            <option value="PO4">磷酸盐 PO₄</option>
+          </select>
+        </div>
+        <div class="d-field"><span class="fl">测试值</span><input type="number" step="any" id="wqValue" class="ctl" placeholder="如 7.8" style="width:110px"></div>
+        <div class="d-field"><span class="fl">日期(可选)</span><input type="date" id="wqDate" class="ctl" style="width:150px"></div>
+        <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wqNote" class="ctl" placeholder="如 换水后" style="width:130px"></div>
+        <button onclick="addWaterRecord()" class="ctl-btn">✓ 保存</button>
+      </div>
+      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试2-3次并记录，记录越多分析越准。</div>
+    </div>
+
+    <!-- 模式切换 -->
+    <div class="dose-card" style="padding:10px 18px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;color:var(--ink)">显示模式</span>
+        <div class="seg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px">
+          <button class="seg-btn active" id="modeSimple" onclick="setWaterMode('simple')">🟢 简洁</button>
+          <button class="seg-btn" id="modePro" onclick="setWaterMode('pro')">🔵 深度</button>
+        </div>
+        <span class="save-hint" style="margin-left:auto">简洁：重点一目了然 · 深度：查看趋势与历史明细</span>
+      </div>
+    </div>
+
+    <!-- 简洁模式: 仪表盘 -->
+    <div id="wqSimple">
+      <div id="wqSimpleCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px"></div>
+      <div class="dose-card" id="wqSimpleAdvice">
+        <div class="dc-title">💡 智能建议</div>
+        <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.9;min-height:30px">暂无数据，先添加几条记录吧。</div>
+      </div>
+    </div>
+
+    <!-- 深度模式: ECharts趋势图 -->
+    <div id="wqPro" style="display:none">
+      <div class="dose-card">
+        <div class="dc-title">📈 趋势图</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <span class="d-field"><span class="fl">元素</span>
+            <select id="wqChartEl" class="ctl" onchange="onWqElChange()">
+              <option value="__all__">🌟 综合趋势（归一化）</option>
+              <option value="KH">KH 碱度</option>
+              <option value="钙">钙 Ca</option>
+              <option value="镁">镁 Mg</option>
+              <option value="NO3">NO₃</option>
+              <option value="PO4">PO₄</option>
+            </select>
+          </span>
+          <span class="d-field"><span class="fl">理想范围</span>
+            <select id="wqChartRange" class="ctl" onchange="renderWaterChart()">
+              <option value="1">显示</option>
+              <option value="0">隐藏</option>
+            </select>
+          </span>
+        </div>
+        <div id="wqChart" style="width:100%;height:320px"></div>
+        <div class="dc-sub" style="margin-top:8px">🔍 可滚轮缩放、拖拽查看细节。红色虚线=理想范围上下限。「综合趋势」将各元素归一化为相对变化(%)，便于对比不同尺度元素的走势。</div>
+      </div>
+      <div class="dose-card">
+        <div class="dc-title">📊 历史记录 <span class="save-hint" style="font-size:11px">(跟随趋势图筛选元素)</span></div>
+        <div style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>时间</th><th>元素</th><th>数值</th><th>备注</th><th>操作</th></tr></thead>
+          <tbody id="wqHistory"></tbody>
+        </table></div>
+        <div id="wqHistoryPager" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px">
+          <button class="pager-btn" id="wqPagePrev" onclick="wqTurnPage(-1)">‹ 上一页</button>
+          <span id="wqPageInfo" style="font-size:12px;color:var(--ink-soft)">1 / 1</span>
+          <button class="pager-btn" id="wqPageNext" onclick="wqTurnPage(1)">下一页 ›</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -494,6 +612,7 @@ async function loadData() {
   renderGroups();
   initDosing();
   restoreWater();
+  loadWater();
 }
 
 function restoreWater() {
@@ -754,7 +873,7 @@ async function recomputeAll() {
 function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const map = { calc: 0, dosing: 1, salt: 2 };
+  const map = { water: 0, calc: 1, dosing: 2, salt: 3 };
   document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
 }
@@ -803,6 +922,231 @@ function calcDosing() {
   localStorage.setItem('dosing_mix', JSON.stringify(mix));
   // 配比变更后，刷新元素补充页的「需滴配液(ml)」联动
   refreshAllMl();
+}
+
+/* ═══ 水质记录与趋势 ═══ */
+let waterMode = 'simple';
+let waterAnalysis = null;
+
+async function loadWater() {
+  const res = await fetch('/api/water/analysis');
+  const data = await res.json();
+  waterAnalysis = data.analysis;
+  renderSimple();
+  renderPro();
+}
+
+let wqChartInstance = null;
+
+function setWaterMode(mode) {
+  waterMode = mode;
+  document.getElementById('modeSimple').classList.toggle('active', mode === 'simple');
+  document.getElementById('modePro').classList.toggle('active', mode === 'pro');
+  document.getElementById('wqSimple').style.display = mode === 'simple' ? 'block' : 'none';
+  document.getElementById('wqPro').style.display = mode === 'pro' ? 'block' : 'none';
+  if (mode === 'pro') {
+    // 等待容器变为可见后再初始化图表，避免0尺寸
+    setTimeout(() => renderWaterChart(), 60);
+  }
+}
+
+async function addWaterRecord() {
+  const el = document.getElementById('wqElement').value;
+  const v = parseFloat(document.getElementById('wqValue').value);
+  const date = document.getElementById('wqDate').value;
+  const note = document.getElementById('wqNote').value.trim();
+  if (!el || isNaN(v)) { alert('请选择元素并输入测试值'); return; }
+  const res = await fetch('/api/water/record', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ element: el, value: v, note: note, recorded_at: date })
+  });
+  if (res.ok) {
+    document.getElementById('wqValue').value = '';
+    document.getElementById('wqNote').value = '';
+    loadWater();
+  }
+}
+
+async function delWaterRecord(id) {
+  if (!confirm('删除这条记录？')) return;
+  await fetch('/api/water/record/' + id, { method: 'DELETE' });
+  loadWater();
+}
+
+function renderSimple() {
+  const wrap = document.getElementById('wqSimpleCards');
+  const adviceBody = document.getElementById('wqSimpleAdviceBody');
+  if (!waterAnalysis || Object.keys(waterAnalysis).length === 0) {
+    wrap.innerHTML = '<div class="wq-card" style="grid-column:1/-1"><div class="wq-name">还没有记录</div><div style="font-size:13px;color:var(--ink-soft);margin-top:6px">在上方添加几条测试值（建议每周2-3次），这里会自动生成健康仪表盘和智能建议。</div></div>';
+    adviceBody.textContent = '暂无数据，先添加记录吧。';
+    return;
+  }
+  let html = '';
+  const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
+  const sorted = Object.keys(waterAnalysis).sort((a,b) => order.indexOf(a) - order.indexOf(b));
+  const allAdvice = [];
+  for (const el of sorted) {
+    const a = waterAnalysis[el];
+    const s = a.signals || {};
+    const status = a.status || 'no_data';
+    const arrowMap = { rising: '📈', falling: '📉', stable: '➡️' };
+    const arrow = arrowMap[s.direction] || '➡️';
+    const trendText = s.direction_cn ? s.direction_cn : '无数据';
+    html += '<div class="wq-card">' +
+      '<div class="wq-head"><span class="wq-name">' + (a.display || el) + '</span>' +
+      '<span class="wq-status ' + status + '">' + ({ok:'正常',low:'偏低',high:'偏高',no_data:'无数据'}[status] || status) + '</span></div>' +
+      '<div class="wq-value">' + (a.current !== undefined ? a.current : '—') + ' <small>' + (a.ideal ? a.ideal.unit : '') + '</small></div>' +
+      '<div class="wq-range">理想 ' + (a.ideal ? a.ideal.low + ' - ' + a.ideal.high + ' ' + a.ideal.unit : '') + '</div>' +
+      '<div class="wq-trend"><span class="arrow">' + arrow + '</span>趋势' + trendText +
+      (s.rate ? ' · 每天' + s.rate + (a.ideal ? a.ideal.unit : '') : '') + '</div>' +
+      (s.count ? '<div class="wq-mini">' + s.count + ' 条记录' + (s.anomaly_cn ? ' · <b style="color:#c0392b">' + s.anomaly_cn + '</b>' : '') + '</div>' : '') +
+      '</div>';
+    if (a.advice && a.advice.summary) allAdvice.push({ el: a.display || el, summary: a.advice.summary, prio: a.advice.priority });
+  }
+  wrap.innerHTML = html;
+  allAdvice.sort((x, y) => y.prio - x.prio);
+  adviceBody.innerHTML = allAdvice.map(x => '<div style="padding:6px 0;border-bottom:1px solid #f0f6f8"><b>' + x.el + '：</b>' + x.summary + '</div>').join('') ||
+    '<div>所有元素状态良好 🎉</div>';
+}
+
+// 历史记录分页状态
+let wqAllRecords = [];
+let wqFilterEl = null;   // 当前过滤元素（null=全部）
+let wqPage = 1;
+const WQ_PAGE_SIZE = 8;
+
+function renderPro() {
+  fetch('/api/water/records').then(r => r.json()).then(data => {
+    wqAllRecords = data.records || [];
+    // 按趋势图选中元素过滤
+    const chartEl = document.getElementById('wqChartEl').value;
+    wqFilterEl = (chartEl === '__all__') ? null : chartEl;
+    wqPage = 1;
+    renderHistoryTable();
+  });
+  if (waterMode === 'pro') setTimeout(() => renderWaterChart(), 60);
+}
+
+function renderHistoryTable() {
+  const tbody = document.getElementById('wqHistory');
+  let recs = wqFilterEl ? wqAllRecords.filter(r => r.element === wqFilterEl) : wqAllRecords;
+  recs = recs.slice().reverse(); // 最新在前
+  const total = recs.length;
+  const pages = Math.max(1, Math.ceil(total / WQ_PAGE_SIZE));
+  if (wqPage > pages) wqPage = pages;
+  const start = (wqPage - 1) * WQ_PAGE_SIZE;
+  const pageRecs = recs.slice(start, start + WQ_PAGE_SIZE);
+  tbody.innerHTML = pageRecs.map(r => '<tr>' +
+    '<td style="white-space:nowrap">' + (r.recorded_at || '').slice(0, 10) + '</td>' +
+    '<td>' + r.element + '</td>' +
+    '<td style="text-align:center;font-weight:700">' + r.value + '</td>' +
+    '<td>' + (r.note || '') + '</td>' +
+    '<td style="text-align:center"><button onclick="delWaterRecord(' + r.id + ')" style="color:#c0392b;background:none;border:none;cursor:pointer">🗑</button></td>' +
+    '</tr>').join('') || '<tr><td colspan="5" style="padding:10px;color:var(--ink-faint)">暂无记录</td></tr>';
+  // 分页信息
+  document.getElementById('wqPageInfo').textContent = total === 0 ? '0 条记录' : (pages === 1 ? '共 ' + total + ' 条' : '第 ' + wqPage + ' / ' + pages + ' 页 · 共 ' + total + ' 条');
+  document.getElementById('wqPagePrev').disabled = wqPage <= 1;
+  document.getElementById('wqPageNext').disabled = wqPage >= pages;
+}
+
+function wqTurnPage(dir) {
+  wqPage += dir;
+  renderHistoryTable();
+}
+
+function onWqElChange() {
+  // 趋势图元素切换 → 联动历史记录过滤
+  const el = document.getElementById('wqChartEl').value;
+  wqFilterEl = (el === '__all__') ? null : el;
+  wqPage = 1;
+  renderHistoryTable();
+  renderWaterChart();
+}
+
+function renderWaterChart() {
+  const el = document.getElementById('wqChartEl').value;
+  const showRange = document.getElementById('wqChartRange').value === '1';
+  const chartEl = document.getElementById('wqChart');
+  if (!wqChartInstance) {
+    wqChartInstance = echarts.init(chartEl);
+    window.addEventListener('resize', () => wqChartInstance && wqChartInstance.resize());
+  }
+  const chart = wqChartInstance;
+  chart.resize();
+
+  // 🌟 综合趋势模式：归一化所有元素
+  if (el === '__all__') {
+    const colors = ['#0a6ea8', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
+    const series = [];
+    const allDates = [];
+    const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
+    let ci = 0;
+    for (const key of order) {
+      const a = waterAnalysis && waterAnalysis[key];
+      if (!a || !a.records || a.records.length < 2) continue;
+      const vals = a.records.map(r => r.value);
+      const base = vals[0];
+      // 归一化为相对变化百分比，数据点 [时间戳, 百分比]
+      const pctData = a.records.map((r, i) => [r.ts, +((vals[i] - base) / base * 100).toFixed(2)]);
+      series.push({ name: a.display || key, type: 'line', data: pctData, smooth: true, symbolSize: 6,
+        lineStyle: { width: 2 }, itemStyle: { color: colors[ci % colors.length] } });
+      ci++;
+    }
+    if (series.length === 0) {
+      chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+      return;
+    }
+    chart.setOption({
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
+        formatter: function(params) {
+          var d = new Date(params[0].value[0]);
+          var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
+          params.forEach(function(p){ s += p.marker + ' ' + p.seriesName + ': ' + p.value[1] + '%<br>'; }); return s; } },
+      legend: { top: 0, type: 'scroll' },
+      grid: { left: 60, right: 25, top: 40, bottom: 50 },
+      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 8 }],
+      xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
+        axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
+          var d = new Date(v);
+          return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        } } },
+      yAxis: { type: 'value', name: '相对变化 %', scale: true, splitLine: { lineStyle: { color: '#f0f6f8' } }, axisLabel: { color: '#5c7a8c', formatter: '{value}%' } },
+      series: series
+    }, true);
+    return;
+  }
+
+  const a = waterAnalysis && waterAnalysis[el];
+  if (!a || !a.records || a.records.length === 0) {
+    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+    return;
+  }
+  // time轴: [时间戳, 数值]，真实反映测量间隔
+  const tsValues = a.records.map(r => [r.ts, r.value]);
+  const minTs = Math.min(...a.records.map(r => r.ts));
+  const maxTs = Math.max(...a.records.map(r => r.ts));
+  const ideal = a.ideal;
+  const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: 7,
+    lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
+    areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'rgba(10,110,168,.25)'},{offset:1,color:'rgba(10,110,168,.02)'}]) } }];
+  if (showRange && ideal) {
+    series.push({ name: '上限', type: 'line', data: [[minTs, ideal.high], [maxTs, ideal.high]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
+    series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
+  }
+  chart.setOption({
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
+      valueFormatter: function(v) { return v; } },
+    legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0 },
+    grid: { left: 55, right: 25, top: 42, bottom: 50 },
+    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 8 }],
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
+      axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
+        var d = new Date(v);
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      } } },
+    yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: '#f0f6f8' } }, axisLabel: { color: '#5c7a8c' } },
+    series: series
+  }, true);  // notMerge: 切换"显示/隐藏理想范围"时清空旧series
 }
 
 /* ═══ 配比参考一键填入 ═══ */

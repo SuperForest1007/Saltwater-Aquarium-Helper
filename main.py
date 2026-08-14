@@ -15,8 +15,18 @@ from dosing_calculator import (
     ELEMENT_FACTORS, DEFAULT_MIX, mix_concentration, per_ml_effect,
     daily_dose, adjust_dose,
 )
+from water_quality import analyze_element, analyze_all, ELEMENT_IDEALS
+from water_store import (
+    init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
+)
 
-app = FastAPI(title="海水缸管理App", version="0.3.0")
+app = FastAPI(title="海水缸管理App", version="0.4.0")
+
+# 初始化数据库
+init_db()
+
+# 静态文件（echarts.min.js 等）
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ---------- API ----------
 
@@ -103,6 +113,51 @@ def api_dosing_adjust(req: AdjustRequest):
     return adjust_dose(req.ro_water_ml, req.powder_g, req.element,
                        req.tank_liters, req.target_value, req.current_value,
                        req.plan_days, req.current_dose_ml)
+
+# ---------- 水质记录与分析 API ----------
+
+class RecordRequest(BaseModel):
+    element: str
+    value: float
+    note: str = ""
+    recorded_at: str = ""   # 可选，默认当前时间
+
+@app.get("/api/water/ideals")
+def api_water_ideals():
+    """各元素理想范围。"""
+    return {"ideals": ELEMENT_IDEALS}
+
+@app.get("/api/water/records")
+def api_water_records(element: str = None):
+    """获取记录（可按元素过滤）。"""
+    return {"records": get_records(element)}
+
+@app.get("/api/water/elements")
+def api_water_elements():
+    """已有记录的元素列表。"""
+    return {"elements": get_elements()}
+
+@app.post("/api/water/record")
+def api_water_add(req: RecordRequest):
+    rid = add_record(req.element, req.value, ELEMENT_IDEALS.get(req.element, {}).get("unit", "ppm"), req.note, req.recorded_at or None)
+    return {"id": rid, "ok": True}
+
+@app.delete("/api/water/record/{rid}")
+def api_water_delete(rid: int):
+    return {"ok": delete_record(rid)}
+
+@app.get("/api/water/analysis")
+def api_water_analysis():
+    """全元素智能分析（L1-L5）。"""
+    grouped = get_records_grouped()
+    return {"analysis": analyze_all(grouped)}
+
+@app.get("/api/water/element-analysis")
+def api_water_element_analysis(element: str):
+    """单元素分析。"""
+    recs = get_records(element)
+    data = [(r["recorded_at"], r["value"]) for r in recs]
+    return {"analysis": analyze_element(data, element)}
 
 # ---------- 前端页面 ----------
 
