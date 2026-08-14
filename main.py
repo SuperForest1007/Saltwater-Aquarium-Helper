@@ -18,12 +18,14 @@ from dosing_calculator import (
 from water_quality import analyze_element, analyze_all, ELEMENT_IDEALS
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
+    init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
 )
 
 app = FastAPI(title="海水缸管理App", version="0.4.0")
 
 # 初始化数据库
 init_db()
+init_dosing_log()
 
 # 静态文件（echarts.min.js 等）
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -113,6 +115,29 @@ def api_dosing_adjust(req: AdjustRequest):
     return adjust_dose(req.ro_water_ml, req.powder_g, req.element,
                        req.tank_liters, req.target_value, req.current_value,
                        req.plan_days, req.current_dose_ml)
+
+class DosingLogRequest(BaseModel):
+    element: str
+    dose_ml: float
+    note: str = ""
+    action: str = "start"   # start=开始滴定 / end=结束滴定
+    recorded_at: str = ""
+
+@app.post("/api/dosing/log")
+def api_dosing_log_add(req: DosingLogRequest):
+    """记录一次滴定设置变化（前端自动调用）。"""
+    rid = add_dosing_log(req.element, req.dose_ml, req.note, req.recorded_at or None, req.action)
+    return {"id": rid, "ok": True}
+
+@app.get("/api/dosing/logs")
+def api_dosing_logs(element: str = None):
+    """获取滴定记录（供趋势图标记）。"""
+    return {"logs": get_dosing_logs(element)}
+
+@app.delete("/api/dosing/log/{rid}")
+def api_dosing_log_delete(rid: int):
+    """删除一条滴定记录。"""
+    return {"ok": delete_dosing_log(rid)}
 
 # ---------- 水质记录与分析 API ----------
 

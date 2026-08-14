@@ -81,3 +81,67 @@ def get_elements():
     rows = conn.execute("SELECT DISTINCT element FROM water_records ORDER BY element").fetchall()
     conn.close()
     return [r["element"] for r in rows]
+
+
+# ============ 滴定记录（自动留痕） ============
+
+def init_dosing_log():
+    """滴定记录表：每次滴定量发生变化时自动记录一条。"""
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS dosing_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            element TEXT NOT NULL,
+            dose_ml REAL NOT NULL,
+            note TEXT,
+            action TEXT DEFAULT 'start',
+            recorded_at TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def add_dosing_log(element, dose_ml, note="", recorded_at=None, action="start"):
+    """记录一次滴定设置变化。"""
+    conn = get_db()
+    if recorded_at is None:
+        recorded_at = datetime.now().strftime("%Y-%m-%d")
+    if note == "" and action:
+        note = "开始滴定" if action == "start" else "结束滴定"
+    cur = conn.execute(
+        "INSERT INTO dosing_log (element, dose_ml, note, action, recorded_at, created_at) VALUES (?,?,?,?,?,?)",
+        (element, dose_ml, note, action, recorded_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    return rid
+
+def get_dosing_logs(element=None):
+    conn = get_db()
+    if element:
+        rows = conn.execute(
+            "SELECT * FROM dosing_log WHERE element=? ORDER BY recorded_at ASC", (element,)
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM dosing_log ORDER BY recorded_at ASC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_last_dose(element):
+    """获取某元素最近的滴定量。"""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT dose_ml FROM dosing_log WHERE element=? ORDER BY recorded_at DESC, id DESC LIMIT 1",
+        (element,)
+    ).fetchone()
+    conn.close()
+    return row["dose_ml"] if row else None
+
+def delete_dosing_log(rid):
+    conn = get_db()
+    cur = conn.execute("DELETE FROM dosing_log WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0

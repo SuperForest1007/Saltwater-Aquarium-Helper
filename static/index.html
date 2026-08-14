@@ -204,6 +204,25 @@
   .pager-btn { padding: 6px 14px; border: 1.5px solid #c8d8e6; background: #fff; color: var(--ocean-deep); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
   .pager-btn:hover { background: var(--ocean-soft); border-color: var(--ocean); }
   .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .dose-toggle { padding: 6px 14px; border: 1.5px solid #2e8b57; background: #fff; color: #2e8b57; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .dose-toggle:hover { background: #2e8b57; color: #fff; }
+  .dose-toggle.running { background: #c0392b; border-color: #c0392b; color: #fff; }
+  .dose-toggle.running:hover { background: #a93226; }
+
+  /* 滴定记录二级菜单 */
+  .dose-log-menu { margin-top: 16px; }
+  .dose-log-menu .dlm-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f6fafb;
+    border: 1px solid #e0edf2; border-radius: 12px; cursor: pointer; user-select: none; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .dose-log-menu .dlm-head:hover { background: #eef6f8; }
+  .dose-log-menu .dlm-head .dlm-arrow { margin-left: auto; color: var(--ink-faint); transition: transform .2s; }
+  .dose-log-menu .dlm-body { display: none; margin-top: 10px; border: 1px solid #e0edf2; border-radius: 12px; padding: 12px; background: #fff; }
+  .dose-log-menu .dlm-body.open { display: block; }
+  .dlm-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+  .dlm-form .ctl { padding: 7px 10px; font-size: 13px; }
+  .dlm-list { max-height: 220px; overflow-y: auto; }
+  .dlm-list table { width: 100%; border-collapse: collapse; }
+  .dlm-list th { padding: 6px; background: #f0f6f8; color: var(--ink-soft); font-size: 11px; font-weight: 600; text-align: left; }
+  .dlm-list td { padding: 6px; border-bottom: 1px solid #f0f6f8; font-size: 12px; }
   .ctl-btn:hover { background: var(--ocean-deep); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th { padding: 8px; background: var(--ocean); color: #fff; font-weight: 600; font-size: 12.5px; }
@@ -462,11 +481,53 @@
 
     <div class="dose-card">
       <div class="dc-title">💧 每天滴定量</div>
-      <div class="dc-sub">按配液浓度与每天消耗自动计算，可直接设定到滴定泵。</div>
-      <div class="dose-result"><span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span></div>
-      <div class="dose-result"><span class="dr-label">钙</span><span class="dr-value" id="g_dose">—</span><span class="dr-unit">毫升/天</span></div>
-      <div class="dose-result"><span class="dr-label">镁</span><span class="dr-value" id="m_dose">—</span><span class="dr-unit">毫升/天</span></div>
+      <div class="dc-sub">按配液浓度与每天消耗自动计算，可直接设定到滴定泵。开始/结束后会记录到水质趋势图上。</div>
+      <div class="dose-result">
+        <span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span>
+        <button class="dose-toggle" id="k_doseBtn" onclick="toggleDose('k', 'KH')">▶ 开始滴定</button>
+      </div>
+      <div class="dose-result">
+        <span class="dr-label">钙</span><span class="dr-value" id="g_dose">—</span><span class="dr-unit">毫升/天</span>
+        <button class="dose-toggle" id="g_doseBtn" onclick="toggleDose('g', '钙')">▶ 开始滴定</button>
+      </div>
+      <div class="dose-result">
+        <span class="dr-label">镁</span><span class="dr-value" id="m_dose">—</span><span class="dr-unit">毫升/天</span>
+        <button class="dose-toggle" id="m_doseBtn" onclick="toggleDose('m', '镁')">▶ 开始滴定</button>
+      </div>
       <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 每毫升提升量。建议少量多次，分2~4次滴入。</div>
+    </div>
+
+    <!-- 滴定记录二级菜单（深度自定义） -->
+    <div class="dose-log-menu">
+      <div class="dlm-head" onclick="toggleDoseLogMenu()">
+        <span>🗂️ 滴定记录管理</span>
+        <span class="save-hint">开始/结束/调整的历史记录，供水质图标记</span>
+        <span class="dlm-arrow" id="dlmArrow">▸</span>
+      </div>
+      <div class="dlm-body" id="dlmBody">
+        <div class="dlm-form">
+          <select id="dlmEl" class="ctl">
+            <option value="KH">KH 碱度</option>
+            <option value="钙">钙 Ca</option>
+            <option value="镁">镁 Mg</option>
+          </select>
+          <input type="number" id="dlmDose" class="ctl" placeholder="滴定量ml" style="width:90px">
+          <select id="dlmAction" class="ctl">
+            <option value="start">▶ 开始滴定</option>
+            <option value="end">⏹ 结束滴定</option>
+            <option value="adjust">🔧 调整</option>
+          </select>
+          <input type="date" id="dlmDate" class="ctl" style="width:140px">
+          <button class="ctl-btn" onclick="addDoseLogManual()" style="padding:8px 16px">✓ 添加</button>
+        </div>
+        <div class="dlm-list">
+          <table>
+            <thead><tr><th>日期</th><th>元素</th><th>滴定量</th><th>动作</th><th></th></tr></thead>
+            <tbody id="dlmListBody"></tbody>
+          </table>
+        </div>
+        <div class="dc-sub" style="margin-top:8px">💡 这里的记录会以绿色虚线标记在深度模式的水质趋势图上（需开启「滴定标记」显示）。</div>
+      </div>
     </div>
   </div>
 
@@ -580,6 +641,12 @@
             <select id="wqChartRange" class="ctl" onchange="renderWaterChart()">
               <option value="1">显示</option>
               <option value="0">隐藏</option>
+            </select>
+          </span>
+          <span class="d-field"><span class="fl">滴定标记</span>
+            <select id="wqChartDose" class="ctl" onchange="renderWaterChart()">
+              <option value="0">隐藏</option>
+              <option value="1">显示</option>
             </select>
           </span>
         </div>
@@ -886,6 +953,10 @@ function showTab(name) {
   if (estimator && (name === 'water' || name === 'salt')) {
     estimator.style.display = 'none';
   }
+  // 切回水质页时，重新渲染图表（容器从隐藏恢复，需resize）
+  if (name === 'water' && waterMode === 'pro' && wqChartInstance) {
+    setTimeout(() => { wqChartInstance.resize(); renderWaterChart(); }, 80);
+  }
 }
 
 function initDosing() {
@@ -934,6 +1005,105 @@ function calcDosing() {
   refreshAllMl();
 }
 
+/* ═══ 滴定开始/结束记录 ═══ */
+const doseRunning = {};  // 各元素是否在滴定中（k/g/m）
+function toggleDose(pre, elName) {
+  const btn = document.getElementById(pre + '_doseBtn');
+  const doseEl = document.getElementById(pre + '_dose');
+  const dose = parseFloat(doseEl.textContent);
+  if (!dose || dose <= 0) { alert('请先设置配比和测试数据，计算出每天滴定量'); return; }
+  const isRunning = doseRunning[pre];
+  const action = isRunning ? 'end' : 'start';
+  const today = new Date().toISOString().slice(0, 10);
+  fetch('/api/dosing/log', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ element: elName, dose_ml: dose, note: action === 'start' ? '开始滴定' : '结束滴定', action: action, recorded_at: today })
+  }).then(res => res.json()).then(() => {
+    doseRunning[pre] = !isRunning;
+    renderDoseBtn(pre);
+    // 同步刷新记录管理列表 + 缓存（供图表标记）
+    renderDoseLogList();
+  }).catch(() => {});
+}
+
+function renderDoseBtn(pre) {
+  const btn = document.getElementById(pre + '_doseBtn');
+  if (!btn) return;
+  const running = doseRunning[pre];
+  btn.textContent = running ? '⏹ 结束滴定' : '▶ 开始滴定';
+  btn.className = running ? 'dose-toggle running' : 'dose-toggle';
+}
+
+/* ═══ 滴定记录二级菜单 ═══ */
+function toggleDoseLogMenu() {
+  const body = document.getElementById('dlmBody');
+  const arrow = document.getElementById('dlmArrow');
+  const opening = !body.classList.contains('open');
+  body.classList.toggle('open', opening);
+  arrow.textContent = opening ? '▾' : '▸';
+  if (opening) renderDoseLogList();
+}
+
+async function renderDoseLogList() {
+  const tbody = document.getElementById('dlmListBody');
+  const logsRes = await fetch('/api/dosing/logs');
+  const data = await logsRes.json();
+  dosingLogsCache = data.logs || [];
+  const actionMap = { start: '▶ 开始', end: '⏹ 结束', adjust: '🔧 调整' };
+  const rows = dosingLogsCache.slice().reverse().map(l => '<tr>' +
+    '<td>' + l.recorded_at.slice(0, 10) + '</td>' +
+    '<td>' + l.element + '</td>' +
+    '<td>' + l.dose_ml + 'ml</td>' +
+    '<td>' + (actionMap[l.action] || l.note || '') + '</td>' +
+    '<td><button onclick="delDoseLog(' + l.id + ')" style="color:#c0392b;background:none;border:none;cursor:pointer">🗑</button></td>' +
+    '</tr>').join('');
+  tbody.innerHTML = rows || '<tr><td colspan="5" style="padding:8px;color:var(--ink-faint)">暂无记录</td></tr>';
+  // 同步刷新趋势图标记
+  if (waterMode === 'pro') renderWaterChart();
+}
+
+async function addDoseLogManual() {
+  const el = document.getElementById('dlmEl').value;
+  const dose = parseFloat(document.getElementById('dlmDose').value);
+  const action = document.getElementById('dlmAction').value;
+  const date = document.getElementById('dlmDate').value;
+  if (isNaN(dose) || dose < 0) { alert('请输入滴定量(毫升)'); return; }
+  const noteMap = { start: '开始滴定', end: '结束滴定', adjust: '调整滴定量' };
+  const res = await fetch('/api/dosing/log', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ element: el, dose_ml: dose, note: noteMap[action], action: action, recorded_at: date || undefined })
+  });
+  if (res.ok) {
+    document.getElementById('dlmDose').value = '';
+    document.getElementById('dlmDate').value = new Date().toISOString().slice(0, 10); // 保持默认今天
+    renderDoseLogList();
+    // 同步开始/结束按钮状态
+    syncDoseButtonsFromLogs();
+  }
+}
+
+async function delDoseLog(id) {
+  if (!confirm('删除这条滴定记录？')) return;
+  const res = await fetch('/api/dosing/log/' + id, { method: 'DELETE' });
+  if (res.ok) {
+    renderDoseLogList();
+    syncDoseButtonsFromLogs();
+  }
+}
+
+/* 根据最新记录同步开始/结束按钮状态 */
+function syncDoseButtonsFromLogs() {
+  const elMap = { 'KH': 'k', '钙': 'g', '镁': 'm' };
+  for (const el of ['KH', '钙', '镁']) {
+    const elLogs = dosingLogsCache.filter(l => l.element === el);
+    if (elLogs.length === 0) { doseRunning[elMap[el]] = false; renderDoseBtn(elMap[el]); continue; }
+    const last = elLogs[elLogs.length - 1];
+    const running = last.action === 'start';
+    doseRunning[elMap[el]] = running;
+    renderDoseBtn(elMap[el]);
+  }
+}
+
 /* ═══ 水质记录与趋势 ═══ */
 let waterMode = 'simple';
 let waterAnalysis = null;
@@ -942,11 +1112,19 @@ async function loadWater() {
   const res = await fetch('/api/water/analysis');
   const data = await res.json();
   waterAnalysis = data.analysis;
+  // 加载滴定记录（供趋势图标记 + 恢复按钮状态）
+  try {
+    const logsRes = await fetch('/api/dosing/logs');
+    const logsData = await logsRes.json();
+    dosingLogsCache = logsData.logs || [];
+    syncDoseButtonsFromLogs();
+  } catch (e) { dosingLogsCache = []; }
   renderSimple();
   renderPro();
 }
 
 let wqChartInstance = null;
+let dosingLogsCache = [];  // 滴定记录缓存（供趋势图标记）
 
 function setWaterMode(mode) {
   waterMode = mode;
@@ -1136,8 +1314,74 @@ function renderWaterChart() {
   const minTs = Math.min(...a.records.map(r => r.ts));
   const maxTs = Math.max(...a.records.map(r => r.ts));
   const ideal = a.ideal;
+  // 该元素的滴定记录 → 区间色带（默认不显示，需开关开启）
+  const showDoseMark = document.getElementById('wqChartDose').value === '1';
+  const elLogs = showDoseMark ? dosingLogsCache.filter(l => l.element === el) : [];
+  // 构建滴定区间：start→end配对成色带；同日开始结束→特殊点；无end→色带延伸
+  function buildDoseMarkers(logs) {
+    const areas = [];
+    const lines = [];   // start/end/adjust 都作为竖线标记（带数值）
+    // 按日期排序（同日多条按id顺序）
+    const sorted = logs.slice().sort((a, b) => (a.recorded_at + '|' + (a.id||0)).localeCompare(b.recorded_at + '|' + (b.id||0)));
+    let openStart = null;      // 未闭合的start（存储 {date, dose}）
+    const sameDayLogs = [];    // 当日所有记录（用于同日开始结束合计）
+    for (const l of sorted) {
+      const d = l.recorded_at.slice(0, 10);
+      if (l.action === 'start') {
+        if (openStart) {
+          // 前一个start未闭合（进行中→到今天）
+          areas.push({ name: '滴定', start: openStart.date, end: todayStr() });
+        }
+        openStart = { date: d, dose: l.dose_ml };
+        // 开始标记：带数值
+        lines.push({ xAxis: d, label: { formatter: '💧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#2e8b57', fontSize: 10 }, lineStyle: { color: '#2e8b57', type: 'solid', width: 1.5 } });
+      } else if (l.action === 'end') {
+        if (openStart) {
+          if (openStart.date === d) {
+            // 同日开始+结束 → 当日总量（start+end）
+            const total = openStart.dose + (l.dose_ml || 0);
+            lines.push({ xAxis: d, label: { formatter: '⚡ 当日共 ' + total + 'ml', position: 'insideEndTop', color: '#7b1fa2', fontSize: 10 }, lineStyle: { color: '#7b1fa2', type: 'solid', width: 1.5 } });
+          } else {
+            areas.push({ name: '滴定', start: openStart.date, end: d });
+            lines.push({ xAxis: d, label: { formatter: '⏹ 结束', position: 'insideEndTop', color: '#c0392b', fontSize: 9 }, lineStyle: { color: '#c0392b', type: 'dashed', width: 1.2 } });
+          }
+          openStart = null;
+        } else {
+          // 缺开始的end → 红色异常标记
+          lines.push({ xAxis: d, label: { formatter: '⚠️ 结束(缺开始)', position: 'insideEndTop', color: '#c0392b', fontSize: 9 }, lineStyle: { color: '#c0392b', type: 'solid', width: 1.5 } });
+        }
+      } else if (l.action === 'adjust') {
+        // 调整 → 蓝色细线（带数值）
+        lines.push({ xAxis: d, label: { formatter: '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
+      }
+    }
+    if (openStart) {
+      // 进行中 → 色带延伸到今天
+      areas.push({ name: '滴定', start: openStart.date, end: todayStr() });
+    }
+    return { areas, lines };
+  }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  const doseMarkers = buildDoseMarkers(elLogs);
+  const markArea = {
+    silent: true,
+    data: doseMarkers.areas.map(a => [{
+      xAxis: a.start, itemStyle: { color: 'rgba(46,139,87,.10)' }, name: a.name
+    }, {
+      xAxis: a.end, itemStyle: { color: 'rgba(46,139,87,.10)' }
+    }])
+  };
+  const markLine = {
+    silent: true, symbol: 'none',
+    data: doseMarkers.lines
+  };
   const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: 7,
     lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
+    markLine: markLine,
+    markArea: markArea,
     areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'rgba(10,110,168,.25)'},{offset:1,color:'rgba(10,110,168,.02)'}]) } }];
   if (showRange && ideal) {
     series.push({ name: '上限', type: 'line', data: [[minTs, ideal.high], [maxTs, ideal.high]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
@@ -1252,6 +1496,14 @@ calcSalt();
 
 // 初始化当前tab的水体条显隐状态（默认激活水质页）
 showTab('water');
+// 所有日期输入默认今天
+(function initDates() {
+  var today = new Date().toISOString().slice(0, 10);
+  var dlm = document.getElementById('dlmDate');
+  if (dlm) dlm.value = today;
+  var wq = document.getElementById('wqDate');
+  if (wq) wq.value = today;
+})();
 loadData();
 </script>
 </body>
