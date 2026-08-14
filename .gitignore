@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# 环境/IDE
+.vscode/
+.idea/
+*.swp
+
+# 运行时
+*.log
+.DS_Store

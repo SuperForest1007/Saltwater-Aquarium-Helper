@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>海水缸助手 · ReefPal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+  :root {
+    --ocean: #0a6ea8;
+    --ocean-deep: #075089;
+    --ocean-soft: #e3f2fb;
+    --ink: #173a52;
+    --ink-soft: #52718a;
+    --ink-faint: #8aa5b8;
+    --card: #ffffff;
+    --bg-a: #f0f7fc;
+    --bg-b: #ddeef8;
+    --ring: rgba(10,110,168,.18);
+    --shadow: 0 6px 24px rgba(30,58,77,.07);
+    --shadow-lg: 0 12px 40px rgba(30,58,77,.12);
+    --radius: 20px;
+    --radius-sm: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%);
+    color: var(--ink); min-height: 100vh; padding-bottom: 40px;
+  }
+  ::selection { background: var(--ring); }
+
+  /* ─── 波浪顶部装饰 ─── */
+  .wave-top { position: relative; height: 90px; overflow: hidden; pointer-events: none; }
+  .wave-top svg { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; animation: waveSlide 18s linear infinite; }
+  @keyframes waveSlide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* ─── 品牌头部 ─── */
+  .brand { text-align: center; margin: -30px 0 6px; position: relative; z-index: 2; }
+  .brand .logo {
+    display: inline-flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 800; color: var(--ocean-deep);
+    letter-spacing: .5px;
+  }
+  .brand .logo .mark {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, #0a6ea8, #0d8dc4);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 22px;
+    box-shadow: 0 6px 16px rgba(10,110,168,.35);
+  }
+  .brand .tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: 2px; margin-top: 4px; }
+
+  /* ─── 容器 ─── */
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px; }
+
+  /* ─── 水量条 ─── */
+  .tank-bar {
+    background: var(--card); border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    justify-content: center; border: 1px solid rgba(10,110,168,.08); margin-bottom: 16px;
+    position: sticky; top: 10px; z-index: 20;
+  }
+  .tank-bar .tb-label { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
+  .tank-bar input[type=number] {
+    width: 88px; padding: 9px 8px; border: 1.5px solid #d8e8ea; border-radius: 12px; text-align: center;
+    font-size: 16px; font-weight: 700; color: var(--ocean-deep); background: var(--ocean-soft); transition: border .2s;
+  }
+  .tank-bar input[type=number]:focus { outline: none; border-color: var(--ocean); }
+  .tank-bar .preset {
+    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid #bcd9eb;
+    border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
+  }
+  .tank-bar .preset:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
+  .preset-btn {
+    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid var(--ocean);
+    border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
+  }
+  .preset-btn:hover { background: var(--ocean-soft); transform: translateY(-1px); }
+  .save-hint { font-size: 10px; color: var(--ink-faint); }
+
+  /* ─── 估算器 ─── */
+  .estimator { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    border: 1px solid rgba(10,110,168,.12); margin-bottom: 16px; }
+  .est-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .est-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; font-size: 13px; }
+  .est-row label { width: 110px; color: var(--ink-soft); font-weight: 600; }
+  .est-row input[type=number] { width: 72px; padding: 7px; border: 1.5px solid #d8e8ea; border-radius: 10px; text-align: center; font-size: 14px; }
+  .est-row input[type=number]:focus { outline: none; border-color: var(--ocean); }
+  .est-row select { padding: 7px 10px; border: 1.5px solid #d8e8ea; border-radius: 10px; font-size: 13px; background: #fff; }
+  .est-result { background: var(--ocean-soft); border-radius: var(--radius-sm); padding: 14px 16px; margin: 12px 0;
+    font-size: 13px; color: var(--ink); line-height: 1.9; }
+  .est-result .big { font-size: 20px; font-weight: 800; color: var(--ocean-deep); }
+  .est-actions { display: flex; gap: 10px; margin-bottom: 8px; }
+  .est-actions button { padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600; border: none; transition: all .15s; }
+  .est-actions button:first-child { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.3); }
+  .est-actions button:first-child:hover { background: var(--ocean-deep); }
+  .est-actions button:last-child { background: #f0f4f5; color: var(--ink-soft); }
+  .est-note { font-size: 11px; color: var(--ink-faint); line-height: 1.6; }
+
+  /* ─── Tabs（分段控制） ─── */
+  .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; background: #e6f2f3;
+    padding: 5px; border-radius: 999px; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .tab-btn {
+    flex: 1; padding: 9px 0; border: none; background: transparent; color: var(--ink-soft);
+    border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s;
+  }
+  .tab-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeUp .25s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* ─── 分组卡片 ─── */
+  .group-card { background: var(--card); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid rgba(10,110,168,.06); }
+  .group-head { display: flex; align-items: center; padding: 15px 18px; cursor: pointer; user-select: none;
+    background: linear-gradient(135deg, #f7fcfb, #eef8f7); border-bottom: 1px solid #e6f2f1; }
+  .group-head .g-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .group-head .g-badge { margin-left: 10px; padding: 3px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 600; }
+  .badge-core { background: #fef0e0; color: #c0560e; }
+  .badge-adv { background: #e2f2fb; color: #0e6ba8; }
+  .badge-other { background: #f0f2f3; color: #7a8d99; }
+  .group-head .g-note { margin-left: auto; font-size: 11px; color: var(--ink-faint); padding-right: 8px; }
+  .group-head .g-arrow { color: var(--ink-faint); font-size: 12px; transition: transform .2s; }
+  .group-body { padding: 4px 0; }
+  .group-body.hidden { display: none; }
+
+  /* ─── 元素行 ─── */
+  .elem { border-top: 1px solid #f0f6f5; padding: 16px 18px; }
+  .elem:first-child { border-top: none; }
+  .elem-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 5px; }
+  .elem-name { font-size: 15px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+  .elem-name .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ocean); display: inline-block; }
+  .elem-ideal { font-size: 12px; color: var(--ink-soft); }
+  .elem-ideal b { color: var(--ocean-deep); font-weight: 700; }
+  .elem-detail { font-size: 12px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 12px; }
+  .elem-detail .tip { color: var(--ink-faint); font-size: 11px; }
+
+  /* ─── 计算行 ─── */
+  .calc-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .calc-row .field { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+  .calc-row .field .flabel { font-size: 10.5px; color: var(--ink-faint); font-weight: 600; letter-spacing: .3px; }
+  .calc-row input[type=number], .calc-row select {
+    padding: 9px 10px; border: 1.5px solid #d8e8ea; border-radius: 12px; text-align: center;
+    font-size: 15px; font-weight: 600; color: var(--ink); background: #fff; transition: border .2s, box-shadow .2s;
+  }
+  .calc-row input[type=number]:focus, .calc-row select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
+  .calc-row .water-in { width: 88px; }
+  .calc-row .conc-in { width: 118px; font-size: 14px; }
+  .calc-row .conc-in::placeholder { font-size: 11.5px; color: #a7bfd0; }
+  .calc-row .add-in { width: 190px; text-align: left; font-weight: 500; font-size: 13px; }
+  .calc-row .result {
+    background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border: 1.5px solid #b2d3ea; border-radius: 12px;
+    font-weight: 800; color: var(--ocean-deep); width: 104px; padding: 9px 8px; text-align: center; font-size: 17px;
+  }
+  .calc-row .sat-hint { font-size: 10.5px; color: var(--ink-faint); align-self: center; padding-bottom: 8px; }
+
+  /* ─── 自动推荐条 ─── */
+  .auto-strip { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px;
+    background: #f6fafb; border: 1.5px dashed #cfe5e8; border-radius: var(--radius-sm); flex-wrap: wrap; }
+  .auto-strip > span { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+  .auto-strip input[type=number] { width: 84px; padding: 8px; border: 1.5px solid #cfe5e8; border-radius: 10px;
+    text-align: center; font-size: 15px; font-weight: 600; }
+  .auto-strip input[type=number]:focus { outline: none; border-color: var(--ocean); }
+  .auto-strip .auto-msg { font-size: 12.5px; color: var(--ink-soft); flex: 1 1 200px; line-height: 1.6; }
+  .auto-strip .auto-msg.ok { color: #2e8b57; }
+  .auto-strip .auto-msg.high { color: #c0560e; }
+  .auto-strip .auto-msg.low { color: #d9480f; }
+
+  /* ─── 滴定卡片 ─── */
+  .dose-card { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+    border: 1px solid rgba(10,110,168,.06); margin-bottom: 16px; }
+  .dose-card .dc-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .dose-card .dc-sub { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.6; }
+  .dose-card .dc-sub b { color: var(--ocean); }
+  .dose-card .dc-tank { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .dose-card .dc-tank label { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .dose-card .dc-tank input { width: 90px; padding: 9px; border: 1.5px solid #bcd3e6; border-radius: 12px; text-align: center;
+    font-size: 17px; font-weight: 800; color: var(--ocean-deep); background: var(--ocean-soft); }
+  .dose-card .dc-tank input:focus { outline: none; border-color: var(--ocean); }
+  .dose-card .dc-tank .unit { font-size: 12px; color: var(--ink-faint); }
+
+  /* 滴定行式布局 */
+  .dose-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #f0f6f8; flex-wrap: wrap; }
+  .dose-row:first-of-type { border-top: none; }
+  .dose-row .d-elem { width: 74px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .dose-row .d-elem .sub { display: block; font-size: 10px; font-weight: 500; color: var(--ink-faint); }
+  .dose-row .d-field { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .dose-row .d-field .fl { font-size: 10px; color: var(--ink-faint); font-weight: 600; }
+  .dose-row input[type=number] { width: 86px; padding: 8px; border: 1.5px solid #d8e8ea; border-radius: 10px; text-align: center;
+    font-size: 14px; font-weight: 600; background: #fff; }
+  .dose-row input[type=number]:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
+  .dose-row .d-read { min-width: 86px; padding: 8px 10px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: 700;
+    background: #f3f8fb; border: 1.5px solid #d8e8ea; color: var(--ink-soft); }
+  .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-color: #b2d3ea; color: var(--ocean-deep); font-size: 16px; }
+  .dose-row .arrow { color: var(--ink-faint); font-size: 12px; padding-bottom: 14px; }
+
+  /* 配比参考 */
+  .mix-ref { margin-top: 14px; background: #f4fafd; border: 1px solid #d3e8f5; border-radius: var(--radius-sm); padding: 12px 14px; }
+  .mix-ref .mr-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .mix-ref .mr-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; font-size: 12px; }
+  .mix-ref .mr-row .mr-elem { width: 60px; color: var(--ink-soft); font-weight: 600; }
+  .mix-ref .mr-btn { padding: 4px 12px; border-radius: 999px; border: 1.5px solid #9fc9e3; background: #fff; color: #0a6ea8;
+    font-size: 11.5px; cursor: pointer; transition: all .15s; }
+  .mix-ref .mr-btn:hover { background: #0a6ea8; color: #fff; }
+  .mix-ref .mr-btn.active { background: #0a6ea8; color: #fff; }
+  .mix-ref .mr-tip { font-size: 11px; color: var(--ink-faint); margin-top: 8px; line-height: 1.6; }
+  .mix-ref .mr-tip b { color: #0a6ea8; }
+
+  .dose-result { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-radius: var(--radius-sm); padding: 14px; }
+  .dose-result .dr-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .dose-result .dr-value { font-size: 24px; font-weight: 800; color: var(--ocean-deep); }
+  .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
+
+  .note { max-width: 780px; margin: 14px auto 0; font-size: 11.5px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
+
+  /* 水滴装饰 */
+  .deco-drops { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .deco-drops span { position: absolute; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: radial-gradient(circle at 35% 35%, rgba(10,110,168,.16), rgba(10,110,168,.03));
+    animation: floatDrop 14s ease-in-out infinite; }
+  @keyframes floatDrop { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-26px) rotate(8deg); } }
+
+  @media (max-width: 560px) {
+    .brand .logo { font-size: 22px; }
+    .calc-row .add-in { width: 100%; }
+    .tank-bar { position: static; }
+  }
+</style>
+</head>
+<body>
+<!-- 海洋装饰 -->
+<div class="deco-drops"><span style="width:120px;height:110px;top:8%;left:4%;animation-delay:0s"></span>
+<span style="width:70px;height:64px;top:22%;right:6%;animation-delay:2.5s"></span>
+<span style="width:50px;height:46px;top:70%;left:5%;animation-delay:5s"></span>
+<span style="width:90px;height:84px;bottom:10%;right:4%;animation-delay:7.5s"></span>
+<span style="width:36px;height:33px;top:55%;left:88%;animation-delay:10s"></span>
+<span style="width:60px;height:55px;top:85%;left:45%;animation-delay:3s"></span></div>
+
+<!-- 波浪顶 -->
+<div class="wave-top">
+<svg viewBox="0 0 1440 90" preserveAspectRatio="none">
+  <path fill="#c9e4f2" opacity=".55" d="M0,45 C240,90 480,0 720,45 C960,90 1200,0 1440,45 L1440,90 L0,90 Z"></path>
+  <path fill="#b2d9ec" opacity=".65" d="M0,30 C240,75 480,-15 720,30 C960,75 1200,-15 1440,30 L1440,90 L0,90 Z"></path>
+</svg>
+</div>
+
+<!-- 品牌 -->
+<div class="brand">
+  <div class="logo"><span class="mark">🐠</span>ReefPal · 海水缸助手</div>
+  <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
+</div>
+
+<div class="wrap">
+  <!-- 水量条 -->
+  <div class="tank-bar">
+    <span class="tb-label">水体</span>
+    <input type="number" id="globalWater" placeholder="升" min="1">
+    <span class="preset" data-w="46" title="40×40×40cm 方缸">40方缸</span>
+    <span class="preset" data-w="156" title="60×60×60cm 方缸">60方缸</span>
+    <span class="preset" data-w="162" title="90×50×50cm">90缸</span>
+    <span class="preset" data-w="216" title="120×50×50cm">120缸</span>
+    <button class="preset-btn" onclick="toggleEstimator()">📐 估算</button>
+    <span class="save-hint">自动保存</span>
+  </div>
+
+  <!-- 估算器 -->
+  <div id="estimator" class="estimator" style="display:none">
+    <div class="est-title">🫧 缸体水量估算</div>
+    <div class="est-row"><label>缸型</label>
+      <select id="estShape" onchange="estCalc()">
+        <option value="cube">方缸（40/60缸）</option>
+        <option value="rect" selected>长方体缸（90/120缸）</option>
+      </select></div>
+    <div class="est-row" id="estCubeRow" style="display:none">
+      <label>边长</label><input type="number" id="estSide" value="60" min="10" max="200" oninput="estCalc()"><span>cm</span></div>
+    <div class="est-row" id="estRectRow">
+      <label>长×宽×高</label>
+      <input type="number" id="estL" value="120" min="30" oninput="estCalc()">×
+      <input type="number" id="estW" value="50" min="20" oninput="estCalc()">×
+      <input type="number" id="estH" value="50" min="20" oninput="estCalc()"><span>cm</span></div>
+    <div class="est-row"><label>水位</label>
+      <select id="estLevel" onchange="estCalc()">
+        <option value="0.95">满水（距顶2cm）</option>
+        <option value="0.9" selected>正常（距顶5cm）</option>
+        <option value="0.85">偏低（距顶8cm）</option>
+      </select></div>
+    <div class="est-row"><label>造景占位</label>
+      <select id="estRock" onchange="estCalc()">
+        <option value="0.9">少石</option>
+        <option value="0.8" selected>中等</option>
+        <option value="0.7">厚景</option>
+      </select></div>
+    <div class="est-row"><label>底缸水体</label><input type="number" id="estSump" value="0" min="0" oninput="estCalc()"><span>升</span></div>
+    <div class="est-result" id="estResult"></div>
+    <div class="est-actions">
+      <button onclick="estApply()">✓ 应用此水量</button>
+      <button onclick="toggleEstimator()">取消</button>
+    </div>
+    <div class="est-note">标称 = 长×宽×高(cm)÷1000；实际水体按水位与造景打折，通常为标称 60~75%。</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('calc')">🧪 元素补充</button>
+    <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
+    <button class="tab-btn" onclick="showTab('salt')">🧂 海盐</button>
+  </div>
+
+  <!-- 元素补充 -->
+  <div id="panel-calc" class="panel active">
+    <div id="groupContainer"></div>
+    <div class="note" style="margin-top:4px">「使用量」= 需要添加的粉末克数；「需滴配液(ml)」= 若用滴定方案里配好的补充液，需要滴入多少毫升。</div>
+    <div class="note">添加前请确认实测浓度，少量多次更安全。市售补充液请按瓶身说明换算。</div>
+  </div>
+
+  <!-- 滴定方案 -->
+  <div id="panel-dosing" class="panel">
+    <div class="dose-card">
+      <div class="dc-title">⚙️ 缸体设置</div>
+      <div class="dc-sub">先设置<b>缸总水量</b>，再从<b>配液</b>开始配置滴定方案。</div>
+      <div class="dc-tank">
+        <label>缸总水量</label>
+        <input type="number" id="d_tank" value="550">
+        <span class="unit">升</span>
+        <span class="save-hint" style="margin-left:auto">与「元素补充」联动</span>
+      </div>
+    </div>
+
+    <div class="dose-card">
+      <div class="dc-title">🧪 配液</div>
+      <div class="dc-sub"><b>配液</b> = 用<b>分析纯粉末</b>兑<b>RO纯净水</b>配成浓缩补充液，再通过滴定泵每天滴入缸中。
+        例如：50克碳酸氢钠 + 1000毫升RO水。</div>
+      <div style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
+        <span style="width:74px"></span>
+        <span class="d-field" style="flex:1;max-width:110px"><span class="fl">分析纯(克)</span></span>
+        <span style="width:6px"></span>
+        <span class="d-field" style="flex:1;max-width:110px"><span class="fl">RO水(毫升)</span></span>
+        <span style="width:6px"></span>
+        <span class="d-field" style="flex:1;max-width:110px"><span class="fl">配液浓度</span></span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">KH<span class="sub">碱度</span></span>
+        <input type="number" id="k_pw" value="50" title="分析纯粉末克数">
+        <span class="arrow">+</span>
+        <input type="number" id="k_ro" value="1000" title="RO纯净水毫升数">
+        <span class="d-read" id="k_conc">—</span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">钙<span class="sub">Ca</span></span>
+        <input type="number" id="g_pw" value="500">
+        <span class="arrow">+</span>
+        <input type="number" id="g_ro" value="2000">
+        <span class="d-read" id="g_conc">—</span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">镁<span class="sub">Mg</span></span>
+        <input type="number" id="m_pw" value="1000">
+        <span class="arrow">+</span>
+        <input type="number" id="m_ro" value="4000">
+        <span class="d-read" id="m_conc">—</span>
+      </div>
+      <div class="dc-sub" style="margin-top:8px">配液浓度 = 分析纯(克) ÷ RO水(毫升)，如 50克÷1000ml = <b>0.05 克/毫升</b>。</div>
+
+      <!-- 配比参考 -->
+      <div class="mix-ref">
+        <div class="mr-title">📋 常用配比参考（每 1000ml RO水）</div>
+        <div class="mr-row">
+          <span class="mr-elem">KH 碱度</span>
+          <button class="mr-btn" onclick="applyMixRef('k', 25, 1000)">稀 25克</button>
+          <button class="mr-btn" onclick="applyMixRef('k', 50, 1000)">浓 50克</button>
+          <span class="mr-tip" style="margin-left:6px">碳酸氢钠饱和约 78克/L</span>
+        </div>
+        <div class="mr-row">
+          <span class="mr-elem">钙 Ca</span>
+          <button class="mr-btn" onclick="applyMixRef('g', 150, 1000)">稀 150克</button>
+          <button class="mr-btn" onclick="applyMixRef('g', 300, 1000)">浓 300克</button>
+          <span class="mr-tip" style="margin-left:6px">氯化钙饱和约 745克/L</span>
+        </div>
+        <div class="mr-row">
+          <span class="mr-elem">镁 Mg</span>
+          <button class="mr-btn" onclick="applyMixRef('m', 100, 1000)">稀 100克</button>
+          <button class="mr-btn" onclick="applyMixRef('m', 250, 1000)">浓 250克</button>
+          <span class="mr-tip" style="margin-left:6px">氯化镁饱和约 542克/L</span>
+        </div>
+        <div class="mr-tip"><b>💡 稀溶液 vs 浓溶液：</b>稀溶液（如 KH 25克/L）滴定量更大，滴定泵每次滴的体积误差占比更小，<b>更容易精确控制</b>；
+          浓溶液（如 KH 50克/L）配一次能用更久，但滴定量小，泵的精度误差会被放大。新手建议先用稀溶液。</div>
+      </div>
+    </div>
+
+    <div class="dose-card">
+      <div class="dc-title">📊 消耗测算</div>
+      <div class="dc-sub">两次实测值相减 ÷ 间隔天数 = <b>每天消耗量</b>，据此推算滴定泵每天该滴多少。</div>
+      <div style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
+        <span style="width:74px"></span>
+        <span class="d-field" style="flex:1;max-width:100px"><span class="fl">上次值</span></span>
+        <span style="width:6px"></span>
+        <span class="d-field" style="flex:1;max-width:100px"><span class="fl">本次值</span></span>
+        <span style="width:6px"></span>
+        <span class="d-field" style="flex:1;max-width:80px"><span class="fl">间隔(天)</span></span>
+        <span class="d-field" style="flex:1;max-width:100px"><span class="fl">每天消耗</span></span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">KH<span class="sub">dKH</span></span>
+        <input type="number" id="k_f" value="8.0">
+        <span class="arrow">→</span>
+        <input type="number" id="k_l" value="7.5">
+        <input type="number" id="k_d" value="7">
+        <span class="d-read" id="k_consume">—</span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">钙<span class="sub">ppm</span></span>
+        <input type="number" id="g_f" value="420">
+        <span class="arrow">→</span>
+        <input type="number" id="g_l" value="400">
+        <input type="number" id="g_d" value="7">
+        <span class="d-read" id="g_consume">—</span>
+      </div>
+      <div class="dose-row">
+        <span class="d-elem">镁<span class="sub">ppm</span></span>
+        <input type="number" id="m_f" value="1350">
+        <span class="arrow">→</span>
+        <input type="number" id="m_l" value="1300">
+        <input type="number" id="m_d" value="7">
+        <span class="d-read" id="m_consume">—</span>
+      </div>
+    </div>
+
+    <div class="dose-card">
+      <div class="dc-title">💧 每天滴定量</div>
+      <div class="dc-sub">按配液浓度与每天消耗自动计算，可直接设定到滴定泵。</div>
+      <div class="dose-result"><span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span></div>
+      <div class="dose-result"><span class="dr-label">钙</span><span class="dr-value" id="g_dose">—</span><span class="dr-unit">毫升/天</span></div>
+      <div class="dose-result"><span class="dr-label">镁</span><span class="dr-value" id="m_dose">—</span><span class="dr-unit">毫升/天</span></div>
+      <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 每毫升提升量。建议少量多次，分2~4次滴入。</div>
+    </div>
+  </div>
+
+  <!-- 海盐参考 -->
+  <div id="panel-salt" class="panel">
+    <div class="dose-card">
+      <div class="dc-title">🧂 配盐计算</div>
+      <div class="dc-sub">目标盐度 <b>1.025</b>：选择你的海盐品牌，自动按该品牌用量计算。</div>
+      <div class="dose-card" style="box-shadow:none;border:1.5px dashed #bcd3e6;margin-bottom:0">
+        <div class="dc-tank">
+          <label>品牌</label>
+          <select id="saltBrand" style="padding:9px 12px;border:1.5px solid #bcd3e6;border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:#fff"></select>
+        </div>
+        <div class="dc-tank">
+          <label>要配水量</label>
+          <input type="number" id="saltWater" value="100" min="1">
+          <span class="unit">升</span>
+          <span class="save-hint" style="margin-left:auto">盐重 <b id="saltPerLiter">—</b> 克/升</span>
+        </div>
+        <div class="dose-result" style="margin-top:4px">
+          <span class="dr-label">需要海盐</span>
+          <span class="dr-value" id="saltTotal">—</span>
+          <span class="dr-unit">克</span>
+          <span class="dr-label" id="saltKg" style="margin-left:8px;font-size:12px;color:var(--ink-faint)"></span>
+        </div>
+        <div class="dc-sub" style="margin-top:10px">💡 实际用量以盐袋说明为准；化盐建议 <b>25°C</b>、充分搅拌溶解后再测盐度微调。</div>
+      </div>
+    </div>
+
+    <div class="dose-card">
+      <div class="dc-title">📊 海盐品牌元素配比（比重1.025 溶解后）</div>
+      <div class="dc-sub">不同品牌侧重不同：SPS 硬骨缸选高钙高KH，LPS/软体缸选均衡型。点击品牌行可直接用于配盐计算。</div>
+      <div style="overflow-x:auto">
+      <table style="width:100%;max-width:100%;border-collapse:collapse;margin-top:4px">
+        <thead><tr><th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">品牌/类型</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">盐重(克/L)</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">KH</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Ca</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Mg</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">K</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Sr</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">NO₃</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">PO₄</th></tr></thead>
+        <tbody id="saltTableBody"></tbody>
+      </table>
+      </div>
+      <div class="dc-sub" style="margin-top:10px">NO₃/PO₄ 为化盐后初始值（ppm），括号内为溶解充分后的稳定值。数据仅供参考，实际以盐袋批次为准。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let groupData = null;
+
+async function loadData() {
+  const res = await fetch('/api/additives');
+  const data = await res.json();
+  groupData = data.groups;
+  renderGroups();
+  initDosing();
+  restoreWater();
+}
+
+function restoreWater() {
+  const saved = localStorage.getItem('tank_water');
+  if (saved) {
+    document.getElementById('globalWater').value = saved;
+    const dt = document.getElementById('d_tank');
+    if (dt) { dt.value = saved; calcDosing(); }
+    syncSaltWater(saved);
+  }
+  document.getElementById('globalWater').addEventListener('input', () => {
+    const v = document.getElementById('globalWater').value;
+    localStorage.setItem('tank_water', v);
+    const dt = document.getElementById('d_tank');
+    if (dt) { dt.value = v; calcDosing(); }
+    syncSaltWater(v);
+  });
+}
+
+/* 配水量 = 缸水体 1/5（约一次换水量） */
+function syncSaltWater(water) {
+  const sw = document.getElementById('saltWater');
+  if (!sw) return;
+  const w = parseFloat(water);
+  if (w > 0) {
+    sw.value = Math.round(w / 5);
+    calcSalt();
+  }
+}
+document.querySelectorAll('.preset').forEach(el => {
+  el.addEventListener('click', () => { setWater(el.dataset.w); });
+});
+
+function setWater(w) {
+  document.getElementById('globalWater').value = w;
+  localStorage.setItem('tank_water', w);
+  const dt = document.getElementById('d_tank');
+  if (dt) dt.value = w;
+  document.querySelectorAll('.water-in').forEach(i => { i.value = w; });
+  syncSaltWater(w);
+  recomputeAll();
+  calcDosing();
+}
+
+/* ═══ 水量估算器 ═══ */
+function toggleEstimator() {
+  const el = document.getElementById('estimator');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') estCalc();
+}
+function estCalc() {
+  const shape = document.getElementById('estShape').value;
+  document.getElementById('estCubeRow').style.display = shape === 'cube' ? 'flex' : 'none';
+  document.getElementById('estRectRow').style.display = shape === 'rect' ? 'flex' : 'none';
+  let nominal = 0, desc = '';
+  if (shape === 'cube') {
+    const s = parseFloat(document.getElementById('estSide').value) || 0;
+    nominal = s * s * s / 1000;
+    desc = s + '×' + s + '×' + s + 'cm 方缸';
+  } else {
+    const L = parseFloat(document.getElementById('estL').value) || 0;
+    const W = parseFloat(document.getElementById('estW').value) || 0;
+    const H = parseFloat(document.getElementById('estH').value) || 0;
+    nominal = L * W * H / 1000;
+    desc = L + '×' + W + '×' + H + 'cm 长方体缸';
+  }
+  const level = parseFloat(document.getElementById('estLevel').value);
+  const rock = parseFloat(document.getElementById('estRock').value);
+  const sump = parseFloat(document.getElementById('estSump').value) || 0;
+  const actual = Math.round(nominal * level * rock + sump);
+  const el = document.getElementById('estResult');
+  el.innerHTML = '<div>标称容量：<b>' + nominal.toFixed(0) + ' 升</b>（' + desc + '）</div>' +
+    '<div>水位 ×' + level + ' · 造景 ×' + rock + (sump ? ' · 底缸 +' + sump + 'L' : '') + '</div>' +
+    '<div class="big">估算实际水体 ≈ ' + actual + ' 升</div>';
+  el.dataset.w = actual;
+}
+function estApply() {
+  const el = document.getElementById('estResult');
+  if (!el.dataset.w || el.dataset.w <= 0) { alert('请先设置缸体尺寸'); return; }
+  setWater(el.dataset.w);
+  toggleEstimator();
+}
+
+/* ═══ 分组渲染 ═══ */
+function renderGroups() {
+  const container = document.getElementById('groupContainer');
+  container.innerHTML = '';
+  groupData.forEach((group, gi) => {
+    const badgeCls = gi === 0 ? 'badge-core' : (gi === 1 ? 'badge-adv' : 'badge-other');
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    const collapsed = group.collapsed ? ' hidden' : '';
+    let html = '<div class="group-head" onclick="toggleGroup(this)">' +
+      '<span class="g-title">' + group.title + '</span>' +
+      '<span class="g-badge ' + badgeCls + '">' + group.badge + '</span>' +
+      '<span class="g-note">' + group.note + '</span>' +
+      '<span class="g-arrow">' + (collapsed ? '▸' : '▾') + '</span></div>' +
+      '<div class="group-body' + collapsed + '">';
+    group.elements.forEach((elem, ei) => {
+      html += renderElement(gi, ei, elem);
+    });
+    html += '</div>';
+    card.innerHTML = html;
+    container.appendChild(card);
+  });
+  document.querySelectorAll('.water-in, .conc-in').forEach(el => {
+    el.addEventListener('input', () => { calcRow(el.dataset.g, el.dataset.e); });
+    el.addEventListener('change', () => { calcRow(el.dataset.g, el.dataset.e); });
+  });
+  document.querySelectorAll('.auto-in').forEach(el => {
+    el.addEventListener('input', () => { autoJudge(el.dataset.g, el.dataset.e); });
+  });
+}
+
+function renderElement(gi, ei, elem) {
+  // 元素 → 滴定配比前缀映射（KH碱度→k, 钙→g, 镁→m）
+  const mixKey = elem.name.includes('KH') ? 'k' : elem.name.includes('钙') ? 'g' : elem.name.includes('镁') ? 'm' : null;
+  let html = '<div class="elem">' +
+    '<div class="elem-head">' +
+      '<span class="elem-name"><span class="dot"></span>' + elem.name + '</span>' +
+      '<span class="elem-ideal">理想 <b>' + elem.ideal + '</b> ' + elem.unit + '</span>' +
+    '</div>' +
+    '<div class="elem-detail">' + elem.detail + ' <span class="tip">' + (elem.tip || '') + '</span></div>';
+  // 浓度预设值 + datalist 支持自定义输入
+  const listId = 'conc-list-' + gi + '-' + ei;
+  const options = elem.conc_presets.map(v => '<option value="' + v + '">').join('');
+  const arrow = elem.direction === 'up' ? '↑' : '↓';
+  const addOptions = elem.additives.map((add, ai) =>
+    '<option value="' + ai + '"' + (ai === 0 ? ' selected' : '') + '>' + add[0] + '</option>').join('');
+  html += '<div class="calc-row" data-g="' + gi + '" data-e="' + ei + '">' +
+    '<div class="field"><span class="flabel">添加物</span>' +
+      (elem.additives.length > 1
+        ? '<select class="add-in" data-g="' + gi + '" data-e="' + ei + '" onchange="onAddChange(this)">' + addOptions + '</select>'
+        : '<span style="font-size:13px;color:var(--ink-soft);font-weight:600;min-width:170px">' + elem.additives[0][0] + '</span>') +
+    '</div>' +
+    '<div class="field"><span class="flabel">水量(升)</span><input type="number" class="water-in" data-g="' + gi + '" data-e="' + ei + '" placeholder="自动"></div>' +
+    '<div class="field"><span class="flabel">' + arrow + ' 浓度</span>' +
+      '<input type="number" step="any" class="conc-in" list="' + listId + '" data-g="' + gi + '" data-e="' + ei + '" placeholder="自定义" title="点击选择预设，或直接输入任意浓度">' +
+      '<datalist id="' + listId + '">' + options + '</datalist>' +
+    '</div>' +
+    '<div class="field"><span class="flabel">' + elem.unit + '</span></div>' +
+    '<div class="field"><span class="flabel">使用量(克)</span><input type="text" class="result" data-g="' + gi + '" data-e="' + ei + '" readonly></div>' +
+    (mixKey ? '<div class="field"><span class="flabel">需滴配液(ml)</span><input type="text" class="ml-result" data-mix="' + mixKey + '" readonly style="width:88px;background:#eaf2f9;border:1.5px solid #bcd3e6;border-radius:12px;color:var(--ocean-deep);font-weight:700;text-align:center;padding:9px 8px;font-size:15px" title="按「滴定方案」里该元素的配液浓度换算：要达到同样的补充量，需要滴入多少毫升配好的液体"></div>' : '') +
+    '<span class="hint sat-hint"></span>' +
+  '</div>';
+  html += '<div class="auto-strip">' +
+    '<span>实测值</span>' +
+    '<input type="number" class="auto-in" data-g="' + gi + '" data-e="' + ei + '" placeholder="如 ' + elem.ideal.split('-')[0] + '">' +
+    '<span class="auto-msg" id="auto-msg-' + gi + '-' + ei + '">输入当前实测值，自动判断是否需补充</span>' +
+  '</div>';
+  html += '</div>';
+  return html;
+}
+
+function onAddChange(sel) {
+  const gi = sel.dataset.g, ei = sel.dataset.e;
+  const elem = groupData[gi].elements[ei];
+  const ai = parseInt(sel.value);
+  const sat = elem.additives[ai][3];
+  const hint = sel.closest('.calc-row').querySelector('.sat-hint');
+  hint.textContent = sat ? '饱和 ' + sat : '';
+  const concEl = sel.closest('.calc-row').querySelector('.conc-in');
+  if (concEl && concEl.value) calcRow(gi, ei);
+}
+
+function toggleGroup(head) {
+  const body = head.nextElementSibling;
+  body.classList.toggle('hidden');
+  head.querySelector('.g-arrow').textContent = body.classList.contains('hidden') ? '▸' : '▾';
+}
+
+async function calcRow(gi, ei) {
+  const row = document.querySelector('.calc-row[data-g="' + gi + '"][data-e="' + ei + '"]');
+  const waterEl = row.querySelector('.water-in');
+  const concEl = row.querySelector('.conc-in');
+  const resEl = row.querySelector('.result');
+  const mlEl = row.querySelector('.ml-result');
+  let water = parseFloat(waterEl.value);
+  if (!water) water = parseFloat(document.getElementById('globalWater').value);
+  if (water) waterEl.value = water;
+  const conc = parseFloat(concEl.value);
+  if (!water || !conc) { resEl.value = ''; if (mlEl) mlEl.value = ''; return; }
+  const elem = groupData[gi].elements[ei];
+  const addSel = row.querySelector('.add-in');
+  const ai = addSel ? parseInt(addSel.value) : 0;
+  const add = elem.additives[ai];
+  const res = await fetch('/api/calc/additive', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ water_liters: water, conc_delta: conc, v1: add[1], v2: add[2] })
+  });
+  const data = await res.json();
+  resEl.value = data.grams;
+  refreshMl(gi, ei);
+}
+
+/* 联动：克 → 配液毫升（读取滴定页配比）。可单独调用以便配比变更后刷新 */
+function refreshMl(gi, ei) {
+  const row = document.querySelector('.calc-row[data-g="' + gi + '"][data-e="' + ei + '"]');
+  if (!row) return;
+  const mlEl = row.querySelector('.ml-result');
+  if (!mlEl) return;
+  const resEl = row.querySelector('.result');
+  const grams = parseFloat(resEl.value);
+  if (!grams || grams <= 0) { mlEl.value = ''; return; }
+  const mixKey = mlEl.dataset.mix;
+  const mix = JSON.parse(localStorage.getItem('dosing_mix') || '{}');
+  const m = mix[mixKey];
+  if (m && m.pw > 0 && m.ro > 0) {
+    // 每毫升含 pw/ro 克，需 ml = grams / (pw/ro)
+    const ml = Math.round(grams * m.ro / m.pw);
+    mlEl.value = ml;
+    mlEl.title = '达到该补充量需滴入约 ' + ml + ' 毫升（按配液 ' + m.pw + '克分析纯 : ' + m.ro + '毫升RO水 换算）';
+  } else {
+    mlEl.value = '';
+    mlEl.title = '请先在「滴定方案」中设置该元素配比';
+  }
+}
+
+/* 全量刷新所有已计算的 ml（配比变更后调用） */
+function refreshAllMl() {
+  if (!groupData) return;
+  groupData.forEach((g, gi) => g.elements.forEach((e, ei) => {
+    const row = document.querySelector('.calc-row[data-g="' + gi + '"][data-e="' + ei + '"]');
+    if (row) {
+      const resEl = row.querySelector('.result');
+      if (resEl && resEl.value) refreshMl(gi, ei);
+    }
+  }));
+}
+
+async function autoJudge(gi, ei) {
+  const val = parseFloat(document.querySelector('.auto-in[data-g="' + gi + '"][data-e="' + ei + '"]').value);
+  const msgEl = document.getElementById('auto-msg-' + gi + '-' + ei);
+  if (!val) { msgEl.textContent = '输入当前实测值，自动判断是否需补充'; msgEl.className = 'auto-msg'; return; }
+  const elem = groupData[gi].elements[ei];
+  const ideal = elem.ideal;
+  let low, high;
+  if (ideal.includes('-')) { const parts = ideal.split('-'); low = parseFloat(parts[0]); high = parseFloat(parts[1]); }
+  else { high = parseFloat(ideal); low = parseFloat(ideal) * 0.9; }
+  const water = parseFloat(document.getElementById('globalWater').value) || 100;
+  const add = elem.additives[0];
+  const res = await fetch('/api/calc/auto', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ water_liters: water, current_value: val, ideal_low: low, ideal_high: high, v1: add[1], v2: add[2], unit: elem.unit })
+  });
+  const d = await res.json();
+  msgEl.textContent = d.message + (d.grams ? '（约 ' + d.grams + ' 克 ' + add[0] + '）' : '');
+  msgEl.className = 'auto-msg ' + d.status;
+}
+
+async function recomputeAll() {
+  groupData.forEach((g, gi) => g.elements.forEach((e, ei) => {
+    const concEl = document.querySelector('.conc-in[data-g="' + gi + '"][data-e="' + ei + '"]');
+    if (concEl && concEl.value) calcRow(gi, ei);
+  }));
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const map = { calc: 0, dosing: 1, salt: 2 };
+  document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function initDosing() {
+  ['d_tank','g_pw','g_ro','g_f','g_l','g_d','m_pw','m_ro','m_f','m_l','m_d','k_pw','k_ro','k_f','k_l','k_d']
+    .forEach(id => document.getElementById(id).addEventListener('input', calcDosing));
+  const saved = localStorage.getItem('tank_water');
+  if (saved) document.getElementById('d_tank').value = saved;
+  // 恢复配比
+  const mix = JSON.parse(localStorage.getItem('dosing_mix') || '{}');
+  if (mix.k) { document.getElementById('k_pw').value = mix.k.pw; document.getElementById('k_ro').value = mix.k.ro; }
+  if (mix.g) { document.getElementById('g_pw').value = mix.g.pw; document.getElementById('g_ro').value = mix.g.ro; }
+  if (mix.m) { document.getElementById('m_pw').value = mix.m.pw; document.getElementById('m_ro').value = mix.m.ro; }
+  calcDosing();
+}
+function calcDosing() {
+  const tank = parseFloat(document.getElementById('d_tank').value) || 0;
+  const specs = [
+    { pre: 'k', coef: 0.03 }, { pre: 'g', coef: 0.004 }, { pre: 'm', coef: 0.009 },
+  ];
+  const mix = {};
+  for (const s of specs) {
+    const pw = parseFloat(document.getElementById(s.pre + '_pw').value) || 0;
+    const ro = parseFloat(document.getElementById(s.pre + '_ro').value) || 0;
+    const f = parseFloat(document.getElementById(s.pre + '_f').value) || 0;
+    const l = parseFloat(document.getElementById(s.pre + '_l').value) || 0;
+    const dd = parseFloat(document.getElementById(s.pre + '_d').value) || 0;
+    mix[s.pre] = { pw, ro };
+    // 配液浓度 = 克/毫升
+    const concPerMl = ro > 0 ? pw / ro : 0;
+    const concRead = document.getElementById(s.pre + '_conc');
+    if (concRead) concRead.textContent = concPerMl > 0 ? concPerMl.toFixed(3) + ' 克/ml' : '—';
+    // 原站对比浓度(稀释比) = RO水/分析纯
+    const conc = ro && pw ? Math.floor(ro / pw) : 0;
+    const perMl = conc * s.coef;
+    // 每天消耗
+    const consume = f && l && dd ? (f - l) / dd : 0;
+    const consumeRead = document.getElementById(s.pre + '_consume');
+    if (consumeRead) consumeRead.textContent = consume > 0 ? consume.toFixed(2) : '—';
+    // 每天滴定量
+    const dose = tank && consume > 0 && perMl ? Math.round(tank * consume * perMl) : '';
+    const doseRead = document.getElementById(s.pre + '_dose');
+    if (doseRead) doseRead.textContent = dose !== '' ? dose : '—';
+  }
+  localStorage.setItem('dosing_mix', JSON.stringify(mix));
+  // 配比变更后，刷新元素补充页的「需滴配液(ml)」联动
+  refreshAllMl();
+}
+
+/* ═══ 配比参考一键填入 ═══ */
+function applyMixRef(pre, pw, ro) {
+  document.getElementById(pre + '_pw').value = pw;
+  document.getElementById(pre + '_ro').value = ro;
+  // 高亮当前选择的参考按钮
+  document.querySelectorAll('.mr-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  calcDosing();
+}
+
+/* ═══ 海盐数据（比重1.025） ═══
+ * [品牌, 盐重克/L, KH, Ca, Mg, K, Sr, NO3, PO4]
+ */
+const SALT_BRANDS = [
+  ["科迪", 37, "10.3", 450, 1290, 363, 12, "无色", "0.06(0.05)"],
+  ["CS", 37, "7.4", 433, 1270, 375, 8, "无色", "0.03(0.02)"],
+  ["顶尖玩家LPS", 39, "8.9", 445, 1390, 340, 10, "略有颜色", "0.08(0.07)"],
+  ["完美海洋精细珊瑚盐", 39, "7.7", 425, 1530, 324, 8, "略有颜色", "0.04(0.03)"],
+  ["美国珊瑚礁", 38, "7.6", 519, 1330, 375, 9, "略有颜色", "0.1(0.09)"],
+  ["中盐（珊瑚类）袋装", 35, "7.4", 450, 1245, 370, 10, "无色", "0.03(0.02)"],
+  ["法红珊瑚盐", 38, "11.5", 480, 1275, 350, 10, "无色", "0.03(0.02)"],
+  ["FM", 36, "7.0", 430, 1185, 378, 8, "无色", "0.02(0.01)"],
+  ["业业", 34, "10.6", 500, 1410, 332, "0-2", "无色", "0"],
+  ["海宝珊瑚礁盐", 36, "7.0", 420, 1260, 347, 8, "无色", "0.03(0.02)"],
+  ["AF珊瑚盐", 37, "8.0", 405, 1215, 370, 10, "无色", "0.03(0.02)"],
+  ["红海珊瑚盐", 36, "8.2", 410, 1140, 370, 10, "无色", "0.02(0.01)"],
+  ["TM", 37, "6.8-8", 400, 1245, 378, 24, "无色", "0.01(0)"],
+  ["蓝色珍品", 36, "8.1", 410, 1305, 394, 10, "无色", "0.02(0.01)"],
+  ["海之绚", 38, "8.1", 410, 1380, 347, 6, "无色", "0.03(0.02)"],
+  ["皇海", 36, "8.0", 440, 1290, 355, 4, "略有颜色", "0.04(0.03)"],
+  ["蓝海", 37, "10.2", 475, 1335, 382, 8, "0", "0.02(0.01)"],
+  ["中盐（珊瑚礁盐）桶装", 35, "7.7", 450, 1360, 355, 12, "0.8", "0.01(0)"],
+  ["美红", 38, "10.8", 500, 1260, 347, 8, "0", "0"],
+];
+
+function renderSaltBrands() {
+  // 品牌下拉
+  const sel = document.getElementById('saltBrand');
+  sel.innerHTML = '<option value="">选择品牌</option>' + SALT_BRANDS.map((b, i) =>
+    '<option value="' + i + '">' + b[0] + '（' + b[1] + '克/升）</option>').join('');
+  sel.addEventListener('change', () => { calcSalt(); });
+
+  // 数据表
+  const tbody = document.getElementById('saltTableBody');
+  tbody.innerHTML = SALT_BRANDS.map((b, i) => {
+    const kh = parseFloat(b[2]);
+    const khHot = kh >= 10;
+    const caHigh = b[3] >= 450;
+    return '<tr style="cursor:pointer" onclick="pickSaltBrand(' + i + ')" title="点击用于配盐计算">' +
+      '<td style="padding:7px;border:1px solid #e3eef7;font-weight:700">' + b[0] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[1] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center;color:' + (khHot ? '#c0560e;font-weight:700' : '#0a6ea8;font-weight:700') + '">' + b[2] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center;font-weight:' + (caHigh ? '700' : '400') + '">' + b[3] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[4] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[5] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[6] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[7] + '</td>' +
+      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[8] + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function pickSaltBrand(i) {
+  const sel = document.getElementById('saltBrand');
+  sel.value = i;
+  calcSalt();
+}
+
+function calcSalt() {
+  const water = parseFloat(document.getElementById('saltWater').value) || 0;
+  const sel = document.getElementById('saltBrand');
+  const idx = sel.value !== '' ? parseInt(sel.value) : -1;
+  const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
+  const perLiter = document.getElementById('saltPerLiter');
+  const total = document.getElementById('saltTotal');
+  const kg = document.getElementById('saltKg');
+  if (!brand || water <= 0) {
+    perLiter.textContent = brand ? brand[1] : '—';
+    total.textContent = brand && water > 0 ? Math.round(water * brand[1]) : '—';
+    kg.textContent = brand && water > 0 ? '≈ ' + (water * brand[1] / 1000).toFixed(2) + ' kg' : '';
+    return;
+  }
+  perLiter.textContent = brand[1];
+  const grams = Math.round(water * brand[1]);
+  total.textContent = grams;
+  kg.textContent = '≈ ' + (grams / 1000).toFixed(2) + ' kg';
+}
+document.getElementById('saltWater').addEventListener('input', calcSalt);
+renderSaltBrands();
+calcSalt();
+
+loadData();
+</script>
+</body>
+</html>
