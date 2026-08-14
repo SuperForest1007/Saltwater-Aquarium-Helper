@@ -285,8 +285,16 @@
 </div>
 
 <div class="wrap">
-  <!-- 水量条 -->
-  <div class="tank-bar">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
+    <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
+    <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
+    <button class="tab-btn" onclick="showTab('salt')">🧂 海盐</button>
+  </div>
+
+  <!-- 水量条（仅元素补充/滴定方案页显示） -->
+  <div class="tank-bar" style="display:none">
     <span class="tb-label">水体</span>
     <input type="number" id="globalWater" placeholder="升" min="1">
     <span class="preset" data-w="46" title="40×40×40cm 方缸">40方缸</span>
@@ -331,14 +339,6 @@
       <button onclick="toggleEstimator()">取消</button>
     </div>
     <div class="est-note">标称 = 长×宽×高(cm)÷1000；实际水体按水位与造景打折，通常为标称 60~75%。</div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
-    <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
-    <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
-    <button class="tab-btn" onclick="showTab('salt')">🧂 海盐</button>
   </div>
 
   <!-- 元素补充 -->
@@ -876,6 +876,16 @@ function showTab(name) {
   const map = { water: 0, calc: 1, dosing: 2, salt: 3 };
   document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
+  // 水体条只在「元素补充」和「滴定方案」页显示
+  const tankBar = document.querySelector('.tank-bar');
+  if (tankBar) {
+    tankBar.style.display = (name === 'calc' || name === 'dosing') ? 'flex' : 'none';
+  }
+  // 估算器跟随水体条隐藏（避免在其他页残留）
+  const estimator = document.getElementById('estimator');
+  if (estimator && (name === 'water' || name === 'salt')) {
+    estimator.style.display = 'none';
+  }
 }
 
 function initDosing() {
@@ -1240,6 +1250,8 @@ document.getElementById('saltWater').addEventListener('input', calcSalt);
 renderSaltBrands();
 calcSalt();
 
+// 初始化当前tab的水体条显隐状态（默认激活水质页）
+showTab('water');
 loadData();
 </script>
 </body>
