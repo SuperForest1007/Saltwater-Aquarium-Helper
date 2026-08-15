@@ -145,3 +145,50 @@ def delete_dosing_log(rid):
     conn.commit()
     conn.close()
     return cur.rowcount > 0
+
+
+# ============ 换水记录 ============
+
+def init_water_change():
+    """换水记录表：记录每次换水的日期/水量/盐品牌/备注。"""
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS water_change (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            water_liters REAL NOT NULL,
+            salt_brand TEXT,
+            note TEXT,
+            recorded_at TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def add_water_change(water_liters, salt_brand="", note="", recorded_at=None):
+    conn = get_db()
+    if recorded_at is None:
+        recorded_at = datetime.now().strftime("%Y-%m-%d")
+    cur = conn.execute(
+        "INSERT INTO water_change (water_liters, salt_brand, note, recorded_at, created_at) VALUES (?,?,?,?,?)",
+        (water_liters, salt_brand, note, recorded_at, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    return rid
+
+def get_water_changes(limit=100):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM water_change ORDER BY recorded_at DESC, id DESC LIMIT ?", (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def delete_water_change(rid):
+    conn = get_db()
+    cur = conn.execute("DELETE FROM water_change WHERE id=?", (rid,))
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0

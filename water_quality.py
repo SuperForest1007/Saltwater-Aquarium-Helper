@@ -404,11 +404,24 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=1
         if consume_g_per_day > 0:
             balance_pct = supply_g_per_day / consume_g_per_day * 100
 
+        # 状态判定：消耗为0 → 水质未下降，无需补充（平衡）
+        # 消耗>0 且 补充=0 → 补充不足；消耗>0 且 补充>0 → 比较比例
+        if consume_g_per_day <= 0:
+            status = "stable"   # 水质稳定，无需补充
+        elif supply_g_per_day <= 0:
+            status = "under"    # 有消耗但没在补充
+        elif 80 <= balance_pct <= 120:
+            status = "balanced"
+        elif balance_pct > 120:
+            status = "over"     # 补多了
+        else:
+            status = "under"    # 补不够
+
         result[el] = {
             "consume_g_per_day": round(consume_g_per_day, 3),
             "supply_g_per_day": round(supply_g_per_day, 3),
             "balance_pct": round(balance_pct, 0),  # >100=补多了, <100=不够
-            "status": "balanced" if 80 <= balance_pct <= 120 else ("over" if balance_pct > 120 else "under"),
+            "status": status,
         }
     return result
 

@@ -319,7 +319,7 @@
     <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
     <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
     <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
-    <button class="tab-btn" onclick="showTab('salt')">🧂 海盐</button>
+    <button class="tab-btn" onclick="showTab('salt')">🔄 换水</button>
   </div>
 
   <!-- 水量条（仅元素补充/滴定方案页显示） -->
@@ -541,8 +541,32 @@
     </div>
   </div>
 
-  <!-- 海盐参考 -->
+  <!-- 换水（配盐计算 + 换水记录） -->
   <div id="panel-salt" class="panel">
+    <!-- 换水记录 -->
+    <div class="dose-card">
+      <div class="dc-title">📒 换水记录</div>
+      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
+        <div class="d-field"><span class="fl">盐品牌</span>
+          <select id="wcBrand" class="ctl" style="width:150px"></select>
+        </div>
+        <div class="d-field"><span class="fl">日期</span><input type="date" id="wcDate" class="ctl" style="width:140px"></div>
+        <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wcNote" class="ctl" placeholder="如 大换水" style="width:120px"></div>
+        <button onclick="addWaterChange()" class="ctl-btn">✓ 记录</button>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px"><table class="data-table">
+        <thead><tr><th>日期</th><th>换水量</th><th>盐品牌</th><th>备注</th><th></th></tr></thead>
+        <tbody id="wcList"></tbody>
+      </table></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px">
+        <button class="pager-btn" id="wcPagePrev" onclick="wcTurnPage(-1)">‹ 上一页</button>
+        <span id="wcPageInfo" style="font-size:12px;color:var(--ink-soft)">1 / 1</span>
+        <button class="pager-btn" id="wcPageNext" onclick="wcTurnPage(1)">下一页 ›</button>
+      </div>
+    </div>
+
     <div class="dose-card">
       <div class="dc-title">🧂 配盐计算</div>
       <div class="dc-sub">目标盐度 <b>1.025</b>：选择你的海盐品牌，自动按该品牌用量计算。</div>
@@ -671,6 +695,12 @@
           </span>
           <span class="d-field"><span class="fl">滴定标记</span>
             <select id="wqChartDose" class="ctl" onchange="renderWaterChart()">
+              <option value="0">隐藏</option>
+              <option value="1">显示</option>
+            </select>
+          </span>
+          <span class="d-field"><span class="fl">换水标记</span>
+            <select id="wqChartWC" class="ctl" onchange="renderWaterChart()">
               <option value="0">隐藏</option>
               <option value="1">显示</option>
             </select>
@@ -1145,6 +1175,12 @@ async function loadWater() {
     dosingLogsCache = logsData.logs || [];
     syncDoseButtonsFromLogs();
   } catch (e) { dosingLogsCache = []; }
+  // 加载换水记录（供趋势图标记）
+  try {
+    const wcRes = await fetch('/api/water-change');
+    const wcData = await wcRes.json();
+    waterChangeCache = wcData.changes || [];
+  } catch (e) { waterChangeCache = []; }
   renderSimple();
   renderPro();
   loadAnalysisCards();
@@ -1233,7 +1269,7 @@ function renderBalance(result) {
   if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">数据不足</span>'; return; }
   el.innerHTML = keys.map(k => {
     const r = result[k];
-    const statusMap = { balanced: ['⚖️ 平衡', '#2e8b57'], over: ['⬆️ 补充偏多', '#c0560e'], under: ['⬇️ 补充不足', '#c0392b'] };
+    const statusMap = { stable: ['⚖️ 水质稳定', '#2e8b57'], balanced: ['⚖️ 平衡', '#2e8b57'], over: ['⬆️ 补充偏多', '#c0560e'], under: ['⬇️ 补充不足', '#c0392b'] };
     const [label, color] = statusMap[r.status] || ['—', '#888'];
     return '<div style="padding:4px 0"><b>' + k + '</b>：<span style="color:' + color + '">' + label +
       '</span><span class="save-hint" style="display:block">补 ' + r.supply_g_per_day + 'g/天 vs 耗 ' + r.consume_g_per_day + 'g/天</span></div>';
@@ -1255,6 +1291,7 @@ function renderFrequency(result) {
 
 let wqChartInstance = null;
 let dosingLogsCache = [];  // 滴定记录缓存（供趋势图标记）
+let waterChangeCache = []; // 换水记录缓存（供趋势图标记）
 
 function setWaterMode(mode) {
   waterMode = mode;
@@ -1432,8 +1469,8 @@ function renderWaterChart() {
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
           params.forEach(function(p){ s += p.marker + ' ' + p.seriesName + ': ' + p.value[1] + '%<br>'; }); return s; } },
       legend: { top: 0, type: 'scroll' },
-      grid: { left: 60, right: 25, top: 40, bottom: 50 },
-      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 8 }],
+      grid: { left: 60, right: 25, top: 40, bottom: 92 },
+      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
       xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
         axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
           var d = new Date(v);
@@ -1507,6 +1544,13 @@ function renderWaterChart() {
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   const doseMarkers = buildDoseMarkers(elLogs);
+  // 换水标记线（橙色，受开关控制）
+  const showWCMark = document.getElementById('wqChartWC').value === '1';
+  const wcLines = showWCMark ? waterChangeCache.map(wc => ({
+    xAxis: wc.recorded_at.slice(0, 10),
+    label: { formatter: '🔄' + wc.water_liters + 'L', position: 'start', distance: 2, color: '#e67e22', fontSize: 9 },
+    lineStyle: { color: '#e67e22', type: 'solid', width: 1.2 }
+  })) : [];
   const markArea = {
     silent: true,
     data: doseMarkers.areas.map(a => [{
@@ -1517,7 +1561,7 @@ function renderWaterChart() {
   };
   const markLine = {
     silent: true, symbol: 'none',
-    data: doseMarkers.lines
+    data: doseMarkers.lines.concat(wcLines)
   };
   const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: 7,
     lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
@@ -1532,8 +1576,8 @@ function renderWaterChart() {
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
       valueFormatter: function(v) { return v; } },
     legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0 },
-    grid: { left: 55, right: 25, top: 42, bottom: 50 },
-    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 8 }],
+    grid: { left: 55, right: 25, top: 42, bottom: 92 },
+    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
     xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
       axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
         var d = new Date(v);
@@ -1634,6 +1678,106 @@ function calcSalt() {
 document.getElementById('saltWater').addEventListener('input', calcSalt);
 renderSaltBrands();
 calcSalt();
+
+/* ═══ 换水记录 ═══ */
+async function initWaterChange() {
+  // 盐品牌下拉（复用SALT_BRANDS）
+  const wcBrand = document.getElementById('wcBrand');
+  if (wcBrand) {
+    wcBrand.innerHTML = '<option value="">不选/自配</option>' + SALT_BRANDS.map((b, i) =>
+      '<option value="' + b[0] + '">' + b[0] + '</option>').join('');
+  }
+  // 日期默认今天
+  const wcDate = document.getElementById('wcDate');
+  if (wcDate) wcDate.value = new Date().toISOString().slice(0, 10);
+  // 换水量联动：默认水体1/5
+  const wcWater = document.getElementById('wcWater');
+  const globalW = parseFloat(document.getElementById('globalWater').value);
+  if (wcWater && globalW > 0) wcWater.value = Math.round(globalW / 5);
+  loadWaterChanges();
+}
+
+// 换水记录分页状态
+let wcAllChanges = [];
+let wcPage = 1;
+const WC_PAGE_SIZE = 5;
+
+async function loadWaterChanges() {
+  const tbody = document.getElementById('wcList');
+  if (!tbody) return;
+  const res = await fetch('/api/water-change');
+  const data = await res.json();
+  wcAllChanges = data.changes || [];
+  wcPage = 1;
+  renderWcTable();
+}
+
+function renderWcTable() {
+  const tbody = document.getElementById('wcList');
+  const total = wcAllChanges.length;
+  const pages = Math.max(1, Math.ceil(total / WC_PAGE_SIZE));
+  if (wcPage > pages) wcPage = pages;
+  const start = (wcPage - 1) * WC_PAGE_SIZE;
+  const pageItems = wcAllChanges.slice(start, start + WC_PAGE_SIZE);
+  tbody.innerHTML = pageItems.map(c => '<tr>' +
+    '<td style="white-space:nowrap">' + c.recorded_at.slice(0, 10) + '</td>' +
+    '<td>' + c.water_liters + 'L</td>' +
+    '<td>' + (c.salt_brand || '—') + '</td>' +
+    '<td>' + (c.note || '') + '</td>' +
+    '<td style="text-align:center"><button onclick="delWaterChange(' + c.id + ')" style="color:#c0392b;background:none;border:none;cursor:pointer">🗑</button></td>' +
+    '</tr>').join('') || '<tr><td colspan="5" style="padding:8px;color:var(--ink-faint)">暂无换水记录</td></tr>';
+  // 分页信息
+  document.getElementById('wcPageInfo').textContent = total === 0 ? '0 条记录' : (pages === 1 ? '共 ' + total + ' 条' : '第 ' + wcPage + ' / ' + pages + ' 页 · 共 ' + total + ' 条');
+  document.getElementById('wcPagePrev').disabled = wcPage <= 1;
+  document.getElementById('wcPageNext').disabled = wcPage >= pages;
+}
+
+function wcTurnPage(dir) {
+  wcPage += dir;
+  renderWcTable();
+}
+
+async function addWaterChange() {
+  const water = parseFloat(document.getElementById('wcWater').value);
+  const brand = document.getElementById('wcBrand').value;
+  const date = document.getElementById('wcDate').value;
+  const note = document.getElementById('wcNote').value.trim();
+  if (!water || water <= 0) { alert('请输入换水量(升)'); return; }
+  const res = await fetch('/api/water-change', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ water_liters: water, salt_brand: brand, note: note, recorded_at: date })
+  });
+  if (res.ok) {
+    document.getElementById('wcNote').value = '';
+    await loadWaterChanges();
+    // 同步刷新趋势图缓存和标记
+    refreshWaterChangeCache();
+  }
+}
+
+async function delWaterChange(id) {
+  if (!confirm('删除这条换水记录？')) return;
+  await fetch('/api/water-change/' + id, { method: 'DELETE' });
+  await loadWaterChanges();
+  // 同步刷新趋势图缓存和标记
+  refreshWaterChangeCache();
+}
+
+/* 重新加载换水缓存并刷新趋势图标记 */
+async function refreshWaterChangeCache() {
+  try {
+    const res = await fetch('/api/water-change');
+    const data = await res.json();
+    waterChangeCache = data.changes || [];
+    // 深度模式且换水标记开启时重新渲染
+    if (waterMode === 'pro' && document.getElementById('wqChartWC').value === '1') {
+      renderWaterChart();
+    }
+  } catch (e) { /* 忽略 */ }
+}
+
+// 初始化换水记录
+initWaterChange();
 
 // 初始化当前tab的水体条显隐状态（默认激活水质页）
 showTab('water');

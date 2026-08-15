@@ -22,6 +22,7 @@ from water_quality import (
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
+    init_water_change, add_water_change, get_water_changes, delete_water_change,
 )
 
 app = FastAPI(title="海水缸管理App", version="0.4.0")
@@ -29,9 +30,13 @@ app = FastAPI(title="海水缸管理App", version="0.4.0")
 # 初始化数据库
 init_db()
 init_dosing_log()
+init_water_change()
+
+# 项目根目录（基于文件位置，避免工作目录不同导致找不到文件）
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 静态文件（echarts.min.js 等）
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # ---------- API ----------
 
@@ -142,6 +147,27 @@ def api_dosing_log_delete(rid: int):
     """删除一条滴定记录。"""
     return {"ok": delete_dosing_log(rid)}
 
+# ---------- 换水记录 API ----------
+
+class WaterChangeRequest(BaseModel):
+    water_liters: float
+    salt_brand: str = ""
+    note: str = ""
+    recorded_at: str = ""
+
+@app.post("/api/water-change")
+def api_water_change_add(req: WaterChangeRequest):
+    rid = add_water_change(req.water_liters, req.salt_brand, req.note, req.recorded_at or None)
+    return {"id": rid, "ok": True}
+
+@app.get("/api/water-change")
+def api_water_change_list():
+    return {"changes": get_water_changes()}
+
+@app.delete("/api/water-change/{rid}")
+def api_water_change_delete(rid: int):
+    return {"ok": delete_water_change(rid)}
+
 # ---------- 水质记录与分析 API ----------
 
 class RecordRequest(BaseModel):
@@ -224,7 +250,7 @@ def api_frequency():
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return FileResponse("static/index.html")
+    return FileResponse(os.path.join(BASE_DIR, "static", "index.html"))
 
 @app.get("/health")
 def health():
