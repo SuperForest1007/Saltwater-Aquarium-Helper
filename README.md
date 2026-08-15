@@ -20,6 +20,19 @@ python main.py
 # 浏览器打开 http://127.0.0.1:8000
 ```
 
+## 🧪 功能测试
+
+```bash
+# 一键测试（Windows）
+run_tests.bat
+
+# 或手动运行
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+测试覆盖：添加剂计算、滴定方案、水质分析（L1-L5）、换水记录、综合分析、前端完整性（JS语法/关键元素）。
+
 ## 📁 项目结构
 
 ```
