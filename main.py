@@ -24,6 +24,7 @@ from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
     init_water_change, add_water_change, get_water_changes, delete_water_change,
+    update_record, update_dosing_log, update_water_change,
 )
 
 app = FastAPI(title="海水缸管理App", version="0.4.0")
@@ -148,6 +149,18 @@ def api_dosing_log_delete(rid: int):
     """删除一条滴定记录。"""
     return {"ok": delete_dosing_log(rid)}
 
+class DosingLogUpdateRequest(BaseModel):
+    element: str
+    dose_ml: float = Field(gt=0)
+    note: str = ""
+    action: str = "start"
+    recorded_at: str = ""
+
+@app.put("/api/dosing/log/{rid}")
+def api_dosing_log_update(rid: int, req: DosingLogUpdateRequest):
+    """更新一条滴定记录。"""
+    return {"ok": update_dosing_log(rid, req.element, req.dose_ml, req.note, req.recorded_at or None, req.action)}
+
 # ---------- 换水记录 API ----------
 
 class WaterChangeRequest(BaseModel):
@@ -168,6 +181,16 @@ def api_water_change_list():
 @app.delete("/api/water-change/{rid}")
 def api_water_change_delete(rid: int):
     return {"ok": delete_water_change(rid)}
+
+class WaterChangeUpdateRequest(BaseModel):
+    water_liters: float = Field(gt=0, description="换水量必须为正数")
+    salt_brand: str = ""
+    note: str = ""
+    recorded_at: str = ""
+
+@app.put("/api/water-change/{rid}")
+def api_water_change_update(rid: int, req: WaterChangeUpdateRequest):
+    return {"ok": update_water_change(rid, req.water_liters, req.salt_brand, req.note, req.recorded_at or None)}
 
 # ---------- 水质记录与分析 API ----------
 
@@ -200,6 +223,19 @@ def api_water_add(req: RecordRequest):
 @app.delete("/api/water/record/{rid}")
 def api_water_delete(rid: int):
     return {"ok": delete_record(rid)}
+
+class RecordUpdateRequest(BaseModel):
+    element: str
+    value: float = Field(gt=0, description="测试值必须为正数")
+    note: str = ""
+    recorded_at: str = ""
+
+@app.put("/api/water/record/{rid}")
+def api_water_update(rid: int, req: RecordUpdateRequest):
+    rid_ok = update_record(rid, req.element, req.value,
+                           ELEMENT_IDEALS.get(req.element, {}).get("unit", "ppm"),
+                           req.note, req.recorded_at or None)
+    return {"ok": rid_ok}
 
 @app.get("/api/water/analysis")
 def api_water_analysis():

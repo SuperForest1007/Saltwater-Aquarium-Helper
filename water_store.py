@@ -69,6 +69,19 @@ def get_records_grouped(limit=500):
         grouped.setdefault(r["element"], []).append((r["recorded_at"], r["value"]))
     return grouped
 
+def update_record(rid, element, value, unit, note="", recorded_at=None):
+    """更新一条水质记录。"""
+    if recorded_at is None:
+        recorded_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    conn = get_db()
+    cur = conn.execute(
+        "UPDATE water_records SET element=?, value=?, unit=?, note=?, recorded_at=? WHERE id=?",
+        (element, value, unit, note, recorded_at, rid)
+    )
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0
+
 def delete_record(rid):
     conn = get_db()
     cur = conn.execute("DELETE FROM water_records WHERE id=?", (rid,))
@@ -139,6 +152,19 @@ def get_last_dose(element):
     conn.close()
     return row["dose_ml"] if row else None
 
+def update_dosing_log(rid, element, dose_ml, note="", recorded_at=None, action="start"):
+    """更新一条滴定记录。"""
+    if recorded_at is None:
+        recorded_at = datetime.now().strftime("%Y-%m-%d")
+    conn = get_db()
+    cur = conn.execute(
+        "UPDATE dosing_log SET element=?, dose_ml=?, note=?, action=?, recorded_at=? WHERE id=?",
+        (element, dose_ml, note, action, recorded_at, rid)
+    )
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0
+
 def delete_dosing_log(rid):
     conn = get_db()
     cur = conn.execute("DELETE FROM dosing_log WHERE id=?", (rid,))
@@ -185,6 +211,19 @@ def get_water_changes(limit=100):
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+def update_water_change(rid, water_liters, salt_brand="", note="", recorded_at=None):
+    """更新一条换水记录。"""
+    if recorded_at is None:
+        recorded_at = datetime.now().strftime("%Y-%m-%d")
+    conn = get_db()
+    cur = conn.execute(
+        "UPDATE water_change SET water_liters=?, salt_brand=?, note=?, recorded_at=? WHERE id=?",
+        (water_liters, salt_brand, note, recorded_at, rid)
+    )
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0
 
 def delete_water_change(rid):
     conn = get_db()
