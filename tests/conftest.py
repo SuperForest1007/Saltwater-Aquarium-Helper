@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 pytest 共享 fixtures：
-- 使用临时测试数据库（不污染真实 water_records.db）
+- 每个测试使用独立的临时数据库（严格隔离，互不污染）
 - 提供 TestClient 实例
 """
 import os
 import sys
 import tempfile
+import shutil
 
 import pytest
 
@@ -16,10 +17,10 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_client():
-    """使用临时数据库的 FastAPI TestClient。"""
-    # 临时数据库文件
+    """每个测试独立的临时数据库 TestClient。"""
+    # 每个测试独立临时目录
     tmp_dir = tempfile.mkdtemp(prefix="seawater_test_")
     tmp_db = os.path.join(tmp_dir, "test.db")
 
@@ -40,7 +41,6 @@ def test_client():
 
     yield client
 
-    # 清理
+    # 清理：恢复DB路径并删除临时目录
     water_store.DB_PATH = original_db
-    if os.path.exists(tmp_db):
-        os.remove(tmp_db)
+    shutil.rmtree(tmp_dir, ignore_errors=True)

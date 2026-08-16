@@ -6,7 +6,7 @@ import os
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from additive_calculator import (
     calc_additive, get_all_additives, calc_dose_auto,
@@ -18,6 +18,7 @@ from dosing_calculator import (
 from water_quality import (
     analyze_element, analyze_all, ELEMENT_IDEALS,
     evaluate_dosing_effect, balance_audit, test_frequency_health,
+    linkage_diagnosis,
 )
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
@@ -150,7 +151,7 @@ def api_dosing_log_delete(rid: int):
 # ---------- 换水记录 API ----------
 
 class WaterChangeRequest(BaseModel):
-    water_liters: float
+    water_liters: float = Field(gt=0, description="换水量必须为正数")
     salt_brand: str = ""
     note: str = ""
     recorded_at: str = ""
@@ -172,7 +173,7 @@ def api_water_change_delete(rid: int):
 
 class RecordRequest(BaseModel):
     element: str
-    value: float
+    value: float = Field(gt=0, description="测试值必须为正数")
     note: str = ""
     recorded_at: str = ""   # 可选，默认当前时间
 
@@ -245,6 +246,13 @@ def api_frequency():
     for el, recs in grouped.items():
         data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
     return {"result": test_frequency_health(data)}
+
+@app.get("/api/analysis/linkage")
+def api_linkage():
+    """元素联动诊断：跨元素因果关系。"""
+    grouped = get_records_grouped()
+    analysis = analyze_all(grouped)
+    return {"findings": linkage_diagnosis(analysis)}
 
 # ---------- 前端页面 ----------
 

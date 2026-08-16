@@ -40,10 +40,10 @@ ADDITIVE_GROUPS = [
         "elements": [
             {
                 "name": "KH 碱度",
-                "ideal": "7-8",
+                "ideal": "8-12",
                 "unit": "dKH",
                 "detail": "维持水体pH稳定和珊瑚钙化速度，波动大会引发珊瑚应激。",
-                "tip": "理想范围 7-8dKH，每天波动不宜超过 ±0.5dKH。",
+                "tip": "理想范围 8-12dKH（SPS建议8-9），每天波动不宜超过 ±0.5dKH。",
                 "direction": "up",
                 "conc_presets": ["0.1", "0.5", "1", "2", "3", "4", "5"],
                 "additives": [
@@ -52,10 +52,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "钙 Ca",
-                "ideal": "400-440",
+                "ideal": "400-450",
                 "unit": "ppm",
                 "detail": "珊瑚骨骼和藻类生长的核心元素，SPS硬骨消耗尤其快。",
-                "tip": "理想范围 400-440ppm，低于 380ppm 珊瑚生长会受影响。",
+                "tip": "理想范围 400-450ppm（SPS建议420-450），低于 380ppm 珊瑚生长会受影响。",
                 "direction": "up",
                 "conc_presets": ["5", "10", "20", "30", "40", "50", "75"],
                 "additives": [
@@ -66,10 +66,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "镁 Mg",
-                "ideal": "1200-1300",
+                "ideal": "1300-1400",
                 "unit": "ppm",
                 "detail": "维持钙与碱度的平衡，镁偏低会导致钙析出沉淀。",
-                "tip": "理想范围 1200-1300ppm，镁是钙KH稳定的前提。",
+                "tip": "理想范围 1300-1400ppm（SPS建议1350-1400），镁是钙KH稳定的前提。",
                 "direction": "up",
                 "conc_presets": ["30", "50", "75", "100", "150", "200"],
                 "additives": [
@@ -258,7 +258,11 @@ def calc_additive(water_liters: float, conc_delta: float, v1: float, v2: float) 
     formula: grams = round(s1 * (v2/v1) * t1) / 1000
     即 提升浓度 × (添加物分子量/元素当量) × 水量升 / 1000
     """
-    if water_liters is None or conc_delta is None or water_liters <= 0 or conc_delta <= 0:
+    import math
+    if (water_liters is None or conc_delta is None or
+            not isinstance(water_liters, (int, float)) or not isinstance(conc_delta, (int, float)) or
+            not math.isfinite(water_liters) or not math.isfinite(conc_delta) or
+            water_liters <= 0 or conc_delta <= 0):
         return 0.0
     return round(conc_delta * (v2 / v1) * water_liters) / 1000
 

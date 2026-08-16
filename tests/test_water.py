@@ -12,9 +12,27 @@ class TestWaterQuality:
         assert r.status_code == 200
         ideals = r.json()["ideals"]
         assert set(ideals.keys()) == {"KH", "钙", "镁", "NO3", "PO4"}
-        # KH范围7-8
-        assert ideals["KH"]["low"] == 7
-        assert ideals["KH"]["high"] == 8
+        # KH范围8-12（主流参考）
+        assert ideals["KH"]["low"] == 8
+        assert ideals["KH"]["high"] == 12
+        # 镁1300-1400
+        assert ideals["镁"]["low"] == 1300
+        assert ideals["镁"]["high"] == 1400
+        # 钙400-450
+        assert ideals["钙"]["low"] == 400
+        assert ideals["钙"]["high"] == 450
+
+
+    def test_ideals_have_coral_type_hints(self, test_client):
+        """核心元素ideal包含珊瑚类型(SPS/LPS)建议。"""
+        r = test_client.get("/api/water/ideals")
+        ideals = r.json()["ideals"]
+        # 钙/镁/KH应有SPS/LPS提示
+        for el in ["钙", "镁", "KH"]:
+            hint = ideals[el].get("hint", "")
+            assert hint, f"{el} 缺少hint"
+        assert "SPS" in ideals["钙"]["hint"]
+        assert "SPS" in ideals["镁"]["hint"]
 
     def test_record_crud(self, test_client):
         """水质记录：添加→查询→删除。"""

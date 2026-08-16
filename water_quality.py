@@ -19,9 +19,12 @@ from datetime import datetime, timedelta
 
 # ============ 理想范围定义 ============
 ELEMENT_IDEALS = {
-    "KH":  {"low": 7.0, "high": 8.0, "unit": "dKH", "display": "KH 碱度"},
-    "钙":  {"low": 400, "high": 440, "unit": "ppm", "display": "钙 Ca"},
-    "镁":  {"low": 1200, "high": 1300, "unit": "ppm", "display": "镁 Mg"},
+    "KH":  {"low": 8.0, "high": 12.0, "unit": "dKH", "display": "KH 碱度",
+            "hint": "SPS建议8-9dKH，混合缸可到12dKH；波动宜控制在±0.5dKH以内"},
+    "钙":  {"low": 400, "high": 450, "unit": "ppm", "display": "钙 Ca",
+            "hint": "SPS硬骨缸建议维持420-450ppm，LPS软体缸400-430即可"},
+    "镁":  {"low": 1300, "high": 1400, "unit": "ppm", "display": "镁 Mg",
+            "hint": "镁是钙的稳定剂；SPS缸建议1350-1400，LPS缸1300-1350即可"},
     "NO3": {"low": 2.0, "high": 10.0, "unit": "ppm", "display": "硝酸盐 NO₃",
             "hint": "完全归零会让珊瑚饿瘦；SPS建议3-10ppm，LPS 2-5ppm，与PO4保持约100:1"},
     "PO4": {"low": 0.03, "high": 0.08, "unit": "ppm", "display": "磷酸盐 PO₄",
@@ -278,6 +281,93 @@ def analyze_all(records_by_element):
     for el, recs in records_by_element.items():
         result[el] = analyze_element(recs, el)
     return result
+
+
+# ============ 元素联动诊断 ============
+def linkage_diagnosis(analysis):
+    """
+    跨元素联动诊断：组合多个元素的信号，找出因果关系。
+    analysis: analyze_all 的输出 {元素: 分析结果}
+    返回: [{title, detail, priority, related}]
+    """
+    def sig(el, key):
+        """安全取元素信号。"""
+        a = analysis.get(el)
+        if not a or "signals" not in a:
+            return None
+        return a["signals"].get(key)
+
+    def cur(el):
+        a = analysis.get(el)
+        return a.get("current") if a else None
+
+    findings = []
+
+    # --- R1: 镁低 → 钙析出 ---
+    mg = cur("镁")
+    ca = cur("钙")
+    mg_trend = sig("镁", "direction")
+    ca_trend = sig("钙", "direction")
+    if mg is not None and ca is not None:
+        if mg < 1300 and ca_trend == "falling":
+            findings.append({
+                "title": "镁偏低可能导致钙析出",
+                "detail": f"镁当前{mg:.0f}ppm（<1300），且钙在下降。镁是钙的稳定剂，镁不足时钙容易析出沉淀。建议先补镁至1300-1400，再观察钙是否回升。",
+                "priority": 85,
+                "related": ["镁", "钙"],
+            })
+
+    # --- R2: KH与钙同步下降（钙化活跃） ---
+    kh = cur("KH")
+    kh_trend = sig("KH", "direction")
+    ca_trend2 = sig("钙", "direction")
+    if kh is not None and ca is not None:
+        kh_rate = abs(sig("KH", "rate") or 0)
+        ca_rate = abs(sig("钙", "rate") or 0)
+        if kh_trend == "falling" and ca_trend2 == "falling" and kh_rate > 0.02 and ca_rate > 0.3:
+            findings.append({
+                "title": "KH与钙同步消耗（珊瑚钙化活跃）",
+                "detail": f"KH每天降{kh_rate:.2f}dKH、钙每天降{ca_rate:.1f}ppm，两者同步。多为珊瑚骨骼生长消耗，建议按比例同步补充KH和钙（约每补10ppm钙配1dKH碱度）。",
+                "priority": 70,
+                "related": ["KH", "钙"],
+            })
+
+    # --- R3: 钙高 + KH低 → 碳酸钙沉淀 ---
+    if kh is not None and ca is not None:
+        ca_high_limit = ELEMENT_IDEALS["钙"]["high"]
+        kh_low_limit = ELEMENT_IDEALS["KH"]["low"]
+        if ca > ca_high_limit and kh < kh_low_limit:
+            findings.append({
+                "title": "钙偏高且碱度偏低（疑似碳酸钙沉淀）",
+                "detail": f"钙{ca:.0f}ppm偏高（>{ca_high_limit:.0f}）但KH仅{kh:.1f}dKH（<{kh_low_limit:.0f}）。可能发生碳酸钙沉淀消耗了碱度。建议检查钙反/补充剂，避免钙碱失衡。",
+                "priority": 80,
+                "related": ["钙", "KH"],
+            })
+
+    # --- R4: 碳氮磷失衡（NO3低 + PO4高） ---
+    no3 = cur("NO3")
+    po4 = cur("PO4")
+    if no3 is not None and po4 is not None:
+        if no3 < 1 and po4 > 0.1:
+            findings.append({
+                "title": "营养盐比例失衡（氮低磷高）",
+                "detail": f"NO₃仅{no3:.2f}ppm但PO₄达{po4:.2f}ppm，偏离约100:1的Redfield比例。磷高氮低易助长藻类、珊瑚褪色。建议补充氮源（硝酸钾/珊瑚粮），或加强蛋分与吸附剂控制磷。",
+                "priority": 75,
+                "related": ["NO3", "PO4"],
+            })
+
+    # --- R5: 镁过高提示 ---
+    if mg is not None and mg > 1400:
+        findings.append({
+            "title": "镁偏高",
+            "detail": f"镁{mg:.0f}ppm偏高（>1400）。一般无害但可能干扰钙吸收，建议暂停补镁观察。",
+            "priority": 30,
+            "related": ["镁"],
+        })
+
+    # 按优先级排序
+    findings.sort(key=lambda x: x["priority"], reverse=True)
+    return findings
 
 
 # ============ A1: 滴定效果评估 ============

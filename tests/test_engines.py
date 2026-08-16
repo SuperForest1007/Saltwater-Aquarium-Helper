@@ -119,7 +119,7 @@ class TestWaterQualityEngine:
     def test_analyze_prediction(self):
         """趋势预测：还在范围内但下降 → 预测。"""
         from datetime import date
-        recs = [(date(2025, 1, 1 + i).isoformat(), 7.6 - i * 0.05) for i in range(8)]
+        recs = [(date(2025, 1, 1 + i).isoformat(), 11.6 - i * 0.08) for i in range(10)]
         r = analyze_element(recs, "KH")
         assert r["prediction"] is not None
         assert "跌破" in r["prediction"]["msg"]

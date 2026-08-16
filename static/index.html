@@ -317,9 +317,9 @@
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
+    <button class="tab-btn" onclick="showTab('salt')">🔄 换水</button>
     <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
     <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
-    <button class="tab-btn" onclick="showTab('salt')">🔄 换水</button>
   </div>
 
   <!-- 水量条（仅元素补充/滴定方案页显示） -->
@@ -465,25 +465,25 @@
       </div>
       <div class="dose-row">
         <span class="d-elem">KH<span class="sub">dKH</span></span>
-        <input type="number" id="k_f" value="8.0">
+        <input type="number" id="k_f" value="8.0" step="0.1">
         <span class="arrow">→</span>
-        <input type="number" id="k_l" value="7.5">
+        <input type="number" id="k_l" value="7.5" step="0.1">
         <input type="number" id="k_d" value="7">
         <span class="d-read" id="k_consume">—</span>
       </div>
       <div class="dose-row">
         <span class="d-elem">钙<span class="sub">ppm</span></span>
-        <input type="number" id="g_f" value="420">
+        <input type="number" id="g_f" value="420" step="0.1">
         <span class="arrow">→</span>
-        <input type="number" id="g_l" value="400">
+        <input type="number" id="g_l" value="400" step="0.1">
         <input type="number" id="g_d" value="7">
         <span class="d-read" id="g_consume">—</span>
       </div>
       <div class="dose-row">
         <span class="d-elem">镁<span class="sub">ppm</span></span>
-        <input type="number" id="m_f" value="1350">
+        <input type="number" id="m_f" value="1350" step="0.1">
         <span class="arrow">→</span>
-        <input type="number" id="m_l" value="1300">
+        <input type="number" id="m_l" value="1300" step="0.1">
         <input type="number" id="m_d" value="7">
         <span class="d-read" id="m_consume">—</span>
       </div>
@@ -546,7 +546,7 @@
     <!-- 换水记录 -->
     <div class="dose-card">
       <div class="dc-title">📒 换水记录</div>
-      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。</div>
+      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。建议每周换水 10-15%，能补充微量元素并稀释积累的有机物。</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
         <div class="d-field"><span class="fl">盐品牌</span>
@@ -619,7 +619,7 @@
       <div class="dc-title">📝 添加水质记录</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">元素</span>
-          <select id="wqElement" class="ctl">
+          <select id="wqElement" class="ctl" onchange="updateWqStep()">
             <option value="KH">KH 碱度 (dKH)</option>
             <option value="钙">钙 Ca (ppm)</option>
             <option value="镁">镁 Mg (ppm)</option>
@@ -627,12 +627,12 @@
             <option value="PO4">磷酸盐 PO₄</option>
           </select>
         </div>
-        <div class="d-field"><span class="fl">测试值</span><input type="number" step="any" id="wqValue" class="ctl" placeholder="如 7.8" style="width:110px"></div>
+        <div class="d-field"><span class="fl">测试值</span><input type="number" step="0.1" id="wqValue" class="ctl" placeholder="如 7.8" style="width:110px"></div>
         <div class="d-field"><span class="fl">日期(可选)</span><input type="date" id="wqDate" class="ctl" style="width:150px"></div>
         <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wqNote" class="ctl" placeholder="如 换水后" style="width:130px"></div>
         <button onclick="addWaterRecord()" class="ctl-btn">✓ 保存</button>
       </div>
-      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试2-3次并记录，记录越多分析越准。</div>
+      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试2-3次并记录，记录越多分析越准。测试剂读数通常有 ±5% 误差，小幅波动属正常，看趋势比看单次数值更可靠。水温保持 24-26°C、盐度 35ppt 也是珊瑚健康的基础。</div>
     </div>
 
     <!-- 模式切换 -->
@@ -652,22 +652,29 @@
       <div id="wqSimpleCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px"></div>
       <div class="dose-card" id="wqSimpleAdvice">
         <div class="dc-title">💡 智能建议</div>
-        <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.9;min-height:30px">暂无数据，先添加几条记录吧。</div>
+        <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">暂无数据，先添加几条记录吧。</div>
       </div>
 
-      <!-- 综合分析: 滴定效果/收支平衡/测试频率 -->
+      <!-- 元素联动诊断（智能建议下方） -->
+      <div class="dose-card" style="margin-top:14px">
+        <div class="dc-title">🧬 元素联动诊断</div>
+        <div class="dc-sub">跨元素分析：单看一个元素可能漏掉真正原因，这里找元素间的因果关系。</div>
+        <div id="wqLinkage" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">—</div>
+      </div>
+
+      <!-- 综合分析: 滴定效果/收支平衡/测试频率（压缩高度） -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px">
-        <div class="dose-card" style="margin:0">
-          <div class="dc-title">🎯 滴定效果</div>
-          <div id="wqDosingEffect" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        <div class="dose-card" style="margin:0;padding:12px 16px">
+          <div class="dc-title" style="margin-bottom:6px;font-size:13px">🎯 滴定效果</div>
+          <div id="wqDosingEffect" style="font-size:12px;color:var(--ink-soft);line-height:1.6;min-height:20px">—</div>
         </div>
-        <div class="dose-card" style="margin:0">
-          <div class="dc-title">⚖️ 收支平衡</div>
-          <div id="wqBalance" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        <div class="dose-card" style="margin:0;padding:12px 16px">
+          <div class="dc-title" style="margin-bottom:6px;font-size:13px">⚖️ 收支平衡</div>
+          <div id="wqBalance" style="font-size:12px;color:var(--ink-soft);line-height:1.6;min-height:20px">—</div>
         </div>
-        <div class="dose-card" style="margin:0">
-          <div class="dc-title">📅 测试频率</div>
-          <div id="wqFrequency" style="font-size:12.5px;color:var(--ink-soft);line-height:1.8;min-height:40px">—</div>
+        <div class="dose-card" style="margin:0;padding:12px 16px">
+          <div class="dc-title" style="margin-bottom:6px;font-size:13px">📅 测试频率</div>
+          <div id="wqFrequency" style="font-size:12px;color:var(--ink-soft);line-height:1.6;min-height:20px">—</div>
         </div>
       </div>
     </div>
@@ -996,7 +1003,7 @@ async function recomputeAll() {
 function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const map = { water: 0, calc: 1, dosing: 2, salt: 3 };
+  const map = { water: 0, salt: 1, calc: 2, dosing: 3 };
   document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   // 水体条只在「元素补充」和「滴定方案」页显示
@@ -1204,7 +1211,32 @@ async function loadAnalysisCards() {
     const freqRes = await fetch('/api/analysis/frequency');
     const freqData = await freqRes.json();
     renderFrequency(freqData.result || {});
+
+    // 元素联动诊断
+    const linkageRes = await fetch('/api/analysis/linkage');
+    const linkageData = await linkageRes.json();
+    renderLinkage(linkageData.findings || []);
   } catch (e) { /* 忽略加载失败 */ }
+}
+
+/* 🧬 元素联动诊断渲染 */
+function renderLinkage(findings) {
+  const el = document.getElementById('wqLinkage');
+  if (!el) return;
+  if (!findings || findings.length === 0) {
+    el.innerHTML = '<span style="color:var(--ink-faint)">未发现明显的跨元素异常，各元素关系正常 🎉</span>';
+    return;
+  }
+  const prioMap = { 85: '#c0392b', 80: '#c0392b', 75: '#e67e22', 70: '#e67e22', 30: '#2e8b57' };
+  el.innerHTML = findings.map(f => {
+    const color = prioMap[f.priority] || '#2e8b57';
+    const icon = f.priority >= 75 ? '🔴' : (f.priority >= 50 ? '🟠' : '🟢');
+    return '<div style="padding:8px 0;border-bottom:1px solid #f0f6f8">' +
+      '<div><span style="color:' + color + '">' + icon + ' <b>' + f.title + '</b></span>' +
+      '<span class="save-hint" style="margin-left:8px">关联: ' + (f.related || []).join(' ↔ ') + '</span></div>' +
+      '<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px">' + f.detail + '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function renderDosingEffect(result) {
@@ -1302,6 +1334,19 @@ function setWaterMode(mode) {
   if (mode === 'pro') {
     // 等待容器变为可见后再初始化图表，避免0尺寸
     setTimeout(() => renderWaterChart(), 60);
+  }
+}
+
+/* 根据元素动态设置测试值精度：PO4两位小数，其他一位 */
+function updateWqStep() {
+  const el = document.getElementById('wqElement').value;
+  const input = document.getElementById('wqValue');
+  if (el === 'PO4') {
+    input.step = '0.01';
+    input.placeholder = '如 0.05';
+  } else {
+    input.step = '0.1';
+    input.placeholder = el === '钙' || el === '镁' ? '如 420' : '如 7.8';
   }
 }
 
