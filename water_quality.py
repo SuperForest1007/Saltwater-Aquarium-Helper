@@ -198,7 +198,14 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
     """
     parts = []
     prio = 0
+    supplement = None  # 偏低时记录"需要补多少"，供前端换算克数/滴定量
     low_cn = {"KH": "碱度", "钙": "钙", "镁": "镁", "NO3": "硝酸盐", "PO4": "磷酸盐"}.get(element, element)
+
+    def _supplement_info():
+        """偏低 → 推荐补到理想中值(保守目标)。返回 {delta, target, unit}"""
+        mid = (low + high) / 2
+        delta = max(mid - s["current"], 0)
+        return {"delta": round(delta, 2), "target": round(mid, 1), "unit": unit}
 
     # --- 异常检测(最高优先) ---
     if s["anomaly"] == "down":
@@ -217,6 +224,7 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
     if element in ("NO3", "PO4"):
         other = "PO4" if element == "NO3" else "NO3"
         if s["level"] == "low" and s["current"] <= low * 0.5:
+            supplement = _supplement_info()
             if element == "NO3":
                 parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})，珊瑚可能因缺乏营养而褪色瘦弱。刚开缸时可接受归零，但养珊瑚建议维持 {low}-{high}{unit}，可用硝酸钾/珊瑚粮缓慢提升，保持与PO4约100:1")
                 prio = max(prio, 70)
@@ -229,6 +237,7 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
 
     # --- 趋势+水平组合 ---
     if s["level"] == "low":
+        supplement = _supplement_info()
         if s["direction"] == "falling":
             if s["accelerating"]:
                 parts.append(f"📉 {low_cn}持续下降且速率在加快(每天{s['rate']:.2f}{unit})，正在远离理想范围，建议尽快补充至{low}-{high}{unit}，并排查消耗增加原因(珊瑚生长加速/换水)")
@@ -271,6 +280,7 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
         "priority": prio,
         "parts": parts,
         "summary": parts[0] if parts else "暂无建议",
+        "supplement": supplement,
     }
 
 

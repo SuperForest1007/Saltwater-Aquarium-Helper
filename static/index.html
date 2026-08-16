@@ -473,6 +473,39 @@
   .mode-switch.pro .ms-slider { transform: translateX(100%); }
   .mode-switch .seg-btn { position: relative; z-index: 1; padding: 8px 26px; min-width: 88px; }
 
+
+  /* 智能建议 → 补充行动按钮 */
+  .advice-action { margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .advice-action span { font-size: 11.5px; color: var(--ink-soft); }
+  .advice-action span b { color: var(--ocean-deep); }
+  .advice-action button { padding: 6px 12px; border: 1.5px solid var(--ocean); background: var(--ocean-soft);
+    color: var(--ocean-deep); border-radius: 999px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .advice-action button:hover { background: var(--ocean); color: #fff; }
+
+
+
+  /* 配比参考折叠 */
+  .mix-ref-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 14px; padding: 9px 14px; background: #f4fafd; border: 1px dashed #c3e0f0;
+    border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ocean-deep);
+    user-select: none; transition: background .15s; }
+  .mix-ref-toggle:hover { background: #e9f4fa; }
+  .mix-ref-toggle .mr-arrow { color: var(--ink-faint); font-size: 11px; transition: transform .2s; }
+
+
+  /* 每日提升超限 - 紧急红色提示 */
+  .d-read.over { background: linear-gradient(135deg, #fdecea, #f8d7da) !important; border-color: #e74c3c !important;
+    color: #c0392b !important; animation: overPulse 1.2s ease-in-out infinite; }
+  .dose-result.over { border: 1.5px solid #e74c3c !important; background: #fdf2f2 !important; }
+  .dose-result.over .dr-value { color: #c0392b !important; }
+  .rate-warn { margin-top: 6px; font-size: 11.5px; color: #c0392b; font-weight: 600; line-height: 1.5; display: none; }
+  .rate-warn.show { display: block; }
+  @keyframes overPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,.35); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
+  /* 元素补充 → 滴定 联动按钮 */
+  .dose-link-btn { padding: 7px 12px; border: 1.5px solid #2e8b57; background: #fff; color: #2e8b57;
+    border-radius: 999px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .dose-link-btn:hover { background: #2e8b57; color: #fff; }
+
   /* ─── 新手引导卡片 ─── */
   .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
     display: none; align-items: center; justify-content: center; z-index: 9500; padding: 18px; }
@@ -598,25 +631,19 @@
     <div id="groupContainer"></div>
     <div class="note" style="margin-top:4px">「使用量」= 需要添加的粉末克数；「需滴配液(ml)」= 若用滴定方案里配好的补充液，需要滴入多少毫升。</div>
     <div class="note">添加前请确认实测浓度，少量多次更安全。市售补充液请按瓶身说明换算。</div>
+    <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid #bcd9eb;border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：数值小幅波动远比"大升大降"安全，单次补充后隔 1-2 天再测，观察趋势再决定下一步。</div>
   </div>
 
   <!-- 滴定方案 -->
   <div id="panel-dosing" class="panel">
     <div class="dose-card">
-      <div class="dc-title">⚙️ 缸体设置</div>
-      <div class="dc-sub">先设置<b>缸总水量</b>，再从<b>配液</b>开始配置滴定方案。</div>
+      <div class="dc-title">⚙️ 设置 · 配液</div>
+      <div class="dc-sub">先设<b>缸总水量</b>（与「元素补充」联动），再配置各元素<b>配液</b>（分析纯粉末 + RO纯净水）。</div>
       <div class="dc-tank">
         <label>缸总水量</label>
         <input type="number" id="d_tank" value="550">
         <span class="unit">升</span>
-        <span class="save-hint" style="margin-left:auto">与「元素补充」联动</span>
       </div>
-    </div>
-
-    <div class="dose-card">
-      <div class="dc-title">🧪 配液</div>
-      <div class="dc-sub"><b>配液</b> = 用<b>分析纯粉末</b>兑<b>RO纯净水</b>配成浓缩补充液，再通过滴定泵每天滴入缸中。
-        例如：50克碳酸氢钠 + 1000毫升RO水。</div>
       <div class="dose-head mix-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
         <span class="dh-spacer" style="width:74px"></span>
         <span class="d-field" style="flex:1;max-width:110px"><span class="fl">分析纯(克)</span></span>
@@ -648,9 +675,12 @@
       </div>
       <div class="dc-sub" style="margin-top:8px">配液浓度 = 分析纯(克) ÷ RO水(毫升)，如 50克÷1000ml = <b>0.05 克/毫升</b>。</div>
 
-      <!-- 配比参考 -->
-      <div class="mix-ref">
-        <div class="mr-title">📋 常用配比参考（每 1000ml RO水）</div>
+      <!-- 配比参考（折叠） -->
+      <div class="mix-ref-toggle" onclick="toggleMixRef(this)">
+        <span>📋 常用配比参考</span><span class="mr-arrow">▸</span>
+      </div>
+      <div class="mix-ref" style="display:none">
+        <div class="mr-title">常用配比参考（每 1000ml RO水）</div>
         <div class="mr-row">
           <span class="mr-elem">KH 碱度</span>
           <button class="mr-btn" onclick="applyMixRef('k', 25, 1000)">稀 25克</button>
@@ -675,11 +705,18 @@
     </div>
 
     <div class="dose-card">
-      <div class="dc-title" style="display:flex;align-items:center;gap:10px">📊 消耗测算
-        <button class="ctl-btn" onclick="importDoseFromRecords()" style="padding:5px 12px;font-size:12px">📥 从记录导入</button>
-        <span class="save-hint">用最近两次实测自动填「上次值/本次值/间隔」</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="dc-title" style="margin-bottom:0">📊 滴定计算</div>
+        <div class="seg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px">
+          <button class="seg-btn active" id="calcTabConsume" onclick="setCalcTab('consume')">📈 消耗测算</button>
+          <button class="seg-btn" id="calcTabAdjust" onclick="setCalcTab('adjust')">🎯 目标调节</button>
+        </div>
       </div>
-      <div class="dc-sub">两次实测值相减 ÷ 间隔天数 = <b>每天消耗量</b>，据此推算滴定泵每天该滴多少。</div>
+      <div id="calcPaneConsume">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="dc-sub" style="margin-bottom:0">两次实测值相减 ÷ 间隔天数 = <b>每天消耗量</b>，据此推算滴定泵每天该滴多少。</div>
+        <button class="ctl-btn" onclick="importDoseFromRecords()" style="padding:5px 12px;font-size:12px;margin-left:auto">📥 从记录导入</button>
+      </div>
       <div class="dose-head consume-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
         <span class="dh-spacer" style="width:74px"></span>
         <span class="d-field" style="flex:1;max-width:100px"><span class="fl">上次值</span></span>
@@ -713,11 +750,43 @@
         <input type="number" id="m_d" value="7" placeholder="间隔天">
         <span class="d-read" id="m_consume">—</span>
       </div>
+      </div>
+      <div id="calcPaneAdjust" style="display:none">
+      <div class="dc-sub">想提升/降低到目标值？填<b>目标值</b>（计划天数默认 7 天），自动按<b>每日消耗 + 提升需求</b>算出<b>每天该滴多少</b>，结果已同步到下方「每天滴定量」。</div>
+      <div class="dose-head adjust-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
+        <span class="dh-spacer" style="width:74px"></span>
+        <span class="d-field" style="flex:1;max-width:100px"><span class="fl">目标值</span></span>
+        <span class="d-field" style="flex:1;max-width:80px"><span class="fl">计划(天)</span></span>
+        <span class="d-field" style="flex:1;max-width:120px"><span class="fl">每天滴定量</span></span>
+      </div>
+      <div class="dose-row adjust-row">
+        <span class="d-elem">KH<span class="sub">dKH</span></span>
+        <input type="number" id="k_t" step="0.1" placeholder="如 9">
+        <input type="number" id="k_p" value="7" placeholder="7">
+        <span class="d-read hot" id="k_adjust">—</span>
+        <div class="rate-warn" id="k_rateWarn"></div>
+      </div>
+      <div class="dose-row adjust-row">
+        <span class="d-elem">钙<span class="sub">ppm</span></span>
+        <input type="number" id="g_t" step="0.1" placeholder="如 425">
+        <input type="number" id="g_p" value="7" placeholder="7">
+        <span class="d-read hot" id="g_adjust">—</span>
+        <div class="rate-warn" id="g_rateWarn"></div>
+      </div>
+      <div class="dose-row adjust-row">
+        <span class="d-elem">镁<span class="sub">ppm</span></span>
+        <input type="number" id="m_t" step="0.1" placeholder="如 1350">
+        <input type="number" id="m_p" value="7" placeholder="7">
+        <span class="d-read hot" id="m_adjust">—</span>
+        <div class="rate-warn" id="m_rateWarn"></div>
+      </div>
+      <div class="dc-sub" style="margin-top:8px">💡 目标值可从「水质」页理想范围参考（如钙理想下限 400）。结果 = 每天滴定泵该设的总量，已包含每日消耗补偿。</div>
+      </div>
     </div>
 
     <div class="dose-card">
       <div class="dc-title">💧 每天滴定量</div>
-      <div class="dc-sub">按配液浓度与每天消耗自动计算，可直接设定到滴定泵。开始/结束后会记录到水质趋势图上。</div>
+      <div class="dc-sub">= <b>消耗维持</b>（维持现状的滴量） + <b>目标提升</b>（如需提升时「目标调节」加的量）。结果可直接设定到滴定泵；开始/结束后会记录到水质趋势图上。</div>
       <div class="dose-result">
         <span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span>
         <button class="dose-toggle" id="k_doseBtn" onclick="toggleDose('k', 'KH')">▶ 开始滴定</button>
@@ -731,6 +800,7 @@
         <button class="dose-toggle" id="m_doseBtn" onclick="toggleDose('m', '镁')">▶ 开始滴定</button>
       </div>
       <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 每毫升提升量。建议少量多次，分2~4次滴入。</div>
+      <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid #bcd9eb;border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：滴定讲究"稳"，宁可每天少滴一点，也不要在某天猛加；固定时间滴入、每周测一次校准，水质才能长期稳定。</div>
     </div>
 
     <!-- 滴定记录二级菜单（深度自定义） -->
@@ -1365,6 +1435,7 @@ function renderElement(gi, ei, elem) {
   html += '<div class="auto-strip">' +
     '<span>实测值</span>' +
     '<input type="number" class="auto-in" data-g="' + gi + '" data-e="' + ei + '" placeholder="如 ' + elem.ideal.split('-')[0] + '">' +
+    (mixKey ? '<button type="button" class="dose-link-btn" data-mix="' + mixKey + '" data-el="' + elem.name + '" onclick="jumpToDosing(this)" title="把实测值带入滴定方案，计算每天滴定量">💧 去滴定</button>' : '') +
     '<span class="auto-msg" id="auto-msg-' + gi + '-' + ei + '">输入当前实测值，自动判断是否需补充</span>' +
   '</div>';
   html += '</div>';
@@ -1502,6 +1573,13 @@ function showTab(name) {
 function initDosing() {
   ['d_tank','g_pw','g_ro','g_f','g_l','g_d','m_pw','m_ro','m_f','m_l','m_d','k_pw','k_ro','k_f','k_l','k_d']
     .forEach(id => document.getElementById(id).addEventListener('input', calcDosing));
+  // 目标调节输入绑定：目标值/计划天数 → 实时计算
+  ['k','g','m'].forEach(pre => {
+    [pre + '_t', pre + '_p'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => calcAdjust(pre));
+    });
+  });
   const saved = localStorage.getItem('tank_water');
   if (saved) document.getElementById('d_tank').value = saved;
   // 恢复配比
@@ -1531,18 +1609,142 @@ function calcDosing() {
     // 原站对比浓度(稀释比) = RO水/分析纯
     const conc = ro && pw ? Math.floor(ro / pw) : 0;
     const perMl = conc * s.coef;
-    // 每天消耗
+    // 每天消耗（维持现状所需，ppm/天）
     const consume = f && l && dd ? (f - l) / dd : 0;
     const consumeRead = document.getElementById(s.pre + '_consume');
     if (consumeRead) consumeRead.textContent = consume > 0 ? consume.toFixed(2) : '—';
-    // 每天滴定量
-    const dose = tank && consume > 0 && perMl ? Math.round(tank * consume * perMl) : '';
+    // 消耗维持滴量
+    const maintainDose = tank && consume > 0 && perMl ? Math.round(tank * consume * perMl) : 0;
+    // 目标提升滴量（若已填目标值）：(目标-当前)/天数 × 水量 × 每ml提升
+    let raiseDose = 0;
+    const tEl = document.getElementById(s.pre + '_t');
+    const pEl = document.getElementById(s.pre + '_p');
+    const tVal = tEl ? parseFloat(tEl.value) : NaN;
+    const pVal = pEl ? parseFloat(pEl.value) : 0;
+    if (!isNaN(tVal) && pVal > 0 && l > 0 && perMl > 0) {
+      const need = tVal - l;                 // 目标 - 当前(本次值)
+      if (need > 0) {
+        raiseDose = Math.round(tank * (need / pVal) * perMl);
+      }
+    }
+    // 最终每天滴定量 = 消耗维持 + 目标提升
+    const dose = (maintainDose + raiseDose) > 0 ? maintainDose + raiseDose : '';
     const doseRead = document.getElementById(s.pre + '_dose');
-    if (doseRead) doseRead.textContent = dose !== '' ? dose : '—';
+    if (doseRead) {
+      doseRead.textContent = dose !== '' ? dose : '—';
+      // 有目标提升时，标题说明构成
+      if (raiseDose > 0) {
+        doseRead.title = '消耗维持 ' + maintainDose + 'ml + 目标提升 ' + raiseDose + 'ml = ' + dose + 'ml/天';
+      } else {
+        doseRead.title = '';
+      }
+    }
   }
   localStorage.setItem('dosing_mix', JSON.stringify(mix));
   // 配比变更后，刷新元素补充页的「需滴配液(ml)」联动
   refreshAllMl();
+}
+
+/* ═══ 滴定计算：消耗测算 / 目标调节 分段切换 ═══ */
+function setCalcTab(tab) {
+  const isConsume = tab === 'consume';
+  document.getElementById('calcTabConsume').classList.toggle('active', isConsume);
+  document.getElementById('calcTabAdjust').classList.toggle('active', !isConsume);
+  document.getElementById('calcPaneConsume').style.display = isConsume ? 'block' : 'none';
+  document.getElementById('calcPaneAdjust').style.display = isConsume ? 'none' : 'block';
+}
+
+/* ═══ 目标调节：输入目标值/天数 → 自动算每天滴定量调整 ═══ */
+async function calcAdjust(pre, syncDose) {
+  const tank = parseFloat(document.getElementById('d_tank').value) || 0;
+  const pw = parseFloat(document.getElementById(pre + '_pw').value) || 0;
+  const ro = parseFloat(document.getElementById(pre + '_ro').value) || 0;
+  const target = parseFloat(document.getElementById(pre + '_t').value);
+  const days = parseFloat(document.getElementById(pre + '_p').value);
+  const curVal = parseFloat(document.getElementById(pre + '_l').value); // 当前实测（消耗测算的本次值）
+  const read = document.getElementById(pre + '_adjust');
+  if (!read) return;
+  if (!target || !days || days <= 0 || !tank || isNaN(curVal)) { read.textContent = '—'; return; }
+
+  // 元素系数（与 calcDosing 一致）+ 配液浓度
+  const coef = { k: 0.03, g: 0.004, m: 0.009 }[pre] || 0;
+  const conc = ro && pw ? Math.floor(ro / pw) : 0; // 配液稀释比
+  const perMl = conc * coef;                        // 每毫升提升量(ppm/L)
+  const concPerMl = ro > 0 ? pw / ro : 0;           // 配液浓度(克/ml)
+
+  // 每日平均消耗(ppm/天)：来自消耗测算模块（_consume 已算出）
+  const consumeEl = document.getElementById(pre + '_consume');
+  let consumePpm = 0;
+  if (consumeEl && consumeEl.textContent !== '—') {
+    consumePpm = parseFloat(consumeEl.textContent) || 0;
+  }
+  const maintainPpm = Math.max(0, consumePpm); // 抵消消耗所需(仅当在下降时)
+
+  // 【目标调节】只算净提升滴量（不含消耗）
+  const need = target - curVal;
+  const dailyRaise = need / days;                          // 净提升 ppm/天
+  const raiseDose = (perMl > 0 && tank > 0) ? Math.round(tank * dailyRaise * perMl) : 0;
+  // 【消耗维持】滴量 = 消耗测算部分
+  const maintainDose = (perMl > 0 && tank > 0) ? Math.round(tank * maintainPpm * perMl) : 0;
+  // 【最终】每天滴定量 = 消耗维持 + 目标提升
+  const finalDose = raiseDose + maintainDose;
+
+  // ⚠️ 每日提升速率安全上限检测（海缸稳定原则）
+  // KH ≤0.5 dKH/天，钙 ≤25 ppm/天，镁 ≤50 ppm/天
+  const RATE_LIMIT = { k: 0.5, g: 25, m: 50 };
+  const unitName = pre === 'k' ? 'dKH' : 'ppm';
+  const limit = RATE_LIMIT[pre];
+  const rateOver = need > 0 && Math.abs(dailyRaise) > limit; // 仅提升方向检测
+  // 若超限，建议的安全天数 = 所需提升量 / 上限
+  const safeDays = rateOver ? Math.ceil(need / limit) : days;
+
+  const sign = need >= 0 ? '▲' : '▼';
+  // 目标调节界面显示：净提升滴量 + 配液浓度（超限则红色紧急提示）
+  if (raiseDose > 0) {
+    read.textContent = sign + ' 提升 ' + raiseDose + 'ml/天';
+  } else if (need < 0) {
+    read.textContent = '▼ 需降低，暂不滴';
+  } else {
+    read.textContent = '—';
+  }
+  read.classList.remove('hot', 'over');
+  if (raiseDose > 0) read.classList.add('hot');
+  if (rateOver) read.classList.add('over');
+  read.title = '当前 ' + curVal + ' → 目标 ' + target + '（' +
+    (need >= 0 ? '需提升' : '需降低') + Math.abs(need).toFixed(1) + ' ' + unitName +
+    '），计划 ' + days + ' 天。\n配液浓度 ' + concPerMl.toFixed(3) + ' 克/ml，净提升滴量 ' + raiseDose + 'ml/天' +
+    (maintainDose > 0 ? '，另需消耗维持 ' + maintainDose + 'ml/天' : '') +
+    '。\n最终每天滴 ' + finalDose + 'ml（提升+消耗）已同步到下方';
+
+  // ⚠️ 超限提示行：明确告诉用户"建议延长天数"
+  const warnEl = document.getElementById(pre + '_rateWarn');
+  if (warnEl) {
+    if (rateOver) {
+      warnEl.textContent = '⚠️ 每日提升 ' + Math.abs(dailyRaise).toFixed(2) + ' ' + unitName + ' 超过安全上限 ' + limit + ' ' + unitName + '/天！建议延长至 ' + safeDays + ' 天（' + unitName + '）或降低目标，避免珊瑚应激。';
+      warnEl.classList.add('show');
+    } else {
+      warnEl.textContent = '';
+      warnEl.classList.remove('show');
+    }
+  }
+
+  // 同步到"每天滴定量"卡片：统一由 calcDosing 计算（消耗维持 + 目标提升）
+  if (syncDose) {
+    calcDosing();
+    const doseEl = document.getElementById(pre + '_dose');
+    if (doseEl) {
+      const doseRow = doseEl.closest('.dose-result');
+      if (doseRow) doseRow.classList.remove('over');
+      if (raiseDose > 0) {
+        doseEl.style.background = 'linear-gradient(135deg, #d8f0e2, #b9e3cc)';
+        setTimeout(() => { doseEl.style.background = ''; }, 1200);
+      }
+      if (rateOver && doseRow) doseRow.classList.add('over');
+    }
+  }
+
+  // 返回超限信息供外层使用
+  return { rateOver, safeDays, limit, dailyRaise };
 }
 
 /* ═══ 消耗测算：从最近两次水质记录自动填充 ═══ */
@@ -1721,7 +1923,55 @@ async function loadAnalysisCards() {
     const linkageRes = await fetch('/api/analysis/linkage');
     const linkageData = await linkageRes.json();
     renderLinkage(linkageData.findings || []);
+
+    // 🟢 跨系统联动提示：换水提醒 + 收支平衡异常（注入智能建议区顶部）
+    renderSystemAlerts(balanceData.result || {});
   } catch (e) { /* 忽略加载失败 */ }
+}
+
+/* ═══ 跨系统联动：把换水/收支平衡信号注入智能建议 ═══ */
+function renderSystemAlerts(balance) {
+  const body = document.getElementById('wqSimpleAdviceBody');
+  if (!body) return;
+  // 已有元素建议（renderSimple 渲染的）
+  const existing = body.innerHTML;
+  if (!existing || existing.indexOf('advice-item') === -1) return;
+
+  let alerts = '';
+
+  // A. 换水提醒：距上次换水 >7 天提醒
+  const wcs = (waterChangeCache || []).slice().sort((a, b) => (b.recorded_at || '').localeCompare(a.recorded_at || ''));
+  if (wcs.length > 0 && wcs[0].recorded_at) {
+    const last = new Date(wcs[0].recorded_at.slice(0, 10));
+    const days = Math.floor((new Date() - last) / 86400000);
+    if (days > 7) {
+      alerts += '<div class="advice-item" style="background:#fff8ec;border-radius:10px;margin-bottom:4px">' +
+        '<span class="advice-strength mid">!</span>' +
+        '<span class="advice-text"><b>🔄 换水：</b>距上次换水已 ' + days + ' 天（' + wcs[0].water_liters + 'L）。建议每 1-2 周换水 10-15%，补充微量元素并稀释有机物。</span></div>';
+    }
+  }
+
+  // B. 收支平衡异常：消耗>补充 或 补过多 → 提示
+  let balanceAlerts = [];
+  if (balance) {
+    for (const [el, b] of Object.entries(balance)) {
+      const name = { KH: '碱度', 钙: '钙', 镁: '镁' }[el] || el;
+      if (b.status === 'under' && b.consume_g_per_day > 0) {
+        balanceAlerts.push('⚠️ <b>' + name + '：</b>收支不平衡——每天消耗约 ' + b.consume_g_per_day + ' 克，但滴定补充仅 ' + (b.supply_g_per_day || 0) + ' 克，长期会持续下降，建议去「💧 滴定方案」调整滴定量');
+      } else if (b.status === 'over') {
+        balanceAlerts.push('💹 <b>' + name + '：</b>补充略多于消耗（' + b.balance_pct + '%），若持续上升可适当减少滴定量');
+      }
+    }
+  }
+  if (balanceAlerts.length > 0) {
+    alerts += '<div class="advice-item" style="background:#eef7f5;border-radius:10px;margin-bottom:4px">' +
+      '<span class="advice-strength mid">⚖️</span>' +
+      '<span class="advice-text"><b>收支平衡：</b>' + balanceAlerts.join('；') + '</span></div>';
+  }
+
+  if (alerts) {
+    body.innerHTML = alerts + body.innerHTML; // 插到元素建议前面
+  }
 }
 
 /* 🧬 元素联动诊断渲染 */
@@ -1866,6 +2116,106 @@ function jumpToTrend(el) {
   if (chartSel) onWqElChange();
 }
 
+/* ═══ 元素补充 → 滴定方案联动 ═══ */
+/* 把某元素实测值带入滴定方案的"消耗测算"，自动填上次值/本次值/间隔 */
+async function jumpToDosing(btn) {
+  const mixKey = btn.dataset.mix;   // k / g / m
+  const elName = btn.dataset.el;    // 如 "KH 碱度" / "钙 Ca"
+  const elMap = { k: 'KH', g: '钙', m: '镁' };
+  const element = elMap[mixKey];
+
+  // 1. 该元素在元素补充页的实测值输入框
+  const autoIn = btn.closest('.auto-strip').querySelector('.auto-in');
+  const current = autoIn ? parseFloat(autoIn.value) : NaN;
+
+  // 2. 跳到滴定方案页，并直接切到「目标调节」tab
+  showTab('dosing');
+  setCalcTab('adjust');
+
+  // 3. 填充消耗测算：本次值 = 实测值（若有）；上次值/间隔从最近两条水质记录取
+  let fVal = null, lVal = null, days = null;
+  try {
+    const res = await fetch('/api/water/records?element=' + encodeURIComponent(element));
+    const data = await res.json();
+    const recs = (data.records || []).slice(-2); // 最近两条（升序）
+    if (recs.length >= 2) {
+      fVal = recs[0].value;   // 上次值
+      lVal = recs[1].value;   // 本次值
+      const d1 = new Date(recs[0].recorded_at.slice(0, 10));
+      const d2 = new Date(recs[1].recorded_at.slice(0, 10));
+      const dd = Math.round((d2 - d1) / 86400000);
+      if (dd > 0) days = dd;
+    } else if (recs.length === 1) {
+      lVal = recs[0].value;
+    }
+  } catch (e) { /* 忽略记录拉取失败 */ }
+
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+  if (lVal != null && !isNaN(current)) {
+    // 有实测值：本次值 = 实测值，上次值 = 记录里的旧值
+    setVal(mixKey + '_f', fVal != null ? fVal : '');
+    setVal(mixKey + '_l', current);
+  } else {
+    setVal(mixKey + '_f', fVal);
+    setVal(mixKey + '_l', lVal);
+  }
+  setVal(mixKey + '_d', days);
+
+  // 4. 自动填目标值（理想下限）+ 计划天数默认7，并触发目标调节计算
+  try {
+    const idealsRes = await fetch('/api/water/ideals');
+    const idealsData = await idealsRes.json();
+    const ideal = idealsData.ideals && idealsData.ideals[element];
+    if (ideal) {
+      // 目标 = 理想下限（提升至下限即达标，保守稳妥）
+      setVal(mixKey + '_t', ideal.low);
+    }
+  } catch (e) { /* 目标值留空由用户填 */ }
+  // 间隔默认 7 天（有实测间隔用实测，否则7）
+  setVal(mixKey + '_p', days > 0 ? days : 7);
+
+  // 5. 重算并触发目标调节，结果实时同步到"每天滴定量"卡片
+  calcDosing();
+  await calcAdjust(mixKey, true); // 第二参 true = 同步到每天滴定量
+  const tVal = document.getElementById(mixKey + '_t').value || '';
+  toast('已带入 ' + element + ' 数据，目标=理想下限 ' + tVal + '，计划' + (days > 0 ? days : 7) + '天，结果已同步到「每天滴定量」', 'ok');
+  setTimeout(() => {
+    const dose = document.getElementById(mixKey + '_dose');
+    if (dose) dose.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+/* 智能建议 → 元素补充页：跳转并预填该元素实测值，让用户算具体用量 */
+function jumpToCalc(key) {
+  // 元素名映射：KH碱度→KH、钙Ca→钙、镁Mg→镁、NO3→NO3、PO4→PO4
+  const nameMap = { KH: 'KH 碱度', 钙: '钙 Ca', 镁: '镁 Mg', NO3: '硝酸盐 NO3', PO4: '磷酸盐 PO4' };
+  const target = nameMap[key] || key;
+  showTab('calc');
+  // 展开分组并定位到对应元素
+  let found = false;
+  (groupData || []).forEach((g, gi) => {
+    g.elements.forEach((e, ei) => {
+      if (!found && e.name.startsWith(target) && !e.name.includes('提升')) {
+        // 展开分组
+        const body = document.querySelectorAll('.group-body')[gi];
+        if (body) body.classList.remove('hidden');
+        const head = document.querySelectorAll('.group-head')[gi];
+        if (head && head.querySelector('.g-arrow')) head.querySelector('.g-arrow').textContent = '▾';
+        // 填入当前实测值（来自水质分析最近记录）
+        const cur = waterAnalysis && waterAnalysis[key] ? waterAnalysis[key].current : '';
+        const autoIn = document.querySelector('.auto-in[data-g="' + gi + '"][data-e="' + ei + '"]');
+        if (autoIn && cur) { autoIn.value = cur; autoJudge(gi, ei); }
+        found = true;
+        setTimeout(() => {
+          const el = document.querySelector('.auto-in[data-g="' + gi + '"][data-e="' + ei + '"]');
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+        }, 300);
+      }
+    });
+  });
+  if (!found) toast('元素补充页未找到对应项', 'info');
+}
+
 /* 根据元素动态设置测试值精度：PO4两位小数，其他一位 */
 function updateWqStep() {
   const el = wqEl;
@@ -1932,7 +2282,7 @@ function renderSimple() {
       (s.rate ? ' · 每天' + s.rate + (a.ideal ? a.ideal.unit : '') : '') + '</div>' +
       (s.count ? '<div class="wq-mini">' + s.count + ' 条记录' + (s.anomaly_cn ? ' · <b style="color:#c0392b">' + s.anomaly_cn + '</b>' : '') + '</div>' : '') +
       '</div>';
-    if (a.advice && a.advice.summary) allAdvice.push({ el: a.display || el, summary: a.advice.summary, prio: a.advice.priority });
+    if (a.advice && a.advice.summary) allAdvice.push({ el: a.display || el, key: el, summary: a.advice.summary, prio: a.advice.priority, supplement: a.advice.supplement });
   }
   wrap.innerHTML = html;
   // 建议按固定元素顺序展示（KH→钙→镁→NO3→PO4），强度用视觉标记体现
@@ -1943,9 +2293,17 @@ function renderSimple() {
   }
   adviceBody.innerHTML = allAdvice.map(x => {
     const st = strengthOf(x.prio);
+    const sup = x.supplement;
+    let actionHtml = '';
+    if (sup && sup.delta > 0) {
+      actionHtml = '<div class="advice-action">' +
+        '<span>需补 <b>' + sup.delta + ' ' + sup.unit + '</b>（目标 ' + sup.target + ' ' + sup.unit + '）</span>' +
+        '<button onclick="jumpToCalc(\'' + x.key + '\')">🧪 去元素补充页算用量</button>' +
+        '</div>';
+    }
     return '<div class="advice-item">' +
       '<span class="advice-strength ' + st.cls + '" title="建议强度：' + st.cn + '">' + st.label + '</span>' +
-      '<span class="advice-text"><b>' + x.el + '：</b>' + x.summary + '</span>' +
+      '<span class="advice-text"><b>' + x.el + '：</b>' + x.summary + actionHtml + '</span>' +
       '<span class="advice-tag">' + st.cn + '</span>' +
       '</div>';
   }).join('') || '<div style="padding:8px 0">所有元素状态良好 🎉</div>';
@@ -2169,6 +2527,16 @@ function renderWaterChart() {
       splitLine: { lineStyle: { color: '#f0f6f8' } }, axisLabel: { color: '#5c7a8c' } },
     series: series
   }, true);  // notMerge: 切换"显示/隐藏理想范围"时清空旧series
+}
+
+/* ═══ 配比参考折叠 ═══ */
+function toggleMixRef(head) {
+  const ref = head.nextElementSibling;
+  if (!ref) return;
+  const open = ref.style.display !== 'none';
+  ref.style.display = open ? 'none' : 'block';
+  const arrow = head.querySelector('.mr-arrow');
+  if (arrow) arrow.textContent = open ? '▸' : '▾';
 }
 
 /* ═══ 配比参考一键填入 ═══ */
