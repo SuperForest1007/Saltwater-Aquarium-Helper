@@ -16,20 +16,53 @@
 <script src="/static/echarts.min.js"></script>
 <style>
   :root {
+    /* ── 品牌主色（深海蓝） ── */
     --ocean: #0a6ea8;
     --ocean-deep: #075089;
     --ocean-soft: #e3f2fb;
-    --ink: #173a52;
-    --ink-soft: #52718a;
-    --ink-faint: #8aa5b8;
+
+    /* ── 文字层级 ── */
+    --ink: #173a52;        /* 主文字 */
+    --ink-soft: #52718a;   /* 次要文字 */
+    --ink-faint: #8aa5b8;  /* 辅助/占位文字 */
+
+    /* ── 表面与背景 ── */
     --card: #ffffff;
     --bg-a: #f0f7fc;
     --bg-b: #ddeef8;
-    --ring: rgba(10,110,168,.18);
+    --surface-2: #f6fafb;  /* 次级表面（说明框/输入底色） */
+
+    /* ── 边框 ── */
+    --border: var(--border);        /* 默认输入/卡片边框 */
+    --border-strong: var(--border-strong); /* 强调边框（选中/胶囊） */
+    --border-light: #eef4f7;  /* 极浅分隔线 */
+
+    /* ── 状态色（语义统一） ── */
+    --ok: #2e8b57;            /* 正常/成功 */
+    --ok-bg: #d7f0e0;
+    --warn: #e67e22;          /* 警告/偏高 */
+    --warn-bg: #fff0d8;
+    --danger: #c0392b;        /* 危险/偏低/异常 */
+    --danger-bg: #ffe3dd;
+    --info: #7b1fa2;          /* 中性提示 */
+
+    /* ── 阴影 ── */
     --shadow: 0 6px 24px rgba(30,58,77,.07);
     --shadow-lg: 0 12px 40px rgba(30,58,77,.12);
-    --radius: 20px;
-    --radius-sm: 14px;
+    --ring: rgba(10,110,168,.18);
+
+    /* ── 圆角 ── */
+    --radius: 20px;      /* 大卡片 */
+    --radius-sm: 14px;   /* 小卡片/输入框 */
+    --radius-xs: 10px;   /* 小按钮/标签 */
+    --radius-pill: 999px;/* 胶囊 */
+
+    /* ── 间距（统一节奏） ── */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
@@ -58,7 +91,7 @@
     letter-spacing: .5px;
   }
   .brand .logo .mark {
-    width: 44px; height: 44px; border-radius: 14px;
+    width: 44px; height: 44px; border-radius: var(--radius-sm);
     background: linear-gradient(135deg, #0a6ea8, #0d8dc4);
     display: inline-flex; align-items: center; justify-content: center; font-size: 22px;
     box-shadow: 0 6px 16px rgba(10,110,168,.35);
@@ -77,23 +110,23 @@
   }
   .tank-bar .tb-label { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
   .tank-bar input[type=number] {
-    width: 88px; padding: 9px 8px; border: 1.5px solid #d8e8ea; border-radius: 12px; text-align: center;
+    width: 88px; padding: 9px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); text-align: center;
     font-size: 16px; font-weight: 700; color: var(--ocean-deep); background: var(--ocean-soft); transition: border .2s;
   }
   .tank-bar input[type=number]:focus { outline: none; border-color: var(--ocean); }
   .tank-bar .preset {
-    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid #bcd9eb;
-    border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
+    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
   }
   .tank-bar .preset:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
   .preset-btn {
     padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid var(--ocean);
-    border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
+    border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
   }
   .preset-btn:hover { background: var(--ocean-soft); transform: translateY(-1px); }
-  .save-hint { font-size: 10px; color: var(--ink-faint); }
+  .save-hint { font-size: 11px; color: var(--ink-faint); }
   .tank-bar-toggle { display: none; cursor: pointer; color: var(--ocean); font-size: 13px; font-weight: 700;
-    padding: 5px 10px; border: 1.5px solid var(--ocean); border-radius: 999px; background: var(--ocean-soft);
+    padding: 5px 10px; border: 1.5px solid var(--ocean); border-radius: var(--radius-pill); background: var(--ocean-soft);
     transition: transform .2s ease; line-height: 1; }
   .tank-bar-toggle:hover { background: var(--ocean); color: #fff; }
   .tank-presets { display: contents; } /* 桌面：presets 直接内联 */
@@ -105,27 +138,28 @@
   .est-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   .est-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; font-size: 13px; }
   .est-row label { width: 110px; color: var(--ink-soft); font-weight: 600; }
-  .est-row input[type=number] { width: 72px; padding: 7px; border: 1.5px solid #d8e8ea; border-radius: 10px; text-align: center; font-size: 14px; }
+  .est-row input[type=number] { width: 72px; padding: 7px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); text-align: center; font-size: 14px; }
   .est-row input[type=number]:focus { outline: none; border-color: var(--ocean); }
-  .est-row select { padding: 7px 10px; border: 1.5px solid #d8e8ea; border-radius: 10px; font-size: 13px; background: #fff; }
+  .est-row select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 13px; background: #fff; }
   .est-result { background: var(--ocean-soft); border-radius: var(--radius-sm); padding: 14px 16px; margin: 12px 0;
     font-size: 13px; color: var(--ink); line-height: 1.9; }
   .est-result .big { font-size: 20px; font-weight: 800; color: var(--ocean-deep); }
   .est-actions { display: flex; gap: 10px; margin-bottom: 8px; }
-  .est-actions button { padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600; border: none; transition: all .15s; }
+  .est-actions button { padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; border: none; transition: all .15s; }
   .est-actions button:first-child { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.3); }
   .est-actions button:first-child:hover { background: var(--ocean-deep); }
   .est-actions button:last-child { background: #f0f4f5; color: var(--ink-soft); }
   .est-note { font-size: 11px; color: var(--ink-faint); line-height: 1.6; }
 
   /* ─── Tabs（分段控制） ─── */
-  .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; background: #e6f2f3;
-    padding: 5px; border-radius: 999px; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; background: var(--border-light);
+    padding: 5px; border-radius: var(--radius-pill); max-width: 420px; margin-left: auto; margin-right: auto; }
   .tab-btn {
     flex: 1; padding: 9px 0; border: none; background: transparent; color: var(--ink-soft);
-    border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s;
+    border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s;
   }
-  .tab-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
+  .tab-btn .tb-ico { display: none; } /* 桌面端隐藏独立图标，保持原横排 */
+  .tab-btn.active { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.35); font-weight: 700; }
   .panel { display: none; }
   .panel.active { display: block; animation: fadeUp .25s ease; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -134,9 +168,9 @@
   .group-card { background: var(--card); border-radius: var(--radius); overflow: hidden;
     box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid rgba(10,110,168,.06); }
   .group-head { display: flex; align-items: center; padding: 15px 18px; cursor: pointer; user-select: none;
-    background: linear-gradient(135deg, #f7fcfb, #eef8f7); border-bottom: 1px solid #e6f2f1; }
+    background: linear-gradient(135deg, #f7fcfb, #eef8f7); border-bottom: 1px solid var(--border-light); }
   .group-head .g-title { font-size: 15px; font-weight: 700; color: var(--ink); }
-  .group-head .g-badge { margin-left: 10px; padding: 3px 11px; border-radius: 999px; font-size: 10.5px; font-weight: 600; }
+  .group-head .g-badge { margin-left: 10px; padding: 3px 11px; border-radius: var(--radius-pill); font-size: 10.5px; font-weight: 600; }
   .badge-core { background: #fef0e0; color: #c0560e; }
   .badge-adv { background: #e2f2fb; color: #0e6ba8; }
   .badge-other { background: #f0f2f3; color: #7a8d99; }
@@ -146,7 +180,7 @@
   .group-body.hidden { display: none; }
 
   /* ─── 元素行 ─── */
-  .elem { border-top: 1px solid #f0f6f5; padding: 16px 18px; }
+  .elem { border-top: 1px solid var(--border-light); padding: 16px 18px; }
   .elem:first-child { border-top: none; }
   .elem-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 5px; }
   .elem-name { font-size: 15px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
@@ -161,7 +195,7 @@
   .calc-row .field { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
   .calc-row .field .flabel { font-size: 10.5px; color: var(--ink-faint); font-weight: 600; letter-spacing: .3px; }
   .calc-row input[type=number], .calc-row select {
-    padding: 9px 10px; border: 1.5px solid #d8e8ea; border-radius: 12px; text-align: center;
+    padding: 9px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); text-align: center;
     font-size: 15px; font-weight: 600; color: var(--ink); background: #fff; transition: border .2s, box-shadow .2s;
   }
   .calc-row input[type=number]:focus, .calc-row select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
@@ -170,91 +204,92 @@
   .calc-row .conc-in::placeholder { font-size: 11.5px; color: #a7bfd0; }
   .calc-row .add-in { width: 190px; text-align: left; font-weight: 500; font-size: 13px; }
   .calc-row .result {
-    background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border: 1.5px solid #b2d3ea; border-radius: 12px;
+    background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
     font-weight: 800; color: var(--ocean-deep); width: 104px; padding: 9px 8px; text-align: center; font-size: 17px;
   }
   .calc-row .sat-hint { font-size: 10.5px; color: var(--ink-faint); align-self: center; padding-bottom: 8px; }
 
   /* ─── 自动推荐条 ─── */
   .auto-strip { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px;
-    background: #f6fafb; border: 1.5px dashed #cfe5e8; border-radius: var(--radius-sm); flex-wrap: wrap; }
+    background: #f6fafb; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; }
   .auto-strip > span { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
-  .auto-strip input[type=number] { width: 84px; padding: 8px; border: 1.5px solid #cfe5e8; border-radius: 10px;
+  .auto-strip input[type=number] { width: 84px; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-xs);
     text-align: center; font-size: 15px; font-weight: 600; }
   .auto-strip input[type=number]:focus { outline: none; border-color: var(--ocean); }
   .auto-strip .auto-msg { font-size: 12.5px; color: var(--ink-soft); flex: 1 1 200px; line-height: 1.6; }
-  .auto-strip .auto-msg.ok { color: #2e8b57; }
-  .auto-strip .auto-msg.high { color: #c0560e; }
-  .auto-strip .auto-msg.low { color: #d9480f; }
+  .auto-strip .auto-msg.ok { color: var(--ok); }
+  .auto-strip .auto-msg.high { color: var(--warn); }
+  .auto-strip .auto-msg.low { color: var(--danger); }
 
   /* ─── 滴定卡片 ─── */
   .dose-card { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
     border: 1px solid rgba(10,110,168,.06); margin-bottom: 16px; }
+  .dose-card.focus-card { border: 1.5px solid var(--border-strong); background: linear-gradient(135deg, #ffffff 0%, #f5fbfe 100%); }
   .dose-card .dc-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-  .dose-card .dc-sub { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.6; }
+  .dose-card .dc-sub { font-size: 11px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.6; }
   .dose-card .dc-sub b { color: var(--ocean); }
   .dose-card .dc-tank { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
   .dose-card .dc-tank label { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
-  .dose-card .dc-tank input { width: 90px; padding: 9px; border: 1.5px solid #bcd3e6; border-radius: 12px; text-align: center;
+  .dose-card .dc-tank input { width: 90px; padding: 9px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); text-align: center;
     font-size: 17px; font-weight: 800; color: var(--ocean-deep); background: var(--ocean-soft); }
   .dose-card .dc-tank input:focus { outline: none; border-color: var(--ocean); }
   .dose-card .dc-tank .unit { font-size: 12px; color: var(--ink-faint); }
 
   /* 滴定行式布局 */
-  .dose-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #f0f6f8; flex-wrap: wrap; }
+  .dose-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-light); flex-wrap: wrap; }
   .dose-row:first-of-type { border-top: none; }
   .dose-row .d-elem { width: 74px; font-size: 13px; font-weight: 700; color: var(--ink); }
   .dose-row .d-elem .sub { display: block; font-size: 10px; font-weight: 500; color: var(--ink-faint); }
   .dose-row .d-field { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .dose-row .d-field .fl { font-size: 10px; color: var(--ink-faint); font-weight: 600; }
-  .dose-row input[type=number] { width: 86px; padding: 8px; border: 1.5px solid #d8e8ea; border-radius: 10px; text-align: center;
+  .dose-row input[type=number] { width: 86px; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); text-align: center;
     font-size: 14px; font-weight: 600; background: #fff; }
   .dose-row input[type=number]:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
-  .dose-row .d-read { min-width: 86px; padding: 8px 10px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: 700;
-    background: #f3f8fb; border: 1.5px solid #d8e8ea; color: var(--ink-soft); }
-  .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-color: #b2d3ea; color: var(--ocean-deep); font-size: 16px; }
+  .dose-row .d-read { min-width: 86px; padding: 8px 10px; border-radius: var(--radius-xs); text-align: center; font-size: 14px; font-weight: 700;
+    background: #f3f8fb; border: 1.5px solid var(--border); color: var(--ink-soft); }
+  .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-color: var(--border-strong); color: var(--ocean-deep); font-size: 16px; }
   .dose-row .arrow { color: var(--ink-faint); font-size: 12px; padding-bottom: 14px; }
 
   /* 通用表单控件 */
-  .ctl { padding: 9px 12px; border: 1.5px solid #d8e8ea; border-radius: 12px; font-size: 14px; color: var(--ink); background: #fff; }
+  .ctl { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--ink); background: #fff; }
   .ctl:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
-  .ctl-btn { padding: 10px 22px; background: var(--ocean); color: #fff; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
-  .seg-btn { padding: 7px 18px; border: none; background: transparent; color: var(--ink-soft); border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
+  .ctl-btn { padding: 10px 22px; background: var(--ocean); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: all .15s; }
+  .seg-btn { padding: 7px 18px; border: none; background: transparent; color: var(--ink-soft); border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
   .seg-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
-  .pager-btn { padding: 6px 14px; border: 1.5px solid #c8d8e6; background: #fff; color: var(--ocean-deep); border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .pager-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: #fff; color: var(--ocean-deep); border-radius: var(--radius-xs); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
   .pager-btn:hover { background: var(--ocean-soft); border-color: var(--ocean); }
   .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
-  .dose-toggle { padding: 6px 14px; border: 1.5px solid #2e8b57; background: #fff; color: #2e8b57; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
-  .dose-toggle:hover { background: #2e8b57; color: #fff; }
-  .dose-toggle.running { background: #c0392b; border-color: #c0392b; color: #fff; }
+  .dose-toggle { padding: 7px 14px; border: 1.5px solid var(--ok); background: #fff; color: var(--ok); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .dose-toggle:hover { background: var(--ok); color: #fff; }
+  .dose-toggle.running { background: var(--danger); border-color: var(--danger); color: #fff; }
   .dose-toggle.running:hover { background: #a93226; }
 
   /* 滴定记录二级菜单 */
   .dose-log-menu { margin-top: 16px; }
   .dose-log-menu .dlm-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f6fafb;
-    border: 1px solid #e0edf2; border-radius: 12px; cursor: pointer; user-select: none; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+    border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; user-select: none; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
   .dose-log-menu .dlm-head:hover { background: #eef6f8; }
   .dose-log-menu .dlm-head .dlm-arrow { margin-left: auto; color: var(--ink-faint); transition: transform .2s; }
-  .dose-log-menu .dlm-body { display: none; margin-top: 10px; border: 1px solid #e0edf2; border-radius: 12px; padding: 12px; background: #fff; }
+  .dose-log-menu .dlm-body { display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: #fff; }
   .dose-log-menu .dlm-body.open { display: block; }
   .dlm-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
   .dlm-form .ctl { padding: 7px 10px; font-size: 13px; }
   .dlm-list { max-height: 220px; overflow-y: auto; overflow-x: auto; }
   .dlm-list table { width: 100%; border-collapse: collapse; }
-  .dlm-list th { padding: 6px; background: #f0f6f8; color: var(--ink-soft); font-size: 11px; font-weight: 600; text-align: left; }
-  .dlm-list td { padding: 6px; border-bottom: 1px solid #f0f6f8; font-size: 12px; }
+  .dlm-list th { padding: 6px; background: var(--border-light); color: var(--ink-soft); font-size: 11px; font-weight: 600; text-align: left; }
+  .dlm-list td { padding: 6px; border-bottom: 1px solid var(--border-light); font-size: 12px; }
   .ctl-btn:hover { background: var(--ocean-deep); }
   .data-table { width: 100%; border-collapse: collapse; }
   .data-table th { padding: 8px; background: var(--ocean); color: #fff; font-weight: 600; font-size: 12.5px; }
-  .data-table td { padding: 7px; border: 1px solid #e3eef7; font-size: 13px; }
+  .data-table td { padding: 7px; border: 1px solid var(--border); font-size: 13px; }
   .data-table tr:hover td { background: #f5fafd; }
 
   /* 配比参考 */
-  .mix-ref { margin-top: 14px; background: #f4fafd; border: 1px solid #d3e8f5; border-radius: var(--radius-sm); padding: 12px 14px; }
+  .mix-ref { margin-top: 14px; background: #f4fafd; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 12px 14px; }
   .mix-ref .mr-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .mix-ref .mr-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; font-size: 12px; }
   .mix-ref .mr-row .mr-elem { width: 60px; color: var(--ink-soft); font-weight: 600; }
-  .mix-ref .mr-btn { padding: 4px 12px; border-radius: 999px; border: 1.5px solid #9fc9e3; background: #fff; color: #0a6ea8;
+  .mix-ref .mr-btn { padding: 6px 13px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: #fff; color: #0a6ea8;
     font-size: 11.5px; cursor: pointer; transition: all .15s; }
   .mix-ref .mr-btn:hover { background: #0a6ea8; color: #fff; }
   .mix-ref .mr-btn.active { background: #0a6ea8; color: #fff; }
@@ -262,17 +297,18 @@
   .mix-ref .mr-tip b { color: #0a6ea8; }
 
   .dose-result { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: linear-gradient(135deg, #e4f1fa, #cfe4f3); border-radius: var(--radius-sm); padding: 14px; }
+    background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-radius: var(--radius-sm); padding: 14px; }
 
   /* 水质仪表盘 */
-  .wq-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+  .wq-card.empty-state { padding: 32px 20px; border: 1.5px dashed var(--border-strong); }
+.wq-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
     border: 1px solid rgba(10,110,168,.06); }
   .wq-card .wq-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .wq-card .wq-name { font-size: 14px; font-weight: 700; color: var(--ink); }
-  .wq-card .wq-status { padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-  .wq-status.ok { background: #d7f0e0; color: #1e7d4a; }
-  .wq-status.low { background: #ffe3dd; color: #c0392b; }
-  .wq-status.high { background: #fff0d8; color: #c0560e; }
+  .wq-card .wq-status { padding: 3px 12px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; }
+  .wq-status.ok { background: var(--ok-bg); color: var(--ok); }
+  .wq-status.low { background: var(--danger-bg); color: var(--danger); }
+  .wq-status.high { background: var(--warn-bg); color: var(--warn); }
   .wq-status.no_data { background: #eef0f2; color: #8a99a5; }
   .wq-card .wq-value { font-size: 34px; font-weight: 800; color: var(--ocean-deep); line-height: 1.1; }
   .wq-card .wq-value small { font-size: 13px; color: var(--ink-faint); font-weight: 500; }
@@ -282,19 +318,19 @@
   .wq-card .wq-mini { margin-top: 6px; font-size: 11px; color: var(--ink-faint); }
 
   /* 智能建议强度标记 */
-  .advice-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 4px; border-bottom: 1px solid #f0f6f8; }
+  .advice-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border-light); }
   .advice-item .advice-strength { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 700; }
-  .advice-strength.high { background: #c0392b; }
-  .advice-strength.mid { background: #e67e22; }
-  .advice-strength.low { background: #2e8b57; }
+  .advice-strength.high { background: var(--danger); }
+  .advice-strength.mid { background: var(--warn); }
+  .advice-strength.low { background: var(--ok); }
   .advice-item .advice-text { flex: 1; font-size: 13px; color: var(--ink-soft); line-height: 1.7; }
   .advice-item .advice-text b { color: var(--ink); }
   .advice-item .advice-tag { flex-shrink: 0; font-size: 10px; color: var(--ink-faint); padding-top: 3px; }
   .dose-result .dr-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
-  .dose-result .dr-value { font-size: 24px; font-weight: 800; color: var(--ocean-deep); }
+  .dose-result .dr-value { font-size: 30px; font-weight: 800; color: var(--ocean-deep); }
   .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
 
-  .note { max-width: 780px; margin: 14px auto 0; font-size: 11.5px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
+  .note { max-width: 780px; margin: 14px auto 0; font-size: 11px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
 
   /* 水滴装饰 */
   .deco-drops { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
@@ -310,12 +346,24 @@
     .tank-bar { position: static; }
     .wave-top { height: 60px; }
     .brand { margin-top: -20px; }
-    .tabs { max-width: 100%; }
-    .tab-btn { font-size: 12px; padding: 8px 0; }
+    /* 手机 App 化：底部导航遮挡补偿 */
+    body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+    /* 手机 App 化：tab 固定底部导航 */
+    .tabs { position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; margin: 0;
+      border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,.96); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-light); z-index: 100; gap: 2px;
+      box-shadow: 0 -4px 16px rgba(30,58,77,.08); }
+    .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 11px; padding: 6px 2px; line-height: 1.2; }
+    .tab-btn .tb-ico { font-size: 20px; display: block; }
     .toolbar { flex-wrap: wrap; }
     .wrap { padding: 0 12px; }
     .d-field .ctl { min-width: 0 !important; }
     input[type=number], input[type=date], input[type=text], select.ctl { max-width: 100%; }
+    /* 手机端关键数字大字（瞄一眼就懂） */
+    .dose-result .dr-value { font-size: 34px; }
+    .dose-result .dr-label { font-size: 13px; }
     /* 简洁模式卡片：手机上 2 列紧凑 */
     #wqSimpleCards { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
     #wqSimpleCards .wq-card { padding: 12px 14px; }
@@ -332,7 +380,7 @@
     /* 表格可横向滑动：手机上始终显示滚动条作为提示 */
     div[style*="overflow-x:auto"] { -webkit-overflow-scrolling: touch; }
     div[style*="overflow-x:auto"]::-webkit-scrollbar { height: 4px; }
-    div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb { background: #bcd9eb; border-radius: 4px; }
+    div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
     .dlm-list table { font-size: 11.5px; }
     .dlm-list th, .dlm-list td { padding: 5px 4px; }
     .pager-btn { padding: 8px 12px; }
@@ -377,10 +425,12 @@
     .dose-row.mix-row { grid-template-columns: repeat(3, 1fr); }
     /* 消耗测算行（consume-row）：上次值/本次值/间隔/每天消耗 4 列一行 */
     .dose-row.consume-row { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
+    .dose-row.adjust-row { grid-template-columns: repeat(3, 1fr); }
     /* 表头行：手机上用 Grid 与输入行同列对齐 */
     .dose-head { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: center; padding-bottom: 8px; }
     .dose-head.mix-head { grid-template-columns: repeat(3, 1fr); }
     .dose-head.consume-head { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
+.dose-head.adjust-head { grid-template-columns: repeat(3, 1fr); }
     .dose-head > span:not(.d-field) { display: none; }
     .dose-head .d-field { max-width: none !important; flex: none; width: 100%; text-align: center; }
     .dose-head .d-field .fl { font-size: 10px; }
@@ -420,19 +470,19 @@
   /* ─── Toast 轻提示 ─── */
   #toastBox { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 9999;
     display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
-  .toast { min-width: 200px; max-width: 86vw; padding: 11px 18px; border-radius: 14px; font-size: 13px; font-weight: 600;
+  .toast { min-width: 200px; max-width: 86vw; padding: 11px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
     color: #fff; box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(-12px);
     transition: opacity .25s ease, transform .25s ease; text-align: center; line-height: 1.5; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.ok { background: linear-gradient(135deg, #0a8f6e, #0d7a5f); }
-  .toast.err { background: linear-gradient(135deg, #c0392b, #a93226); }
+  .toast.err { background: linear-gradient(135deg, var(--danger), #a93226); }
   .toast.info { background: linear-gradient(135deg, var(--ocean), var(--ocean-deep)); }
 
   /* ─── 编辑弹窗 ─── */
   .modal-mask { position: fixed; inset: 0; background: rgba(10,30,45,.45); backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center; z-index: 9000; padding: 16px; }
   .modal-mask.open { display: flex; }
-  .modal-box { background: #fff; border-radius: 20px; max-width: 430px; width: 100%; padding: 20px 22px;
+  .modal-box { background: #fff; border-radius: var(--radius); max-width: 430px; width: 100%; padding: 20px 22px;
     box-shadow: var(--shadow-lg); animation: fadeUp .22s ease; max-height: calc(100vh - 60px); overflow-y: auto;
     -webkit-overflow-scrolling: touch; }
   .modal-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
@@ -440,36 +490,36 @@
   .modal-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
   .modal-field label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .modal-field input, .modal-field select {
-    padding: 9px 11px; border: 1.5px solid #d8e8ea; border-radius: 11px; font-size: 14px;
+    padding: 9px 11px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 14px;
     color: var(--ink); background: #fff; transition: border .2s; width: 100%; }
   .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--ocean); }
   .modal-row { display: flex; gap: 10px; }
   .modal-row .modal-field { flex: 1; }
   .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .modal-actions button { flex: 1; padding: 10px 0; border-radius: 12px; font-size: 13px; font-weight: 700;
+  .modal-actions button { flex: 1; padding: 10px 0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
   .modal-actions .m-save { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.3); }
   .modal-actions .m-save:hover { background: var(--ocean-deep); }
   .modal-actions .m-cancel { background: #f0f4f5; color: var(--ink-soft); }
   .modal-actions .m-cancel:hover { background: #e3e9ec; }
-  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; border-radius: 8px;
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; border-radius: var(--radius-xs);
     transition: background .15s; }
   .icon-btn:hover { background: var(--ocean-soft); }
 
   /* ─── 顶部工具条 ─── */
   .toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 auto 14px;
     max-width: 420px; }
-  .mini-btn { padding: 7px 15px; border: 1.5px solid #c8dce8; background: rgba(255,255,255,.85);
-    color: var(--ocean-deep); border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600;
+  .mini-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: rgba(255,255,255,.85);
+    color: var(--ocean-deep); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600;
     transition: all .18s; backdrop-filter: blur(4px); }
   .mini-btn:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
 
 
   /* ─── 模式切换滑块 ─── */
-  .mode-switch { position: relative; display: inline-flex; background: #e6f2f3; border-radius: 999px;
+  .mode-switch { position: relative; display: inline-flex; background: var(--border-light); border-radius: var(--radius-pill);
     padding: 4px; box-shadow: inset 0 1px 3px rgba(30,58,77,.06); }
   .mode-switch .ms-slider { position: absolute; top: 4px; left: 4px; height: calc(100% - 8px); width: calc(50% - 4px);
-    background: #fff; border-radius: 999px; box-shadow: 0 3px 10px rgba(30,58,77,.12); transition: transform .28s cubic-bezier(.4,0,.2,1); }
+    background: #fff; border-radius: var(--radius-pill); box-shadow: 0 3px 10px rgba(30,58,77,.12); transition: transform .28s cubic-bezier(.4,0,.2,1); }
   .mode-switch.pro .ms-slider { transform: translateX(100%); }
   .mode-switch .seg-btn { position: relative; z-index: 1; padding: 8px 26px; min-width: 88px; }
 
@@ -479,15 +529,15 @@
   .advice-action span { font-size: 11.5px; color: var(--ink-soft); }
   .advice-action span b { color: var(--ocean-deep); }
   .advice-action button { padding: 6px 12px; border: 1.5px solid var(--ocean); background: var(--ocean-soft);
-    color: var(--ocean-deep); border-radius: 999px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
+    color: var(--ocean-deep); border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .advice-action button:hover { background: var(--ocean); color: #fff; }
 
 
 
   /* 配比参考折叠 */
   .mix-ref-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-top: 14px; padding: 9px 14px; background: #f4fafd; border: 1px dashed #c3e0f0;
-    border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ocean-deep);
+    margin-top: 14px; padding: 9px 14px; background: #f4fafd; border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ocean-deep);
     user-select: none; transition: background .15s; }
   .mix-ref-toggle:hover { background: #e9f4fa; }
   .mix-ref-toggle .mr-arrow { color: var(--ink-faint); font-size: 11px; transition: transform .2s; }
@@ -495,16 +545,16 @@
 
   /* 每日提升超限 - 紧急红色提示 */
   .d-read.over { background: linear-gradient(135deg, #fdecea, #f8d7da) !important; border-color: #e74c3c !important;
-    color: #c0392b !important; animation: overPulse 1.2s ease-in-out infinite; }
+    color: var(--danger) !important; animation: overPulse 1.2s ease-in-out infinite; }
   .dose-result.over { border: 1.5px solid #e74c3c !important; background: #fdf2f2 !important; }
-  .dose-result.over .dr-value { color: #c0392b !important; }
-  .rate-warn { margin-top: 6px; font-size: 11.5px; color: #c0392b; font-weight: 600; line-height: 1.5; display: none; }
+  .dose-result.over .dr-value { color: var(--danger) !important; }
+  .rate-warn { margin-top: 6px; font-size: 11.5px; color: var(--danger); font-weight: 600; line-height: 1.5; display: none; }
   .rate-warn.show { display: block; }
   @keyframes overPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,.35); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
   /* 元素补充 → 滴定 联动按钮 */
-  .dose-link-btn { padding: 7px 12px; border: 1.5px solid #2e8b57; background: #fff; color: #2e8b57;
-    border-radius: 999px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
-  .dose-link-btn:hover { background: #2e8b57; color: #fff; }
+  .dose-link-btn { padding: 7px 14px; border: 1.5px solid var(--ok); background: #fff; color: var(--ok);
+    border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .dose-link-btn:hover { background: var(--ok); color: #fff; }
 
   /* ─── 新手引导卡片 ─── */
   .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
@@ -521,14 +571,14 @@
     display: flex; align-items: center; gap: 8px; }
   .guide-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 16px; }
   .guide-step { display: flex; gap: 12px; margin-bottom: 14px; }
-  .guide-num { flex: 0 0 34px; height: 34px; border-radius: 12px; background: linear-gradient(135deg, var(--ocean), #0d8dc4);
+  .guide-num { flex: 0 0 34px; height: 34px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--ocean), #0d8dc4);
     color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
     box-shadow: 0 4px 10px rgba(10,110,168,.3); }
   .guide-step-body { flex: 1; }
   .guide-step-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
   .guide-step-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
   .guide-actions { display: flex; gap: 10px; margin-top: 18px; }
-  .guide-actions button { flex: 1; padding: 11px 0; border-radius: 13px; font-size: 14px; font-weight: 700;
+  .guide-actions button { flex: 1; padding: 11px 0; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
   .guide-start { background: var(--ocean); color: #fff; box-shadow: 0 4px 14px rgba(10,110,168,.35); }
   .guide-start:hover { background: var(--ocean-deep); }
@@ -569,10 +619,10 @@
 <div class="wrap">
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('water')">📈 水质</button>
-    <button class="tab-btn" onclick="showTab('salt')">🔄 换水</button>
-    <button class="tab-btn" onclick="showTab('calc')">🧪 元素补充</button>
-    <button class="tab-btn" onclick="showTab('dosing')">💧 滴定方案</button>
+    <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico">📈</span><span>水质</span></button>
+    <button class="tab-btn" onclick="showTab('salt')"><span class="tb-ico">🔄</span><span>换水</span></button>
+    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico">🧪</span><span>元素补充</span></button>
+    <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico">💧</span><span>滴定</span></button>
   </div>
 
   <!-- 水量条（仅元素补充/滴定方案页显示） -->
@@ -631,7 +681,7 @@
     <div id="groupContainer"></div>
     <div class="note" style="margin-top:4px">「使用量」= 需要添加的粉末克数；「需滴配液(ml)」= 若用滴定方案里配好的补充液，需要滴入多少毫升。</div>
     <div class="note">添加前请确认实测浓度，少量多次更安全。市售补充液请按瓶身说明换算。</div>
-    <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid #bcd9eb;border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：数值小幅波动远比"大升大降"安全，单次补充后隔 1-2 天再测，观察趋势再决定下一步。</div>
+    <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：数值小幅波动远比"大升大降"安全，单次补充后隔 1-2 天再测，观察趋势再决定下一步。</div>
   </div>
 
   <!-- 滴定方案 -->
@@ -707,9 +757,9 @@
     <div class="dose-card">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
         <div class="dc-title" style="margin-bottom:0">📊 滴定计算</div>
-        <div class="seg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px">
-          <button class="seg-btn active" id="calcTabConsume" onclick="setCalcTab('consume')">📈 消耗测算</button>
-          <button class="seg-btn" id="calcTabAdjust" onclick="setCalcTab('adjust')">🎯 目标调节</button>
+        <div class="seg" style="display:inline-flex;background:var(--border-light);border-radius:999px;padding:4px">
+          <button class="seg-btn active" id="calcTabConsume" onclick="setCalcTab('consume')">📈 每天消耗</button>
+          <button class="seg-btn" id="calcTabAdjust" onclick="setCalcTab('adjust')">🎯 调整目标</button>
         </div>
       </div>
       <div id="calcPaneConsume">
@@ -786,7 +836,7 @@
 
     <div class="dose-card">
       <div class="dc-title">💧 每天滴定量</div>
-      <div class="dc-sub">= <b>消耗维持</b>（维持现状的滴量） + <b>目标提升</b>（如需提升时「目标调节」加的量）。结果可直接设定到滴定泵；开始/结束后会记录到水质趋势图上。</div>
+      <div class="dc-sub">= <b>消耗维持</b>（维持现状的滴量） + <b>目标提升</b>（如需提升时「调整目标」加的量）。结果可直接设定到滴定泵；开始/结束后会记录到水质趋势图上。</div>
       <div class="dose-result">
         <span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span>
         <button class="dose-toggle" id="k_doseBtn" onclick="toggleDose('k', 'KH')">▶ 开始滴定</button>
@@ -800,7 +850,7 @@
         <button class="dose-toggle" id="m_doseBtn" onclick="toggleDose('m', '镁')">▶ 开始滴定</button>
       </div>
       <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 每毫升提升量。建议少量多次，分2~4次滴入。</div>
-      <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid #bcd9eb;border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：滴定讲究"稳"，宁可每天少滴一点，也不要在某天猛加；固定时间滴入、每周测一次校准，水质才能长期稳定。</div>
+      <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：滴定讲究"稳"，宁可每天少滴一点，也不要在某天猛加；固定时间滴入、每周测一次校准，水质才能长期稳定。</div>
     </div>
 
     <!-- 滴定记录二级菜单（深度自定义） -->
@@ -866,10 +916,10 @@
     <div class="dose-card">
       <div class="dc-title">🧂 配盐计算</div>
       <div class="dc-sub">目标盐度 <b>1.025</b>：选择你的海盐品牌，自动按该品牌用量计算。</div>
-      <div class="dose-card" style="box-shadow:none;border:1.5px dashed #bcd3e6;margin-bottom:0">
+      <div class="dose-card" style="box-shadow:none;border:1.5px dashed var(--border-strong);margin-bottom:0">
         <div class="dc-tank">
           <label>品牌</label>
-          <select id="saltBrand" style="padding:9px 12px;border:1.5px solid #bcd3e6;border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:#fff"></select>
+          <select id="saltBrand" style="padding:9px 12px;border:1.5px solid var(--border-strong);border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:#fff"></select>
         </div>
         <div class="dc-tank">
           <label>要配水量</label>
@@ -910,12 +960,12 @@
 
   <!-- 水质记录与趋势 -->
   <div id="panel-water" class="panel active">
-    <!-- 记录表单 -->
-    <div class="dose-card">
+    <!-- 记录表单（视觉焦点） -->
+    <div class="dose-card focus-card">
       <div class="dc-title">📝 添加水质记录</div>
       <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">元素</span>
-          <div class="seg" id="wqElSeg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px;flex-wrap:wrap">
+          <div class="seg" id="wqElSeg" style="display:inline-flex;background:var(--border-light);border-radius:999px;padding:4px;flex-wrap:wrap">
             <button type="button" class="seg-btn active" data-el="KH" onclick="setWqEl('KH')" title="碱度 dKH">KH</button>
             <button type="button" class="seg-btn" data-el="钙" onclick="setWqEl('钙')" title="钙 Ca ppm">钙</button>
             <button type="button" class="seg-btn" data-el="镁" onclick="setWqEl('镁')" title="镁 Mg ppm">镁</button>
@@ -931,15 +981,12 @@
       <div class="dc-sub" style="margin-top:8px">💡 建议每周测试1-2次并记录，记录越多分析越准。测试剂读数通常有 ±5% 误差，小幅波动属正常，看趋势比看单次数值更可靠。水温保持 25-27°C、盐度 35ppt 也是珊瑚健康的基础。</div>
     </div>
 
-    <!-- 模式切换（居中 + 滑块动效） -->
-    <div class="dose-card" style="padding:12px 18px">
-      <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;flex-direction:column">
-        <div class="mode-switch" id="modeSwitch">
-          <div class="ms-slider"></div>
-          <button class="seg-btn active" id="modeSimple" onclick="setWaterMode('simple')">🟢 简洁</button>
-          <button class="seg-btn" id="modePro" onclick="setWaterMode('pro')">🔵 深度</button>
-        </div>
-        <span class="save-hint" style="text-align:center">简洁：重点一目了然 · 深度：查看趋势与历史明细</span>
+    <!-- 模式切换（轻量条，居中 + 滑块动效） -->
+    <div class="mode-bar">
+      <div class="mode-switch" id="modeSwitch">
+        <div class="ms-slider"></div>
+        <button class="seg-btn active" id="modeSimple" onclick="setWaterMode('simple')">🟢 简洁</button>
+        <button class="seg-btn" id="modePro" onclick="setWaterMode('pro')">🔵 深度</button>
       </div>
     </div>
 
@@ -965,7 +1012,7 @@
           <div id="wqDosingEffect" style="font-size:12px;color:var(--ink-soft);line-height:1.6;min-height:20px">—</div>
         </div>
         <div class="dose-card" style="margin:0;padding:12px 16px">
-          <div class="dc-title" style="margin-bottom:6px;font-size:13px">⚖️ 收支平衡</div>
+          <div class="dc-title" style="margin-bottom:6px;font-size:13px">⚖️ 补充是否平衡</div>
           <div id="wqBalance" style="font-size:12px;color:var(--ink-soft);line-height:1.6;min-height:20px">—</div>
         </div>
         <div class="dose-card" style="margin:0;padding:12px 16px">
@@ -1056,7 +1103,7 @@
       <div class="guide-num">3</div>
       <div class="guide-step-body">
         <div class="guide-step-title">还能做什么？</div>
-        <div class="guide-step-desc">「🔄 换水」登记换水记录 · 「🧪 元素补充」计算补充剂用量 · 「💧 滴定方案」测算每日滴定量。</div>
+        <div class="guide-step-desc">「🔄 换水」登记换水记录 · 「🧪 元素补充」计算补充剂用量 · 「💧 滴定」测算每日滴定量。</div>
       </div>
     </div>
     <div class="guide-actions">
@@ -1429,7 +1476,7 @@ function renderElement(gi, ei, elem) {
     '</div>' +
     '<div class="field"><span class="flabel">' + elem.unit + '</span></div>' +
     '<div class="field"><span class="flabel">使用量(克)</span><input type="text" class="result" data-g="' + gi + '" data-e="' + ei + '" readonly></div>' +
-    (mixKey ? '<div class="field"><span class="flabel">需滴配液(ml)</span><input type="text" class="ml-result" data-mix="' + mixKey + '" readonly style="width:88px;background:#eaf2f9;border:1.5px solid #bcd3e6;border-radius:12px;color:var(--ocean-deep);font-weight:700;text-align:center;padding:9px 8px;font-size:15px" title="按「滴定方案」里该元素的配液浓度换算：要达到同样的补充量，需要滴入多少毫升配好的液体"></div>' : '') +
+    (mixKey ? '<div class="field"><span class="flabel">需滴配液(ml)</span><input type="text" class="ml-result" data-mix="' + mixKey + '" readonly style="width:88px;background:#eaf2f9;border:1.5px solid var(--border-strong);border-radius:12px;color:var(--ocean-deep);font-weight:700;text-align:center;padding:9px 8px;font-size:15px" title="按「滴定方案」里该元素的配液浓度换算：要达到同样的补充量，需要滴入多少毫升配好的液体"></div>' : '') +
     '<span class="hint sat-hint"></span>' +
   '</div>';
   html += '<div class="auto-strip">' +
@@ -1986,7 +2033,7 @@ function renderLinkage(findings) {
   el.innerHTML = findings.map(f => {
     const color = prioMap[f.priority] || '#2e8b57';
     const icon = f.priority >= 75 ? '🔴' : (f.priority >= 50 ? '🟠' : '🟢');
-    return '<div style="padding:8px 0;border-bottom:1px solid #f0f6f8">' +
+    return '<div style="padding:8px 0;border-bottom:1px solid var(--border-light)">' +
       '<div><span style="color:' + color + '">' + icon + ' <b>' + f.title + '</b></span>' +
       '<span class="save-hint" style="margin-left:8px">关联: ' + (f.related || []).join(' ↔ ') + '</span></div>' +
       '<div style="font-size:12.5px;color:var(--ink-soft);margin-top:4px">' + f.detail + '</div>' +
@@ -2132,34 +2179,17 @@ async function jumpToDosing(btn) {
   showTab('dosing');
   setCalcTab('adjust');
 
-  // 3. 填充消耗测算：本次值 = 实测值（若有）；上次值/间隔从最近两条水质记录取
-  let fVal = null, lVal = null, days = null;
-  try {
-    const res = await fetch('/api/water/records?element=' + encodeURIComponent(element));
-    const data = await res.json();
-    const recs = (data.records || []).slice(-2); // 最近两条（升序）
-    if (recs.length >= 2) {
-      fVal = recs[0].value;   // 上次值
-      lVal = recs[1].value;   // 本次值
-      const d1 = new Date(recs[0].recorded_at.slice(0, 10));
-      const d2 = new Date(recs[1].recorded_at.slice(0, 10));
-      const dd = Math.round((d2 - d1) / 86400000);
-      if (dd > 0) days = dd;
-    } else if (recs.length === 1) {
-      lVal = recs[0].value;
-    }
-  } catch (e) { /* 忽略记录拉取失败 */ }
+  // 3. 自动「从记录导入」：填满 KH/钙/镁 三元素的消耗测算（上次值/本次值/间隔）
+  await importDoseFromRecords();
 
   const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
-  if (lVal != null && !isNaN(current)) {
-    // 有实测值：本次值 = 实测值，上次值 = 记录里的旧值
-    setVal(mixKey + '_f', fVal != null ? fVal : '');
+  // 若元素补充页填了实测值，则用实测值覆盖"本次值"（更实时）
+  if (!isNaN(current)) {
     setVal(mixKey + '_l', current);
-  } else {
-    setVal(mixKey + '_f', fVal);
-    setVal(mixKey + '_l', lVal);
   }
-  setVal(mixKey + '_d', days);
+  // 间隔天数：从当前元素记录取（若导入没算出，默认7）
+  const daysEl = document.getElementById(mixKey + '_d');
+  const days = (daysEl && daysEl.value) ? parseFloat(daysEl.value) : 7;
 
   // 4. 自动填目标值（理想下限）+ 计划天数默认7，并触发目标调节计算
   try {
@@ -2171,7 +2201,7 @@ async function jumpToDosing(btn) {
       setVal(mixKey + '_t', ideal.low);
     }
   } catch (e) { /* 目标值留空由用户填 */ }
-  // 间隔默认 7 天（有实测间隔用实测，否则7）
+  // 计划天数默认 = 实际间隔（或7）
   setVal(mixKey + '_p', days > 0 ? days : 7);
 
   // 5. 重算并触发目标调节，结果实时同步到"每天滴定量"卡片
@@ -2258,7 +2288,7 @@ function renderSimple() {
   const wrap = document.getElementById('wqSimpleCards');
   const adviceBody = document.getElementById('wqSimpleAdviceBody');
   if (!waterAnalysis || Object.keys(waterAnalysis).length === 0) {
-    wrap.innerHTML = '<div class="wq-card" style="grid-column:1/-1"><div class="wq-name">还没有记录</div><div style="font-size:13px;color:var(--ink-soft);margin-top:6px">在上方添加几条测试值（建议每周1-2次），这里会自动生成健康仪表盘和智能建议。</div></div>';
+    wrap.innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1"><div style="font-size:40px;text-align:center">🐠</div><div class="wq-name" style="text-align:center;margin-top:8px">开始记录你的第一组水质数据</div><div style="font-size:13px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.7">在上方选择元素、输入测试值（建议每周1-2次），<br>这里会自动生成健康仪表盘和智能建议。</div></div>';
     adviceBody.textContent = '暂无数据，先添加记录吧。';
     return;
   }
@@ -2400,7 +2430,7 @@ function renderWaterChart() {
       return;
     }
     chart.setOption({
-      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: '#173a52', fontSize: 12 },
         formatter: function(params) {
           var d = new Date(params[0].value[0]);
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
@@ -2409,12 +2439,12 @@ function renderWaterChart() {
         textStyle: { fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 10 : 12, pageTextStyle: { color: '#5c7a8c' } },
       grid: { left: narrow ? 48 : 60, right: 16, top: narrow ? 34 : 40, bottom: narrow ? 80 : 92 },
       dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
-      xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
+      xAxis: { type: 'time', axisLine: { lineStyle: { color: 'var(--border-strong)' } },
         axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
           var d = new Date(v);
           return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
         } } },
-      yAxis: { type: 'value', name: '相对变化 %', scale: true, splitLine: { lineStyle: { color: '#f0f6f8' } }, axisLabel: { color: '#5c7a8c', formatter: '{value}%' } },
+      yAxis: { type: 'value', name: '相对变化 %', scale: true, splitLine: { lineStyle: { color: 'var(--border-light)' } }, axisLabel: { color: '#5c7a8c', formatter: '{value}%' } },
       series: series
     }, true);
     return;
@@ -2513,18 +2543,18 @@ function renderWaterChart() {
     series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
   }
   chart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: '#173a52', fontSize: 12 },
       valueFormatter: function(v) { return v; } },
     legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: narrow ? 10 : 12 } },
     grid: { left: narrow ? 44 : 55, right: 14, top: narrow ? 36 : 42, bottom: narrow ? 80 : 92 },
     dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
-    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: 'var(--border-strong)' } },
       axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
         var d = new Date(v);
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
       } } },
     yAxis: { type: 'value', scale: true, name: ideal ? ideal.unit : '', nameTextStyle: { color: '#5c7a8c', fontSize: 11 },
-      splitLine: { lineStyle: { color: '#f0f6f8' } }, axisLabel: { color: '#5c7a8c' } },
+      splitLine: { lineStyle: { color: 'var(--border-light)' } }, axisLabel: { color: '#5c7a8c' } },
     series: series
   }, true);  // notMerge: 切换"显示/隐藏理想范围"时清空旧series
 }
@@ -2588,15 +2618,15 @@ function renderSaltBrands() {
     const khHot = kh >= 10;
     const caHigh = b[3] >= 450;
     return '<tr style="cursor:pointer" onclick="pickSaltBrand(' + i + ')" title="点击用于配盐计算">' +
-      '<td style="padding:7px;border:1px solid #e3eef7;font-weight:700">' + b[0] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[1] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center;color:' + (khHot ? '#c0560e;font-weight:700' : '#0a6ea8;font-weight:700') + '">' + b[2] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center;font-weight:' + (caHigh ? '700' : '400') + '">' + b[3] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[4] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[5] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[6] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[7] + '</td>' +
-      '<td style="padding:7px;border:1px solid #e3eef7;text-align:center">' + b[8] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);font-weight:700">' + b[0] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[1] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center;color:' + (khHot ? '#c0560e;font-weight:700' : '#0a6ea8;font-weight:700') + '">' + b[2] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center;font-weight:' + (caHigh ? '700' : '400') + '">' + b[3] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[4] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[5] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[6] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[7] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[8] + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -2863,7 +2893,7 @@ initWaterChange();
     if (isOverlayOpen()) return; // 弹窗/引导打开时不触发
     // 在图表、输入框、按钮上滑动时不触发（避免误切）
     const t = e.target;
-    if (t.closest && (t.closest('#wqChart') || t.closest('input') || t.closest('select') || t.closest('button') || t.closest('.data-table') || t.closest('.dose-log-menu'))) return;
+    if (t.closest && (t.closest('#wqChart') || t.closest('input') || t.closest('select') || t.closest('button') || t.closest('table') || t.closest('.data-table') || t.closest('.dose-log-menu') || t.closest('.mix-ref') || t.closest('.dlm-list'))) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     tracking = true;
