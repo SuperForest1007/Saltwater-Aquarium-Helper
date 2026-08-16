@@ -267,6 +267,18 @@ def calc_additive(water_liters: float, conc_delta: float, v1: float, v2: float) 
     return round(conc_delta * (v2 / v1) * water_liters) / 1000
 
 
+def _fmt(v):
+    """按量级自适应小数位：小数值保留更多位（PO4 0.008 显示 0.008，钙 376 显示 376）。"""
+    av = abs(v)
+    if av < 0.01:
+        return f"{v:.3f}"
+    if av < 1:
+        return f"{v:.2f}"
+    if av < 100:
+        return f"{v:.1f}"
+    return f"{v:.0f}"
+
+
 def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
                    ideal_high: float, v1: float, v2: float, unit: str = "ppm") -> dict:
     """
@@ -278,14 +290,14 @@ def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
     if current_value >= ideal_low and current_value <= ideal_high:
         return {
             "status": "ok",
-            "message": f"当前 {current_value}{unit} 在理想范围 {ideal_low}-{ideal_high}{unit} 内，无需添加",
+            "message": f"当前 {_fmt(current_value)}{unit} 在理想范围 {_fmt(ideal_low)}-{_fmt(ideal_high)}{unit} 内，无需添加",
             "recommend_delta": 0,
             "grams": 0,
         }
     if current_value > ideal_high:
         return {
             "status": "high",
-            "message": f"当前 {current_value}{unit} 高于理想上限 {ideal_high}{unit}，建议先观察/少量换水，暂不添加",
+            "message": f"当前 {_fmt(current_value)}{unit} 高于理想上限 {_fmt(ideal_high)}{unit}，建议先观察/少量换水，暂不添加",
             "recommend_delta": 0,
             "grams": 0,
         }
@@ -296,7 +308,7 @@ def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
     grams = calc_additive(water_liters, delta, v1, v2)
     return {
         "status": "low",
-        "message": f"当前 {current_value}{unit} 低于理想下限 {ideal_low}{unit}，建议补充 {delta:.1f}{unit} 到 {target:.0f}{unit}",
+        "message": f"当前 {_fmt(current_value)}{unit} 低于理想下限 {_fmt(ideal_low)}{unit}，建议补充 {_fmt(delta)}{unit} 到 {_fmt(target)}{unit}",
         "recommend_delta": round(delta, 2),
         "grams": grams,
     }
