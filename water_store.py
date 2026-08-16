@@ -231,3 +231,85 @@ def delete_water_change(rid):
     conn.commit()
     conn.close()
     return cur.rowcount > 0
+# ============ 导出 / 导入 ============
+
+def export_all():
+    """导出全部数据为可恢复的 JSON 结构。"""
+    return {
+        "water_records": get_records(limit=100000),
+        "dosing_log": get_dosing_logs(),
+        "water_change": get_water_changes(limit=100000),
+    }
+
+def _count_matching(conn, table, conditions, params):
+    sql = "SELECT COUNT(*) FROM " + table + " WHERE " + conditions
+    row = conn.execute(sql, params).fetchone()
+    return row[0]
+
+def import_all(data):
+    """导入备份数据（按内容去重：重复记录跳过，新记录插入）。
+    返回 (inserted, skipped)。
+    """
+    if not isinstance(data, dict):
+        return 0, 0
+    inserted = 0
+    skipped = 0
+    conn = get_db()
+    # 水质记录：element+value+recorded_at 去重
+    for r in data.get("water_records") or []:
+        try:
+            el, v, dt = r["element"], float(r["value"]), str(r.get("recorded_at") or "")
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        if _count_matching(conn, "water_records",
+                           "element=? AND value=? AND recorded_at=?",
+                           (el, v, dt)) > 0:
+            skipped += 1
+            continue
+        conn.execute(
+            "INSERT INTO water_records (element, value, unit, note, recorded_at, created_at) VALUES (?,?,?,?,?,?)",
+            (el, v, r.get("unit") or "", r.get("note") or "", dt,
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        inserted += 1
+    # 滴定记录：element+dose_ml+recorded_at 去重
+    for r in data.get("dosing_log") or []:
+        try:
+            el, d, dt = r["element"], float(r["dose_ml"]), str(r.get("recorded_at") or "")
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        if _count_matching(conn, "dosing_log",
+                           "element=? AND dose_ml=? AND recorded_at=?",
+                           (el, d, dt)) > 0:
+            skipped += 1
+            continue
+        conn.execute(
+            "INSERT INTO dosing_log (element, dose_ml, note, action, recorded_at, created_at) VALUES (?,?,?,?,?,?)",
+            (el, d, r.get("note") or "", r.get("action") or "start", dt,
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        inserted += 1
+    # 换水记录：water_liters+recorded_at 去重
+    for r in data.get("water_change") or []:
+        try:
+            w, dt = float(r["water_liters"]), str(r.get("recorded_at") or "")
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        if _count_matching(conn, "water_change",
+                           "water_liters=? AND recorded_at=?",
+                           (w, dt)) > 0:
+            skipped += 1
+            continue
+        conn.execute(
+            "INSERT INTO water_change (water_liters, salt_brand, note, recorded_at, created_at) VALUES (?,?,?,?,?)",
+            (w, r.get("salt_brand") or "", r.get("note") or "", dt,
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        inserted += 1
+    conn.commit()
+    conn.close()
+    return inserted, skipped
+

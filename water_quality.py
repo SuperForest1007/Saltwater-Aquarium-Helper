@@ -26,7 +26,7 @@ ELEMENT_IDEALS = {
     "镁":  {"low": 1300, "high": 1400, "unit": "ppm", "display": "镁 Mg",
             "hint": "镁是钙的稳定剂；SPS缸建议1350-1400，LPS缸1300-1350即可"},
     "NO3": {"low": 2.0, "high": 10.0, "unit": "ppm", "display": "硝酸盐 NO₃",
-            "hint": "完全归零会让珊瑚饿瘦；SPS建议3-10ppm，LPS 2-5ppm，与PO4保持约100:1"},
+            "hint": "过低会让珊瑚生长停滞、颜色变淡；SPS建议5-10ppm，LPS 2-5ppm，与PO4保持约100:1"},
     "PO4": {"low": 0.03, "high": 0.08, "unit": "ppm", "display": "磷酸盐 PO₄",
             "hint": "完全归零会让珊瑚失去颜色；SPS建议0.03-0.05ppm，LPS可到0.08ppm"},
 }
@@ -265,7 +265,7 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
 
     # --- 波动补充 ---
     if s["volatility"] == "high" and "波动" not in "".join(parts):
-        parts.append(f"📊 整体波动偏大，建议增加测试频率(每周2-3次)以掌握真实变化")
+        parts.append(f"📊 整体波动偏大，建议增加测试频率(每周1-2次)以掌握真实变化")
 
     return {
         "priority": prio,
@@ -548,7 +548,7 @@ def test_frequency_health(records_by_element, weeks=4):
             msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，频率良好"
         elif per_week >= 1:
             status = "fair"
-            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，略少，建议每周2-3次"
+            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，略少，建议每周1-2次"
         else:
             status = "low"
             msg = f"近{weeks}周仅测试{count}次，频率偏低，趋势判断可能不准"

@@ -1,0 +1,14 @@
+{
+  "name": "ReefPal 海水缸助手",
+  "short_name": "ReefPal",
+  "description": "海水缸水质记录、智能分析、元素补充与滴定方案助手",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f7fc",
+  "theme_color": "#0a6ea8",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

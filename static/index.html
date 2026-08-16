@@ -2,8 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>海水缸助手 · ReefPal</title>
+<meta name="theme-color" content="#0a6ea8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ReefPal">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="/static/echarts.min.js"></script>
 <style>
@@ -25,6 +33,12 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
+  /* 触摸：去掉 iOS/Android 点击灰色高亮 */
+  * { -webkit-tap-highlight-color: transparent; }
+  /* iPhone 底部安全区：刘海屏 Home 条不遮挡内容 */
+  body { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+  /* 弹窗打开时锁定背景滚动（JS 控制 body.lock-scroll） */
+  body.lock-scroll { overflow: hidden; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
     background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%);
@@ -78,6 +92,12 @@
   }
   .preset-btn:hover { background: var(--ocean-soft); transform: translateY(-1px); }
   .save-hint { font-size: 10px; color: var(--ink-faint); }
+  .tank-bar-toggle { display: none; cursor: pointer; color: var(--ocean); font-size: 13px; font-weight: 700;
+    padding: 5px 10px; border: 1.5px solid var(--ocean); border-radius: 999px; background: var(--ocean-soft);
+    transition: transform .2s ease; line-height: 1; }
+  .tank-bar-toggle:hover { background: var(--ocean); color: #fff; }
+  .tank-presets { display: contents; } /* 桌面：presets 直接内联 */
+  .tank-bar .preset { display: inline-block; }
 
   /* ─── 估算器 ─── */
   .estimator { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
@@ -134,7 +154,7 @@
   .elem-ideal { font-size: 12px; color: var(--ink-soft); }
   .elem-ideal b { color: var(--ocean-deep); font-weight: 700; }
   .elem-detail { font-size: 12px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 12px; }
-  .elem-detail .tip { color: var(--ink-faint); font-size: 11px; }
+  .elem-detail .tip { color: var(--ink-faint); font-size: 11px; display: block; margin-top: 4px; line-height: 1.6; }
 
   /* ─── 计算行 ─── */
   .calc-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
@@ -219,7 +239,7 @@
   .dose-log-menu .dlm-body.open { display: block; }
   .dlm-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
   .dlm-form .ctl { padding: 7px 10px; font-size: 13px; }
-  .dlm-list { max-height: 220px; overflow-y: auto; }
+  .dlm-list { max-height: 220px; overflow-y: auto; overflow-x: auto; }
   .dlm-list table { width: 100%; border-collapse: collapse; }
   .dlm-list th { padding: 6px; background: #f0f6f8; color: var(--ink-soft); font-size: 11px; font-weight: 600; text-align: left; }
   .dlm-list td { padding: 6px; border-bottom: 1px solid #f0f6f8; font-size: 12px; }
@@ -283,10 +303,118 @@
     animation: floatDrop 14s ease-in-out infinite; }
   @keyframes floatDrop { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-26px) rotate(8deg); } }
 
+  /* ─── 移动端适配 ─── */
   @media (max-width: 560px) {
     .brand .logo { font-size: 22px; }
     .calc-row .add-in { width: 100%; }
     .tank-bar { position: static; }
+    .wave-top { height: 60px; }
+    .brand { margin-top: -20px; }
+    .tabs { max-width: 100%; }
+    .tab-btn { font-size: 12px; padding: 8px 0; }
+    .toolbar { flex-wrap: wrap; }
+    .wrap { padding: 0 12px; }
+    .d-field .ctl { min-width: 0 !important; }
+    input[type=number], input[type=date], input[type=text], select.ctl { max-width: 100%; }
+    /* 简洁模式卡片：手机上 2 列紧凑 */
+    #wqSimpleCards { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    #wqSimpleCards .wq-card { padding: 12px 14px; }
+    #wqSimpleCards .wq-value { font-size: 24px; }
+    #wqSimpleCards .wq-range { font-size: 11px; }
+    #wqSimpleCards .wq-trend { font-size: 11px; }
+    #wqSimpleCards .wq-mini { font-size: 10px; }
+    .wq-card { min-height: 0; }
+    .advice-item { flex-wrap: wrap; }
+    .advice-item .advice-text { min-width: 0; }
+    .advice-item .advice-tag { display: none; } /* 窄屏隐藏冗余标签，圆点+文字已表达强度 */
+    .data-table { font-size: 12px; }
+    .data-table th, .data-table td { padding: 6px 4px; }
+    /* 表格可横向滑动：手机上始终显示滚动条作为提示 */
+    div[style*="overflow-x:auto"] { -webkit-overflow-scrolling: touch; }
+    div[style*="overflow-x:auto"]::-webkit-scrollbar { height: 4px; }
+    div[style*="overflow-x:auto"]::-webkit-scrollbar-thumb { background: #bcd9eb; border-radius: 4px; }
+    .dlm-list table { font-size: 11.5px; }
+    .dlm-list th, .dlm-list td { padding: 5px 4px; }
+    .pager-btn { padding: 8px 12px; }
+    .est-row label { width: auto; min-width: 90px; }
+    .modal-box { padding: 18px 16px; }
+    .guide-box { padding: 22px 18px 18px; }
+    .btn, .ctl-btn { padding: 10px 14px; }
+    /* 触摸目标最小 40px */
+    .icon-btn { padding: 6px 8px; font-size: 16px; }
+    .mini-btn { padding: 9px 16px; }
+    .group-head { padding: 13px 14px; flex-wrap: nowrap; align-items: flex-start; }
+    .group-head .g-title { white-space: nowrap; flex-shrink: 0; line-height: 1.4; }
+    .group-head .g-badge { flex-shrink: 0; white-space: nowrap; margin-top: 2px; }
+    .group-head .g-note { flex: 1 1 auto; min-width: 0; padding-right: 4px; margin-top: 1px; }
+    .group-head .g-arrow { flex-shrink: 0; margin-top: 2px; }
+    .elem-head { flex-wrap: wrap; align-items: baseline; }
+    .elem-head .elem-name { white-space: nowrap; flex-shrink: 0; }
+    .elem-head .elem-ideal { white-space: normal; overflow: visible; min-width: 0; line-height: 1.5; }
+
+    /* ── 记录表单：手机上纵向堆叠，避免突兀换行 ── */
+    /* 水体条：手机默认收起 preset，点 ▾ 展开 */
+    .tank-bar-toggle { display: inline-block; padding: 8px 14px; font-size: 13px; }
+    .tank-presets { display: none; }
+    .tank-bar.open .tank-presets { display: contents; }
+    .tank-bar .preset { padding: 8px 14px; } /* 触摸目标加大 */
+    .record-form { flex-direction: column; align-items: stretch; gap: 8px; }
+    .record-form .d-field { width: 100%; }
+    .record-form .d-field .ctl,
+    .record-form .d-field input,
+    .record-form .d-field select { width: 100% !important; }
+    .record-form .ctl-btn { width: 100%; }
+    .record-form #wqElSeg { width: 100%; justify-content: space-between; }
+    .record-form #wqElSeg .seg-btn { flex: 1; min-width: 0; }
+
+    /* ── 滴定行：手机上用 Grid 网格，元素名整行、输入框等宽排列 ── */
+    .dose-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: center; }
+    .dose-row .d-elem { grid-column: 1 / -1; margin-bottom: 2px; }
+    .dose-row .arrow { display: none; }
+    .dose-row input[type=number] { width: 100%; min-width: 0; }
+    .dose-row .d-read { width: 100%; min-width: 0; }
+    /* 配液行（mix-row）：克/毫升/浓度三项缩到一行 3 列 */
+    .dose-row.mix-row { grid-template-columns: repeat(3, 1fr); }
+    /* 消耗测算行（consume-row）：上次值/本次值/间隔/每天消耗 4 列一行 */
+    .dose-row.consume-row { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
+    /* 表头行：手机上用 Grid 与输入行同列对齐 */
+    .dose-head { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: center; padding-bottom: 8px; }
+    .dose-head.mix-head { grid-template-columns: repeat(3, 1fr); }
+    .dose-head.consume-head { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
+    .dose-head > span:not(.d-field) { display: none; }
+    .dose-head .d-field { max-width: none !important; flex: none; width: 100%; text-align: center; }
+    .dose-head .d-field .fl { font-size: 10px; }
+
+    /* ── 元素补充计算行：手机上 2 列网格 ── */
+    .calc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+    .calc-row .field:nth-child(1) { grid-column: 1 / -1; } /* 添加物整行 */
+    .calc-row .field:nth-child(4) { grid-column: 1 / -1; } /* 单位说明整行 */
+    .calc-row .field input, .calc-row .field select { width: 100% !important; min-width: 0; }
+    .calc-row .sat-hint { grid-column: 1 / -1; }
+    .auto-strip { gap: 8px; }
+    .auto-strip .auto-msg { flex-basis: 100%; }
+
+    /* ── 配比参考 ── */
+    .mix-ref .mr-row { gap: 6px; }
+    .mix-ref .mr-btn { padding: 8px 14px; }
+
+    /* ── 滴定结果条 ── */
+    .dose-result { flex-wrap: wrap; gap: 8px; }
+
+    /* ── 趋势图控制行：手机上 2 列网格 ── */
+    .chart-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .chart-controls .d-field:first-child { grid-column: 1 / -1; }
+    .chart-controls .d-field select { width: 100%; min-width: 0; }
+    .chart-controls .d-field .fl { font-size: 11px; }
+  }
+  @media (max-width: 400px) {
+    .brand .tagline { font-size: 10px; letter-spacing: 1px; }
+    .seg-btn { padding: 7px 12px; font-size: 12px; }
+    .tab-btn { font-size: 11px; }
+    .d-field .fl { font-size: 11px; }
+    .modal-field input, .modal-field select { font-size: 13px; }
+    .record-form #wqElSeg { gap: 4px; }
+    .record-form #wqElSeg .seg-btn { padding: 7px 8px; font-size: 12px; }
   }
 
   /* ─── Toast 轻提示 ─── */
@@ -305,7 +433,8 @@
     display: none; align-items: center; justify-content: center; z-index: 9000; padding: 16px; }
   .modal-mask.open { display: flex; }
   .modal-box { background: #fff; border-radius: 20px; max-width: 430px; width: 100%; padding: 20px 22px;
-    box-shadow: var(--shadow-lg); animation: fadeUp .22s ease; }
+    box-shadow: var(--shadow-lg); animation: fadeUp .22s ease; max-height: calc(100vh - 60px); overflow-y: auto;
+    -webkit-overflow-scrolling: touch; }
   .modal-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
   .modal-sub { font-size: 11px; color: var(--ink-faint); margin-bottom: 14px; }
   .modal-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
@@ -326,6 +455,52 @@
   .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; border-radius: 8px;
     transition: background .15s; }
   .icon-btn:hover { background: var(--ocean-soft); }
+
+  /* ─── 顶部工具条 ─── */
+  .toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 auto 14px;
+    max-width: 420px; }
+  .mini-btn { padding: 7px 15px; border: 1.5px solid #c8dce8; background: rgba(255,255,255,.85);
+    color: var(--ocean-deep); border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: all .18s; backdrop-filter: blur(4px); }
+  .mini-btn:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
+
+
+  /* ─── 模式切换滑块 ─── */
+  .mode-switch { position: relative; display: inline-flex; background: #e6f2f3; border-radius: 999px;
+    padding: 4px; box-shadow: inset 0 1px 3px rgba(30,58,77,.06); }
+  .mode-switch .ms-slider { position: absolute; top: 4px; left: 4px; height: calc(100% - 8px); width: calc(50% - 4px);
+    background: #fff; border-radius: 999px; box-shadow: 0 3px 10px rgba(30,58,77,.12); transition: transform .28s cubic-bezier(.4,0,.2,1); }
+  .mode-switch.pro .ms-slider { transform: translateX(100%); }
+  .mode-switch .seg-btn { position: relative; z-index: 1; padding: 8px 26px; min-width: 88px; }
+
+  /* ─── 新手引导卡片 ─── */
+  .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 9500; padding: 18px; }
+  .guide-mask.open { display: flex; }
+  .guide-box { background: linear-gradient(165deg, #ffffff 0%, #f2f9fd 100%); border-radius: 22px;
+    max-width: 420px; width: 100%; padding: 26px 24px 20px; box-shadow: var(--shadow-lg);
+    animation: fadeUp .28s ease; position: relative; max-height: calc(100vh - 60px); overflow-y: auto;
+    -webkit-overflow-scrolling: touch; }
+  .guide-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 16px;
+    color: var(--ink-faint); cursor: pointer; padding: 6px; border-radius: 50%; line-height: 1; }
+  .guide-close:hover { background: var(--ocean-soft); color: var(--ocean-deep); }
+  .guide-title { font-size: 18px; font-weight: 800; color: var(--ocean-deep); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px; }
+  .guide-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 16px; }
+  .guide-step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .guide-num { flex: 0 0 34px; height: 34px; border-radius: 12px; background: linear-gradient(135deg, var(--ocean), #0d8dc4);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
+    box-shadow: 0 4px 10px rgba(10,110,168,.3); }
+  .guide-step-body { flex: 1; }
+  .guide-step-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+  .guide-step-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  .guide-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .guide-actions button { flex: 1; padding: 11px 0; border-radius: 13px; font-size: 14px; font-weight: 700;
+    border: none; cursor: pointer; transition: all .15s; }
+  .guide-start { background: var(--ocean); color: #fff; box-shadow: 0 4px 14px rgba(10,110,168,.35); }
+  .guide-start:hover { background: var(--ocean-deep); }
+  .guide-later { background: #eef3f6; color: var(--ink-soft); }
+  .guide-later:hover { background: #e2eaef; }
 
 </style>
 </head>
@@ -352,6 +527,12 @@
   <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
 </div>
 
+<!-- 顶部工具条：入门指南 / 数据备份 -->
+<div class="toolbar">
+  <button class="mini-btn" onclick="openGuide()">📖 入门指南</button>
+  <button class="mini-btn" onclick="openBackup()">💾 数据备份</button>
+</div>
+
 <div class="wrap">
   <!-- Tabs -->
   <div class="tabs">
@@ -365,10 +546,13 @@
   <div class="tank-bar" style="display:none">
     <span class="tb-label">水体</span>
     <input type="number" id="globalWater" placeholder="升" min="1">
-    <span class="preset" data-w="46" title="40×40×40cm 方缸">40方缸</span>
-    <span class="preset" data-w="156" title="60×60×60cm 方缸">60方缸</span>
-    <span class="preset" data-w="162" title="90×50×50cm">90缸</span>
-    <span class="preset" data-w="216" title="120×50×50cm">120缸</span>
+    <span class="tank-bar-toggle" id="tankBarToggle" onclick="toggleTankPresets()">更多缸型 ▾</span>
+    <span class="tank-presets" id="tankPresets">
+      <span class="preset" data-w="46" title="40×40×40cm 方缸">40方缸</span>
+      <span class="preset" data-w="156" title="60×60×60cm 方缸">60方缸</span>
+      <span class="preset" data-w="162" title="90×50×50cm">90缸</span>
+      <span class="preset" data-w="216" title="120×50×50cm">120缸</span>
+    </span>
     <button class="preset-btn" onclick="toggleEstimator()">📐 估算</button>
     <span class="save-hint">自动保存</span>
   </div>
@@ -433,33 +617,33 @@
       <div class="dc-title">🧪 配液</div>
       <div class="dc-sub"><b>配液</b> = 用<b>分析纯粉末</b>兑<b>RO纯净水</b>配成浓缩补充液，再通过滴定泵每天滴入缸中。
         例如：50克碳酸氢钠 + 1000毫升RO水。</div>
-      <div style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
-        <span style="width:74px"></span>
+      <div class="dose-head mix-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
+        <span class="dh-spacer" style="width:74px"></span>
         <span class="d-field" style="flex:1;max-width:110px"><span class="fl">分析纯(克)</span></span>
         <span style="width:6px"></span>
         <span class="d-field" style="flex:1;max-width:110px"><span class="fl">RO水(毫升)</span></span>
         <span style="width:6px"></span>
         <span class="d-field" style="flex:1;max-width:110px"><span class="fl">配液浓度</span></span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row mix-row">
         <span class="d-elem">KH<span class="sub">碱度</span></span>
-        <input type="number" id="k_pw" value="50" title="分析纯粉末克数">
+        <input type="number" id="k_pw" value="50" placeholder="克" title="分析纯粉末克数">
         <span class="arrow">+</span>
-        <input type="number" id="k_ro" value="1000" title="RO纯净水毫升数">
+        <input type="number" id="k_ro" value="1000" placeholder="毫升" title="RO纯净水毫升数">
         <span class="d-read" id="k_conc">—</span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row mix-row">
         <span class="d-elem">钙<span class="sub">Ca</span></span>
-        <input type="number" id="g_pw" value="500">
+        <input type="number" id="g_pw" value="500" placeholder="克">
         <span class="arrow">+</span>
-        <input type="number" id="g_ro" value="2000">
+        <input type="number" id="g_ro" value="1000" placeholder="毫升">
         <span class="d-read" id="g_conc">—</span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row mix-row">
         <span class="d-elem">镁<span class="sub">Mg</span></span>
-        <input type="number" id="m_pw" value="1000">
+        <input type="number" id="m_pw" value="1000" placeholder="克">
         <span class="arrow">+</span>
-        <input type="number" id="m_ro" value="4000">
+        <input type="number" id="m_ro" value="1000" placeholder="毫升">
         <span class="d-read" id="m_conc">—</span>
       </div>
       <div class="dc-sub" style="margin-top:8px">配液浓度 = 分析纯(克) ÷ RO水(毫升)，如 50克÷1000ml = <b>0.05 克/毫升</b>。</div>
@@ -496,8 +680,8 @@
         <span class="save-hint">用最近两次实测自动填「上次值/本次值/间隔」</span>
       </div>
       <div class="dc-sub">两次实测值相减 ÷ 间隔天数 = <b>每天消耗量</b>，据此推算滴定泵每天该滴多少。</div>
-      <div style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
-        <span style="width:74px"></span>
+      <div class="dose-head consume-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
+        <span class="dh-spacer" style="width:74px"></span>
         <span class="d-field" style="flex:1;max-width:100px"><span class="fl">上次值</span></span>
         <span style="width:6px"></span>
         <span class="d-field" style="flex:1;max-width:100px"><span class="fl">本次值</span></span>
@@ -505,28 +689,28 @@
         <span class="d-field" style="flex:1;max-width:80px"><span class="fl">间隔(天)</span></span>
         <span class="d-field" style="flex:1;max-width:100px"><span class="fl">每天消耗</span></span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row consume-row">
         <span class="d-elem">KH<span class="sub">dKH</span></span>
-        <input type="number" id="k_f" value="8.0" step="0.1">
+        <input type="number" id="k_f" value="8.0" step="0.1" placeholder="上次值">
         <span class="arrow">→</span>
-        <input type="number" id="k_l" value="7.5" step="0.1">
-        <input type="number" id="k_d" value="7">
+        <input type="number" id="k_l" value="7.5" step="0.1" placeholder="本次值">
+        <input type="number" id="k_d" value="7" placeholder="间隔天">
         <span class="d-read" id="k_consume">—</span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row consume-row">
         <span class="d-elem">钙<span class="sub">ppm</span></span>
-        <input type="number" id="g_f" value="420" step="0.1">
+        <input type="number" id="g_f" value="420" step="0.1" placeholder="上次值">
         <span class="arrow">→</span>
-        <input type="number" id="g_l" value="400" step="0.1">
-        <input type="number" id="g_d" value="7">
+        <input type="number" id="g_l" value="400" step="0.1" placeholder="本次值">
+        <input type="number" id="g_d" value="7" placeholder="间隔天">
         <span class="d-read" id="g_consume">—</span>
       </div>
-      <div class="dose-row">
+      <div class="dose-row consume-row">
         <span class="d-elem">镁<span class="sub">ppm</span></span>
-        <input type="number" id="m_f" value="1350" step="0.1">
+        <input type="number" id="m_f" value="1350" step="0.1" placeholder="上次值">
         <span class="arrow">→</span>
-        <input type="number" id="m_l" value="1300" step="0.1">
-        <input type="number" id="m_d" value="7">
+        <input type="number" id="m_l" value="1300" step="0.1" placeholder="本次值">
+        <input type="number" id="m_d" value="7" placeholder="间隔天">
         <span class="d-read" id="m_consume">—</span>
       </div>
     </div>
@@ -589,7 +773,7 @@
     <div class="dose-card">
       <div class="dc-title">📒 换水记录</div>
       <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。建议每周换水 10-15%，能补充微量元素并稀释积累的有机物。</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
         <div class="d-field"><span class="fl">盐品牌</span>
           <select id="wcBrand" class="ctl" style="width:150px"></select>
@@ -659,7 +843,7 @@
     <!-- 记录表单 -->
     <div class="dose-card">
       <div class="dc-title">📝 添加水质记录</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">元素</span>
           <div class="seg" id="wqElSeg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px;flex-wrap:wrap">
             <button type="button" class="seg-btn active" data-el="KH" onclick="setWqEl('KH')" title="碱度 dKH">KH</button>
@@ -674,18 +858,18 @@
         <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wqNote" class="ctl" placeholder="如 换水后" style="width:130px"></div>
         <button onclick="addWaterRecord()" class="ctl-btn">✓ 保存</button>
       </div>
-      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试2-3次并记录，记录越多分析越准。测试剂读数通常有 ±5% 误差，小幅波动属正常，看趋势比看单次数值更可靠。水温保持 24-26°C、盐度 35ppt 也是珊瑚健康的基础。</div>
+      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试1-2次并记录，记录越多分析越准。测试剂读数通常有 ±5% 误差，小幅波动属正常，看趋势比看单次数值更可靠。水温保持 25-27°C、盐度 35ppt 也是珊瑚健康的基础。</div>
     </div>
 
-    <!-- 模式切换 -->
-    <div class="dose-card" style="padding:10px 18px">
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <span style="font-size:13px;font-weight:600;color:var(--ink)">显示模式</span>
-        <div class="seg" style="display:inline-flex;background:#e6f2f3;border-radius:999px;padding:4px">
+    <!-- 模式切换（居中 + 滑块动效） -->
+    <div class="dose-card" style="padding:12px 18px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;flex-direction:column">
+        <div class="mode-switch" id="modeSwitch">
+          <div class="ms-slider"></div>
           <button class="seg-btn active" id="modeSimple" onclick="setWaterMode('simple')">🟢 简洁</button>
           <button class="seg-btn" id="modePro" onclick="setWaterMode('pro')">🔵 深度</button>
         </div>
-        <span class="save-hint" style="margin-left:auto">简洁：重点一目了然 · 深度：查看趋势与历史明细</span>
+        <span class="save-hint" style="text-align:center">简洁：重点一目了然 · 深度：查看趋势与历史明细</span>
       </div>
     </div>
 
@@ -725,7 +909,7 @@
     <div id="wqPro" style="display:none">
       <div class="dose-card">
         <div class="dc-title">📈 趋势图</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="chart-controls" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
           <span class="d-field"><span class="fl">元素</span>
             <select id="wqChartEl" class="ctl" onchange="onWqElChange()">
               <option value="__all__">🌟 综合趋势（归一化）</option>
@@ -778,6 +962,65 @@
 <!-- Toast 提示 -->
 <div id="toastBox"></div>
 
+<!-- 新手引导卡片（首次自动弹出，可随时从「入门指南」找回） -->
+<div class="guide-mask" id="guideMask" onclick="if(event.target===this)closeGuide()">
+  <div class="guide-box">
+    <button class="guide-close" onclick="closeGuide()" title="关闭">✕</button>
+    <div class="guide-title">🐠 欢迎使用 ReefPal</div>
+    <div class="guide-sub">你的海水缸管理助手 · 三步上手</div>
+    <div class="guide-step">
+      <div class="guide-num">1</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">这是什么？</div>
+        <div class="guide-step-desc">记录水质测试数据（KH / 钙 / 镁 / NO₃ / PO₄），自动分析健康状态与趋势，帮你养出稳定的缸。</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">2</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">怎么开始？</div>
+        <div class="guide-step-desc">在「📈 水质」页添加测试记录（建议每周 1-2 次），记录越多，智能分析越准。</div>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">3</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">还能做什么？</div>
+        <div class="guide-step-desc">「🔄 换水」登记换水记录 · 「🧪 元素补充」计算补充剂用量 · 「💧 滴定方案」测算每日滴定量。</div>
+      </div>
+    </div>
+    <div class="guide-actions">
+      <button class="guide-later" onclick="closeGuide()">稍后再说</button>
+      <button class="guide-start" onclick="closeGuide();showTab('water')">开始使用 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 数据备份弹窗 -->
+<div class="modal-mask" id="backupModal" onclick="if(event.target===this)closeBackup()">
+  <div class="modal-box">
+    <div class="modal-title">💾 数据备份</div>
+    <div class="modal-sub">数据保存在本机。建议定期备份，换设备或重装后可导入恢复。</div>
+    <div class="modal-field"><label>完整备份（推荐）</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--ocean);color:#fff;font-weight:700;cursor:pointer" onclick="exportJson()">📤 导出 JSON 备份</button>
+        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#2e8b57;color:#fff;font-weight:700;cursor:pointer" onclick="document.getElementById('importFile').click()">📥 导入恢复</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJson(event)">
+      </div>
+    </div>
+    <div class="modal-field"><label>单表导出（CSV，Excel 可打开）</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('water')">水质记录</button>
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('dosing')">滴定记录</button>
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('change')">换水记录</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeBackup()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 编辑弹窗（水质/换水/滴定共用） -->
 <div class="modal-mask" id="editModal" onclick="if(event.target===this)closeEditModal()">
   <div class="modal-box">
@@ -793,6 +1036,11 @@
 
 <script>
 let groupData = null;
+/* ═══ 触感反馈（震动） ═══ */
+function buzz(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {}
+}
+
 /* ═══ Toast 轻提示 ═══ */
 function toast(msg, type) {
   type = type || 'ok';
@@ -836,6 +1084,100 @@ async function api(url, opts) {
   return await res.json();
 }
 
+
+
+/* ═══ 移动端输入优化 ═══ */
+// 所有数字输入框弹数字键盘（含动态渲染的：用 MutationObserver 兜底）
+(function initMobileInput() {
+  const apply = () => document.querySelectorAll('input[type=number]').forEach(i => {
+    if (!i.hasAttribute('inputmode')) i.setAttribute('inputmode', 'decimal');
+  });
+  apply();
+  // 动态渲染（元素补充页分组）后也补上
+  const mo = new MutationObserver(apply);
+  mo.observe(document.body, { childList: true, subtree: true });
+  setTimeout(apply, 1500); // 初次数据加载完成后兜底
+})();
+
+/* ═══ 新手引导 ═══ */
+const GUIDE_KEY = 'reefpal_guided_v1';
+function openGuide() {
+  const m = document.getElementById('guideMask');
+  if (m) m.classList.add('open');
+  document.body.classList.add('lock-scroll');
+}
+function closeGuide() {
+  const m = document.getElementById('guideMask');
+  if (m) m.classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+  localStorage.setItem(GUIDE_KEY, '1');
+}
+/* 首次打开自动弹出（已看过则不再打扰，可从「入门指南」找回） */
+(function initGuide() {
+  if (!localStorage.getItem(GUIDE_KEY)) setTimeout(openGuide, 600);
+})();
+
+
+/* ═══ 数据备份 ═══ */
+function openBackup() {
+  document.getElementById('backupModal').classList.add('open');
+  document.body.classList.add('lock-scroll');
+}
+function closeBackup() {
+  document.getElementById('backupModal').classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+}
+function _download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function exportJson() {
+  try {
+    const data = await api('/api/export/json');
+    const stamp = todayLocal().replace(/-/g, '');
+    _download(JSON.stringify(data, null, 2), 'reefpal_backup_' + stamp + '.json', 'application/json');
+    const n = (data.water_records||[]).length + (data.dosing_log||[]).length + (data.water_change||[]).length;
+    toast('已导出 ' + n + ' 条记录 ✓', 'ok');
+  } catch (e) { /* api已提示 */ }
+}
+async function exportCsv(kind) {
+  try {
+    const res = await fetch('/api/export/csv?kind=' + kind);
+    if (!res.ok) throw new Error('导出失败');
+    const text = await res.text();
+    const names = { water: '水质记录', dosing: '滴定记录', change: '换水记录' };
+    _download(text, 'reefpal_' + kind + '_' + todayLocal().replace(/-/g, '') + '.csv', 'text/csv;charset=utf-8');
+    toast(names[kind] + ' CSV 已导出 ✓', 'ok');
+  } catch (e) {
+    toast('CSV 导出失败', 'err');
+  }
+}
+async function importJson(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.water_records && !data.dosing_log && !data.water_change) {
+      toast('文件格式不对：不是 ReefPal 备份文件', 'err');
+      return;
+    }
+    const res = await api('/api/import', { method: 'POST', body: data });
+    toast('导入完成：新增 ' + res.inserted + ' 条，跳过重复 ' + res.skipped + ' 条 ✓', 'ok');
+    // 刷新所有数据
+    loadWater(); loadWaterChanges();
+    if (waterMode === 'pro') { renderPro(); }
+  } catch (e) {
+    toast('导入失败：' + (e.message || '文件无法解析'), 'err');
+  } finally {
+    event.target.value = '';
+  }
+}
+
 /* ═══ 编辑弹窗 ═══ */
 let editCtx = null; // { type:'water'|'change'|'dose', id, save:fn }
 function openEditModal(title, sub, ctx, fieldsHtml) {
@@ -844,10 +1186,12 @@ function openEditModal(title, sub, ctx, fieldsHtml) {
   document.getElementById('editSub').textContent = sub;
   document.getElementById('editFields').innerHTML = fieldsHtml;
   document.getElementById('editModal').classList.add('open');
+  document.body.classList.add('lock-scroll');
 }
 function closeEditModal() {
   editCtx = null;
   document.getElementById('editModal').classList.remove('open');
+  document.body.classList.remove('lock-scroll');
 }
 async function saveEditModal() {
   if (!editCtx) return;
@@ -896,6 +1240,15 @@ function syncSaltWater(water) {
 document.querySelectorAll('.preset').forEach(el => {
   el.addEventListener('click', () => { setWater(el.dataset.w); });
 });
+
+/* 手机端：水体条 preset 折叠展开 */
+function toggleTankPresets() {
+  const bar = document.querySelector('.tank-bar');
+  if (!bar) return;
+  const opened = bar.classList.toggle('open');
+  const t = document.getElementById('tankBarToggle');
+  if (t) t.textContent = opened ? '收起 ▴' : '更多缸型 ▾';
+}
 
 function setWater(w) {
   document.getElementById('globalWater').value = w;
@@ -1123,6 +1476,8 @@ async function recomputeAll() {
 
 function showTab(name) {
   localStorage.setItem('last_tab', name);
+  // 触感反馈（手机轻震）
+  if (window.innerWidth < 560) buzz(10);
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const map = { water: 0, salt: 1, calc: 2, dosing: 3 };
@@ -1293,7 +1648,7 @@ async function addDoseLogManual() {
   renderDoseLogList();
   // 同步开始/结束按钮状态
   syncDoseButtonsFromLogs();
-  toast('滴定记录已保存 ✓', 'ok');
+  buzz(15); toast('滴定记录已保存 ✓', 'ok');
 }
 
 async function delDoseLog(id) {
@@ -1301,7 +1656,7 @@ async function delDoseLog(id) {
   const res = await api('/api/dosing/log/' + id, { method: 'DELETE' });
   renderDoseLogList();
   syncDoseButtonsFromLogs();
-  toast('滴定记录已删除', 'info');
+  buzz(8); toast('滴定记录已删除', 'info');
 }
 
 /* 根据最新记录同步开始/结束按钮状态 */
@@ -1478,6 +1833,9 @@ let waterChangeCache = []; // 换水记录缓存（供趋势图标记）
 function setWaterMode(mode) {
   waterMode = mode;
   localStorage.setItem('water_mode', mode);
+  // 滑块跟随切换
+  const sw = document.getElementById('modeSwitch');
+  if (sw) sw.classList.toggle('pro', mode === 'pro');
   document.getElementById('modeSimple').classList.toggle('active', mode === 'simple');
   document.getElementById('modePro').classList.toggle('active', mode === 'pro');
   document.getElementById('wqSimple').style.display = mode === 'simple' ? 'block' : 'none';
@@ -1517,7 +1875,7 @@ function updateWqStep() {
     input.placeholder = '如 0.05';
   } else {
     input.step = '0.1';
-    input.placeholder = el === '钙' || el === '镁' ? '如 420' : '如 7.8';
+    input.placeholder = el === '钙' ? '如 420' : (el === '镁' ? '如 1350' : '如 7.8');
   }
 }
 
@@ -1534,7 +1892,7 @@ async function addWaterRecord() {
   document.getElementById('wqValue').value = '';
   document.getElementById('wqNote').value = '';
   loadWater();
-  toast(el + ' ' + v + ' 已保存 ✓', 'ok');
+  buzz(15); toast(el + ' ' + v + ' 已保存 ✓', 'ok');
   // 连续录入：保存后焦点回到测试值，且元素保持不变
   document.getElementById('wqValue').focus();
 }
@@ -1543,14 +1901,14 @@ async function delWaterRecord(id) {
   if (!confirm('删除这条记录？')) return;
   await api('/api/water/record/' + id, { method: 'DELETE' });
   loadWater();
-  toast('记录已删除', 'info');
+  buzz(8); toast('记录已删除', 'info');
 }
 
 function renderSimple() {
   const wrap = document.getElementById('wqSimpleCards');
   const adviceBody = document.getElementById('wqSimpleAdviceBody');
   if (!waterAnalysis || Object.keys(waterAnalysis).length === 0) {
-    wrap.innerHTML = '<div class="wq-card" style="grid-column:1/-1"><div class="wq-name">还没有记录</div><div style="font-size:13px;color:var(--ink-soft);margin-top:6px">在上方添加几条测试值（建议每周2-3次），这里会自动生成健康仪表盘和智能建议。</div></div>';
+    wrap.innerHTML = '<div class="wq-card" style="grid-column:1/-1"><div class="wq-name">还没有记录</div><div style="font-size:13px;color:var(--ink-soft);margin-top:6px">在上方添加几条测试值（建议每周1-2次），这里会自动生成健康仪表盘和智能建议。</div></div>';
     adviceBody.textContent = '暂无数据，先添加记录吧。';
     return;
   }
@@ -1652,6 +2010,7 @@ function onWqElChange() {
 function renderWaterChart() {
   const el = document.getElementById('wqChartEl').value;
   const showRange = document.getElementById('wqChartRange').value === '1';
+  const narrow = window.innerWidth < 560; // 窄屏：标记只显示图标防重叠
   const chartEl = document.getElementById('wqChart');
   if (!wqChartInstance) {
     wqChartInstance = echarts.init(chartEl);
@@ -1688,8 +2047,9 @@ function renderWaterChart() {
           var d = new Date(params[0].value[0]);
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
           params.forEach(function(p){ s += p.marker + ' ' + p.seriesName + ': ' + p.value[1] + '%<br>'; }); return s; } },
-      legend: { top: 0, type: 'scroll' },
-      grid: { left: 60, right: 25, top: 40, bottom: 92 },
+      legend: { top: 0, type: 'scroll', itemWidth: narrow ? 14 : 20, itemHeight: narrow ? 8 : 12,
+        textStyle: { fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 10 : 12, pageTextStyle: { color: '#5c7a8c' } },
+      grid: { left: narrow ? 48 : 60, right: 16, top: narrow ? 34 : 40, bottom: narrow ? 80 : 92 },
       dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
       xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
         axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
@@ -1731,26 +2091,26 @@ function renderWaterChart() {
           areas.push({ name: '滴定', start: openStart.date, end: todayStr() });
         }
         openStart = { date: d, dose: l.dose_ml };
-        // 开始标记：带数值
-        lines.push({ xAxis: d, label: { formatter: '💧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#2e8b57', fontSize: 10 }, lineStyle: { color: '#2e8b57', type: 'solid', width: 1.5 } });
+        // 开始标记：带数值（窄屏只显示图标）
+        lines.push({ xAxis: d, label: { formatter: narrow ? '💧' : '💧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#2e8b57', fontSize: narrow ? 8 : 10 }, lineStyle: { color: '#2e8b57', type: 'solid', width: 1.5 } });
       } else if (l.action === 'end') {
         if (openStart) {
           if (openStart.date === d) {
             // 同日开始+结束 → 当日总量（start+end）
             const total = openStart.dose + (l.dose_ml || 0);
-            lines.push({ xAxis: d, label: { formatter: '⚡ 当日共 ' + total + 'ml', position: 'insideEndTop', color: '#7b1fa2', fontSize: 10 }, lineStyle: { color: '#7b1fa2', type: 'solid', width: 1.5 } });
+            lines.push({ xAxis: d, label: { formatter: narrow ? '⚡' : '⚡ 当日共 ' + total + 'ml', position: 'insideEndTop', color: '#7b1fa2', fontSize: narrow ? 8 : 10 }, lineStyle: { color: '#7b1fa2', type: 'solid', width: 1.5 } });
           } else {
             areas.push({ name: '滴定', start: openStart.date, end: d });
-            lines.push({ xAxis: d, label: { formatter: '⏹ 结束', position: 'insideEndTop', color: '#c0392b', fontSize: 9 }, lineStyle: { color: '#c0392b', type: 'dashed', width: 1.2 } });
+            lines.push({ xAxis: d, label: { formatter: '⏹', position: 'insideEndTop', color: '#c0392b', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#c0392b', type: 'dashed', width: 1.2 } });
           }
           openStart = null;
         } else {
           // 缺开始的end → 红色异常标记
-          lines.push({ xAxis: d, label: { formatter: '⚠️ 结束(缺开始)', position: 'insideEndTop', color: '#c0392b', fontSize: 9 }, lineStyle: { color: '#c0392b', type: 'solid', width: 1.5 } });
+          lines.push({ xAxis: d, label: { formatter: narrow ? '⚠️' : '⚠️ 结束(缺开始)', position: 'insideEndTop', color: '#c0392b', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#c0392b', type: 'solid', width: 1.5 } });
         }
       } else if (l.action === 'adjust') {
         // 调整 → 蓝色细线（带数值）
-        lines.push({ xAxis: d, label: { formatter: '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
+        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
       }
     }
     if (openStart) {
@@ -1768,7 +2128,7 @@ function renderWaterChart() {
   const showWCMark = document.getElementById('wqChartWC').value === '1';
   const wcLines = showWCMark ? waterChangeCache.map(wc => ({
     xAxis: wc.recorded_at.slice(0, 10),
-    label: { formatter: '🔄' + wc.water_liters + 'L', position: 'start', distance: 2, color: '#e67e22', fontSize: 9 },
+    label: { formatter: narrow ? '🔄' : '🔄' + wc.water_liters + 'L', position: 'start', distance: 2, color: '#e67e22', fontSize: narrow ? 7 : 9 },
     lineStyle: { color: '#e67e22', type: 'solid', width: 1.2 }
   })) : [];
   const markArea = {
@@ -1797,8 +2157,8 @@ function renderWaterChart() {
   chart.setOption({
     tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: '#d8e8ea', textStyle: { color: '#173a52', fontSize: 12 },
       valueFormatter: function(v) { return v; } },
-    legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0 },
-    grid: { left: 55, right: 25, top: 42, bottom: 92 },
+    legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: narrow ? 10 : 12 } },
+    grid: { left: narrow ? 44 : 55, right: 14, top: narrow ? 36 : 42, bottom: narrow ? 80 : 92 },
     dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
     xAxis: { type: 'time', axisLine: { lineStyle: { color: '#c8d8e6' } },
       axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
@@ -1976,7 +2336,7 @@ async function addWaterChange() {
   await loadWaterChanges();
   // 同步刷新趋势图缓存和标记
   refreshWaterChangeCache();
-  toast('换水 ' + water + 'L 已记录 ✓', 'ok');
+  buzz(15); toast('换水 ' + water + 'L 已记录 ✓', 'ok');
 }
 
 async function delWaterChange(id) {
@@ -1985,7 +2345,7 @@ async function delWaterChange(id) {
   await loadWaterChanges();
   // 同步刷新趋势图缓存和标记
   refreshWaterChangeCache();
-  toast('换水记录已删除', 'info');
+  buzz(8); toast('换水记录已删除', 'info');
 }
 
 
@@ -2014,7 +2374,7 @@ function editWaterRecord(id) {
       if (!el || isNaN(v) || v <= 0) { toast('请输入有效的测试值(大于0)', 'err'); throw new Error('invalid'); }
       await api('/api/water/record/' + id, { method: 'PUT', body: { element: el, value: v, note: note, recorded_at: date } });
       loadWater();
-      toast('记录已更新 ✓', 'ok');
+      buzz(15); toast('记录已更新 ✓', 'ok');
     }
   }, fields);
 }
@@ -2048,7 +2408,7 @@ function editDoseLog(id) {
       await api('/api/dosing/log/' + id, { method: 'PUT', body: { element: el, dose_ml: dose, note: noteMap[action], action: action, recorded_at: date } });
       await renderDoseLogList();
       syncDoseButtonsFromLogs();
-      toast('滴定记录已更新 ✓', 'ok');
+      buzz(15); toast('滴定记录已更新 ✓', 'ok');
     }
   }, fields);
 }
@@ -2079,7 +2439,7 @@ function editWaterChange(id) {
       await api('/api/water-change/' + id, { method: 'PUT', body: { water_liters: water, salt_brand: brand, note: note, recorded_at: date } });
       await loadWaterChanges();
       await refreshWaterChangeCache();
-      toast('换水记录已更新 ✓', 'ok');
+      buzz(15); toast('换水记录已更新 ✓', 'ok');
     }
   }, fields);
 }
@@ -2119,6 +2479,41 @@ initWaterChange();
   bind('dlmDose', addDoseLogManual);
 })();
 
+
+// 4. 左右滑动切换 tab（触屏设备）
+(function bindSwipeTabs() {
+  if (!('ontouchstart' in window)) return; // 仅触屏
+  let startX = 0, startY = 0, tracking = false;
+  const TAB_ORDER = ['water', 'salt', 'calc', 'dosing'];
+  const isOverlayOpen = () => {
+    return ['guideMask', 'editModal', 'backupModal'].some(id => {
+      const el = document.getElementById(id);
+      return el && el.classList.contains('open');
+    });
+  };
+  document.addEventListener('touchstart', e => {
+    if (isOverlayOpen()) return; // 弹窗/引导打开时不触发
+    // 在图表、输入框、按钮上滑动时不触发（避免误切）
+    const t = e.target;
+    if (t.closest && (t.closest('#wqChart') || t.closest('input') || t.closest('select') || t.closest('button') || t.closest('.data-table') || t.closest('.dose-log-menu'))) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    // 水平滑动 > 60px 且水平明显大于垂直（避免误触纵向滚动）
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    const current = document.querySelector('.panel.active');
+    let idx = TAB_ORDER.indexOf(current ? current.id.replace('panel-', '') : 'water');
+    if (dx < 0) idx = Math.min(idx + 1, TAB_ORDER.length - 1); // 左滑 → 下一个
+    else idx = Math.max(idx - 1, 0);                            // 右滑 → 上一个
+    if (TAB_ORDER[idx]) showTab(TAB_ORDER[idx]);
+  }, { passive: true });
+})();
 // 3. 记住上次 tab 与显示模式（刷新后不丢位置）
 // 注意：先默认激活水质页，再覆盖为上次的tab，避免 restoreTabMode 被后面的 showTab('water') 覆盖
 showTab('water');

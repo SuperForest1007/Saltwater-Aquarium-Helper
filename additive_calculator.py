@@ -103,10 +103,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "钾 K",
-                "ideal": "380-400",
+                "ideal": "380-420",
                 "unit": "ppm",
                 "detail": "对珊瑚发色有一定帮助，但过量有风险，谨慎添加。",
-                "tip": "理想范围 380-400ppm，超量可能抑制钙吸收。",
+                "tip": "天然海水约 400ppm，理想范围 380-420ppm，超量可能抑制钙吸收。",
                 "direction": "up",
                 "conc_presets": ["5", "10", "20", "30", "40", "50", "100"],
                 "additives": [
@@ -126,10 +126,10 @@ ADDITIVE_GROUPS = [
         "elements": [
             {
                 "name": "碘 I",
-                "ideal": "0.03",
+                "ideal": "0.06",
                 "unit": "ppm",
                 "detail": "参与蜕壳类生物和珊瑚新陈代谢，剂量极小。",
-                "tip": "理想范围约 0.03ppm，补充请用低浓度溶液。",
+                "tip": "天然海水约 0.06ppm，补充请用低浓度溶液。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.03", "0.05", "0.1", "0.2"],
                 "additives": [
@@ -173,10 +173,10 @@ ADDITIVE_GROUPS = [
         "elements": [
             {
                 "name": "硝酸盐 NO3",
-                "ideal": "0.05-0.2",
+                "ideal": "2-10",
                 "unit": "ppm",
                 "detail": "过高会抑制珊瑚生长，可用碳源（酒精/伏特加）降低。",
-                "tip": "SPS建议 <2ppm；碳源法需配合蛋分和菌群。",
+                "tip": "SPS建议 5-10ppm，LPS 2-5ppm；过低珊瑚生长停滞、颜色变淡，碳源法需配合蛋分和菌群。",
                 "direction": "down",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2", "0.3", "0.5", "1"],
                 "additives": [
@@ -186,7 +186,7 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "硝酸盐 NO3（提升）",
-                "ideal": "0.05-0.2",
+                "ideal": "2-10",
                 "unit": "ppm",
                 "detail": "当NO3过低或水体氮匮乏时可提升。",
                 "tip": "通常只在大换水或氮饥饿时使用。",
@@ -199,10 +199,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "磷酸盐 PO4",
-                "ideal": "<0.03",
+                "ideal": "0.03-0.05",
                 "unit": "ppm",
                 "detail": "藻类养分，过高容易爆藻，需要控制。",
-                "tip": "SPS建议 0.01-0.03ppm；提升需谨慎。",
+                "tip": "SPS建议 0.03-0.05ppm，LPS可到0.08ppm；过低珊瑚会发白褪色，提升需谨慎。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2"],
                 "additives": [
@@ -236,10 +236,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "福马林",
-                "ideal": "50-60",
+                "ideal": "25-50",
                 "unit": "ppm",
                 "detail": "治疗寄生虫/鳃病，毒性强，注意通风与防护。",
-                "tip": "治疗浓度 50-60ppm；勿用37%高浓度甲醛。",
+                "tip": "治疗浓度 25-50ppm，鱼病治疗常用下限浓度以降低毒性；勿用37%高浓度甲醛。",
                 "direction": "up",
                 "conc_presets": ["50", "55", "60"],
                 "additives": [

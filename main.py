@@ -25,6 +25,7 @@ from water_store import (
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
     init_water_change, add_water_change, get_water_changes, delete_water_change,
     update_record, update_dosing_log, update_water_change,
+    export_all, import_all,
 )
 
 app = FastAPI(title="海水缸管理App", version="0.4.0")
@@ -295,6 +296,52 @@ def api_linkage():
 @app.get("/", response_class=HTMLResponse)
 def index():
     return FileResponse(os.path.join(BASE_DIR, "static", "index.html"))
+
+
+# ---------- 数据导出 / 导入 ----------
+import csv as _csv, io
+
+@app.get("/api/export/json")
+def api_export_json():
+    """导出全部数据为 JSON 备份（可导入恢复）。"""
+    return export_all()
+
+@app.post("/api/import")
+def api_import(payload: dict):
+    """导入 JSON 备份（按内容去重，重复跳过）。"""
+    inserted, skipped = import_all(payload)
+    return {"inserted": inserted, "skipped": skipped, "ok": True}
+
+@app.get("/api/export/csv")
+def api_export_csv(kind: str = "water"):
+    """导出单表为 CSV：kind = water | dosing | change。"""
+    buf = io.StringIO()
+    if kind == "water":
+        rows = get_records(limit=100000)
+        if rows:
+            w = _csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            w.writerows(rows)
+    elif kind == "dosing":
+        rows = get_dosing_logs()
+        if rows:
+            w = _csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            w.writerows(rows)
+    elif kind == "change":
+        rows = get_water_changes(limit=100000)
+        if rows:
+            w = _csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            w.writeheader()
+            w.writerows(rows)
+    else:
+        return {"error": "kind 必须是 water/dosing/change"}
+    # CSV 需 UTF-8 BOM，Excel 打开中文不乱码
+    data = "\ufeff" + buf.getvalue()
+    from fastapi.responses import Response
+    return Response(content=data, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f"attachment; filename=reefpal_{kind}.csv"})
+
 
 @app.get("/health")
 def health():
