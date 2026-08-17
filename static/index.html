@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>海水缸助手 · ReefPal</title>
-<meta name="theme-color" content="#0a6ea8">
+<meta name="theme-color" content="var(--ocean)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,48 +16,49 @@
 <script src="/static/echarts.min.js"></script>
 <style>
   :root {
-    /* ── 品牌主色（深海蓝） ── */
-    --ocean: #0a6ea8;
-    --ocean-deep: #075089;
-    --ocean-soft: #e3f2fb;
+    /* ── 品牌主色（深海墨蓝，沉稳高级） ── */
+    --ocean: #0f5f86;        /* 主品牌色 */
+    --ocean-deep: #0a3d5c;   /* 深海军蓝 */
+    --ocean-soft: #e8f1f6;   /* 浅蓝调（选中背景，低饱和） */
+    --accent: #e07a5f;       /* 珊瑚橙强调色（记忆点） */
 
-    /* ── 文字层级 ── */
-    --ink: #173a52;        /* 主文字 */
-    --ink-soft: #52718a;   /* 次要文字 */
-    --ink-faint: #8aa5b8;  /* 辅助/占位文字 */
+    /* ── 文字层级（高对比深蓝黑） ── */
+    --ink: #123044;          /* 主文字 */
+    --ink-soft: #4a6b80;     /* 次要文字 */
+    --ink-faint: #7c96a8;    /* 辅助/占位文字 */
 
-    /* ── 表面与背景 ── */
+    /* ── 表面与背景（中性暖灰，高级感） ── */
     --card: #ffffff;
-    --bg-a: #f0f7fc;
-    --bg-b: #ddeef8;
-    --surface-2: #f6fafb;  /* 次级表面（说明框/输入底色） */
+    --bg-a: #f6f8f9;
+    --bg-b: #ecf1f4;
+    --surface-2: #f4f7f9;    /* 次级表面 */
 
     /* ── 边框 ── */
-    --border: var(--border);        /* 默认输入/卡片边框 */
-    --border-strong: var(--border-strong); /* 强调边框（选中/胶囊） */
-    --border-light: #eef4f7;  /* 极浅分隔线 */
+    --border: #dde5ea;       /* 默认输入/卡片边框 */
+    --border-strong: #b7cddd;/* 强调边框（选中/胶囊） */
+    --border-light: #edf2f5; /* 极浅分隔线 */
 
-    /* ── 状态色（语义统一） ── */
-    --ok: #2e8b57;            /* 正常/成功 */
+    /* ── 状态色 ── */
+    --ok: #2e8b57;
     --ok-bg: #d7f0e0;
-    --warn: #e67e22;          /* 警告/偏高 */
-    --warn-bg: #fff0d8;
-    --danger: #c0392b;        /* 危险/偏低/异常 */
-    --danger-bg: #ffe3dd;
-    --info: #7b1fa2;          /* 中性提示 */
+    --warn: #d9822b;
+    --warn-bg: #fdf0dd;
+    --danger: #c0392b;
+    --danger-bg: #fde8e5;
+    --info: #7b1fa2;
 
-    /* ── 阴影 ── */
-    --shadow: 0 6px 24px rgba(30,58,77,.07);
-    --shadow-lg: 0 12px 40px rgba(30,58,77,.12);
-    --ring: rgba(10,110,168,.18);
+    /* ── 阴影（更深更有层次） ── */
+    --shadow: 0 4px 20px rgba(10,44,66,.06);
+    --shadow-lg: 0 12px 36px rgba(10,44,66,.13);
+    --ring: rgba(15,95,134,.16);
 
     /* ── 圆角 ── */
-    --radius: 20px;      /* 大卡片 */
-    --radius-sm: 14px;   /* 小卡片/输入框 */
-    --radius-xs: 10px;   /* 小按钮/标签 */
-    --radius-pill: 999px;/* 胶囊 */
+    --radius: 20px;
+    --radius-sm: 14px;
+    --radius-xs: 10px;
+    --radius-pill: 999px;
 
-    /* ── 间距（统一节奏） ── */
+    /* ── 间距 ── */
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -66,6 +67,20 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
+  /* ── 跟手反馈：按压缩放 + 卡片悬停 ── */
+  button, .preset, .seg-btn, .tab-btn, .mini-btn, .pager-btn, .mr-btn, .dose-toggle, .ctl-btn, .icon-btn, .dose-link-btn {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active, .preset:active, .seg-btn:active, .mini-btn:active, .pager-btn:active, .mr-btn:active, .dose-toggle:active, .ctl-btn:active, .dose-link-btn:active {
+    transform: scale(.96);
+    transition: transform .12s ease;
+  }
+  /* 仅简洁模式元素卡片保留 hover 微动（其他卡片保持静态，避免死板乱跳） */
+  #wqSimpleCards .wq-card { transition: transform .18s ease, box-shadow .18s ease; }
+  @media (hover: hover) {
+    #wqSimpleCards .wq-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  }
+
   /* 触摸：去掉 iOS/Android 点击灰色高亮 */
   * { -webkit-tap-highlight-color: transparent; }
   /* iPhone 底部安全区：刘海屏 Home 条不遮挡内容 */
@@ -85,17 +100,27 @@
   @keyframes waveSlide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
   /* ─── 品牌头部 ─── */
-  .brand { text-align: center; margin: -30px 0 6px; position: relative; z-index: 2; }
+  .brand { text-align: center; margin: -22px 0 10px; position: relative; z-index: 2; }
   .brand .logo {
-    display: inline-flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 800; color: var(--ocean-deep);
-    letter-spacing: .5px;
+    display: inline-flex; align-items: center; gap: 12px; color: var(--ocean-deep); letter-spacing: .5px;
   }
+  /* 品牌活力：徽章呼吸光晕 + 漂浮光点 */
+  .brand .logo .mark { position: relative; }
+  .brand .logo .mark::after { content: ''; position: absolute; inset: -4px; border-radius: 18px;
+    background: radial-gradient(circle at 30% 30%, rgba(15,95,134,.25), transparent 70%);
+    animation: markGlow 3.2s ease-in-out infinite; z-index: -1; }
+  @keyframes markGlow { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  .brand .logo .mark { animation: markFloat 4.5s ease-in-out infinite; }
+  @keyframes markFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
   .brand .logo .mark {
-    width: 44px; height: 44px; border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, #0a6ea8, #0d8dc4);
-    display: inline-flex; align-items: center; justify-content: center; font-size: 22px;
-    box-shadow: 0 6px 16px rgba(10,110,168,.35);
+    width: 46px; height: 46px; border-radius: 15px;
+    background: linear-gradient(150deg, var(--ocean) 0%, var(--ocean-deep) 100%);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(10,61,92,.35), inset 0 1px 0 rgba(255,255,255,.18);
   }
+  .brand .logo .brand-name { font-size: 25px; font-weight: 800; color: var(--ocean-deep); letter-spacing: 1px; }
+  .brand .logo .brand-sub { font-size: 12px; color: var(--ink-faint); font-weight: 600; letter-spacing: 2px; padding-top: 10px; }
   .brand .tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: 2px; margin-top: 4px; }
 
   /* ─── 容器 ─── */
@@ -161,7 +186,17 @@
   .tab-btn .tb-ico { display: none; } /* 桌面端隐藏独立图标，保持原横排 */
   .tab-btn.active { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.35); font-weight: 700; }
   .panel { display: none; }
-  .panel.active { display: block; animation: fadeUp .25s ease; }
+  .panel.active { display: block; } /* 无默认动画，避免切换后重播闪烁 */
+  .panel.slide-in-right { animation: slideRight .32s cubic-bezier(.25,.8,.35,1) both; }
+  .panel.slide-in-left { animation: slideLeft .32s cubic-bezier(.25,.8,.35,1) both; }
+  @keyframes slideRight { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+  @keyframes slideLeft { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+  .panel.active > .dose-card, .panel.active > .group-card { animation: fadeUp .35s ease both; }
+  .panel.active > .dose-card:nth-child(1), .panel.active > .group-card:nth-child(1) { animation-delay: .02s; }
+  .panel.active > .dose-card:nth-child(2), .panel.active > .group-card:nth-child(2) { animation-delay: .06s; }
+  .panel.active > .dose-card:nth-child(3), .panel.active > .group-card:nth-child(3) { animation-delay: .10s; }
+  .panel.active > .dose-card:nth-child(4), .panel.active > .group-card:nth-child(4) { animation-delay: .14s; }
+  .panel.active > .dose-card:nth-child(5), .panel.active > .group-card:nth-child(5) { animation-delay: .18s; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
   /* ─── 分组卡片 ─── */
@@ -222,11 +257,13 @@
   .auto-strip .auto-msg.low { color: var(--danger); }
 
   /* ─── 滴定卡片 ─── */
-  .dose-card { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
-    border: 1px solid rgba(10,110,168,.06); margin-bottom: 16px; }
+  .dose-card { background: linear-gradient(160deg, #ffffff 0%, #fbfdfe 100%); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.9); border: 1px solid rgba(15,95,134,.07);
+    margin-bottom: 16px; }
   .dose-card.focus-card { border: 1.5px solid var(--border-strong); background: linear-gradient(135deg, #ffffff 0%, #f5fbfe 100%); }
-  .dose-card .dc-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-  .dose-card .dc-sub { font-size: 11px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.6; }
+  .dose-card .dc-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    letter-spacing: .3px; position: relative; padding-bottom: 8px; border-bottom: 1px solid var(--border-light); }
+  .dose-card .dc-sub { font-size: 11px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.7; }
   .dose-card .dc-sub b { color: var(--ocean); }
   .dose-card .dc-tank { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
   .dose-card .dc-tank label { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
@@ -253,7 +290,14 @@
   /* 通用表单控件 */
   .ctl { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--ink); background: #fff; }
   .ctl:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
-  .ctl-btn { padding: 10px 22px; background: var(--ocean); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; transition: all .15s; }
+  .ctl-btn { padding: 10px 22px; background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-deep) 100%); color: #fff;
+    border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; position: relative; overflow: hidden;
+    transition: transform .15s ease, box-shadow .2s ease; box-shadow: 0 3px 10px rgba(10,61,92,.2); }
+  /* 按钮光效：hover 光晕扩散 + 上浮 */
+  .ctl-btn::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 120%, rgba(255,255,255,.4), transparent 60%);
+    opacity: 0; transition: opacity .25s; }
+  .ctl-btn:hover::after { opacity: 1; }
+  .ctl-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(10,61,92,.3); }
   .seg-btn { padding: 7px 18px; border: none; background: transparent; color: var(--ink-soft); border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
   .seg-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
   .pager-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: #fff; color: var(--ocean-deep); border-radius: var(--radius-xs); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
@@ -289,20 +333,20 @@
   .mix-ref .mr-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .mix-ref .mr-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; font-size: 12px; }
   .mix-ref .mr-row .mr-elem { width: 60px; color: var(--ink-soft); font-weight: 600; }
-  .mix-ref .mr-btn { padding: 6px 13px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: #fff; color: #0a6ea8;
+  .mix-ref .mr-btn { padding: 6px 13px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: #fff; color: var(--ocean);
     font-size: 11.5px; cursor: pointer; transition: all .15s; }
-  .mix-ref .mr-btn:hover { background: #0a6ea8; color: #fff; }
-  .mix-ref .mr-btn.active { background: #0a6ea8; color: #fff; }
+  .mix-ref .mr-btn:hover { background: var(--ocean); color: #fff; }
+  .mix-ref .mr-btn.active { background: var(--ocean); color: #fff; }
   .mix-ref .mr-tip { font-size: 11px; color: var(--ink-faint); margin-top: 8px; line-height: 1.6; }
-  .mix-ref .mr-tip b { color: #0a6ea8; }
+  .mix-ref .mr-tip b { color: var(--ocean); }
 
   .dose-result { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;
     background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-radius: var(--radius-sm); padding: 14px; }
 
   /* 水质仪表盘 */
   .wq-card.empty-state { padding: 32px 20px; border: 1.5px dashed var(--border-strong); }
-.wq-card { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
-    border: 1px solid rgba(10,110,168,.06); }
+.wq-card { background: linear-gradient(160deg, #ffffff 0%, #fbfdfe 100%); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.9); border: 1px solid rgba(15,95,134,.07); }
   .wq-card .wq-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .wq-card .wq-name { font-size: 14px; font-weight: 700; color: var(--ink); }
   .wq-card .wq-status { padding: 3px 12px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; }
@@ -356,7 +400,10 @@
       box-shadow: 0 -4px 16px rgba(30,58,77,.08); }
     .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
       font-size: 11px; padding: 6px 2px; line-height: 1.2; }
-    .tab-btn .tb-ico { font-size: 20px; display: block; }
+    .tab-btn .tb-ico { font-size: 18px; display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: var(--radius-pill); background: var(--ocean-soft);
+      transition: background .2s; margin-bottom: 2px; }
+    .tab-btn.active .tb-ico { background: rgba(255,255,255,.2); }
     .toolbar { flex-wrap: wrap; }
     .wrap { padding: 0 12px; }
     .d-field .ctl { min-width: 0 !important; }
@@ -552,9 +599,9 @@
   .rate-warn.show { display: block; }
   @keyframes overPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,.35); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
   /* 元素补充 → 滴定 联动按钮 */
-  .dose-link-btn { padding: 7px 14px; border: 1.5px solid var(--ok); background: #fff; color: var(--ok);
+  .dose-link-btn { padding: 7px 14px; border: 1.5px solid var(--accent); background: #fff; color: var(--accent);
     border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
-  .dose-link-btn:hover { background: var(--ok); color: #fff; }
+  .dose-link-btn:hover { background: var(--accent); color: #fff; }
 
   /* ─── 新手引导卡片 ─── */
   .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
@@ -599,14 +646,30 @@
 <!-- 波浪顶 -->
 <div class="wave-top">
 <svg viewBox="0 0 1440 90" preserveAspectRatio="none">
-  <path fill="#c9e4f2" opacity=".55" d="M0,45 C240,90 480,0 720,45 C960,90 1200,0 1440,45 L1440,90 L0,90 Z"></path>
-  <path fill="#b2d9ec" opacity=".65" d="M0,30 C240,75 480,-15 720,30 C960,75 1200,-15 1440,30 L1440,90 L0,90 Z"></path>
+  <path fill="#cfe2ee" opacity=".55" d="M0,45 C240,90 480,0 720,45 C960,90 1200,0 1440,45 L1440,90 L0,90 Z"></path>
+  <path fill="#b8d3e2" opacity=".65" d="M0,30 C240,75 480,-15 720,30 C960,75 1200,-15 1440,30 L1440,90 L0,90 Z"></path>
 </svg>
 </div>
 
 <!-- 品牌 -->
 <div class="brand">
-  <div class="logo"><span class="mark">🐠</span>ReefPal · 海水缸助手</div>
+  <div class="logo">
+    <span class="mark">
+      <svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgMark" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#d8ecf7" stop-opacity=".8"/>
+          </linearGradient>
+        </defs>
+        <path d="M8 30 C 14 22, 20 36, 26 28 S 38 20, 42 26" fill="none" stroke="url(#lgMark)" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="14" cy="18" r="2.4" fill="url(#lgMark)"/>
+        <circle cx="34" cy="34" r="1.6" fill="url(#lgMark)" opacity=".7"/>
+      </svg>
+    </span>
+    <span class="brand-name">ReefPal</span>
+    <span class="brand-sub">海水缸助手</span>
+  </div>
   <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
 </div>
 
@@ -621,7 +684,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico">📈</span><span>水质</span></button>
     <button class="tab-btn" onclick="showTab('salt')"><span class="tb-ico">🔄</span><span>换水</span></button>
-    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico">🧪</span><span>元素补充</span></button>
+    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico">🧪</span><span>补充</span></button>
     <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico">💧</span><span>滴定</span></button>
   </div>
 
@@ -1153,6 +1216,33 @@
 
 <script>
 let groupData = null;
+/* ═══ 数字滚动动画：数值变化时从旧值滚到新值（活力感） ═══ */
+let _numAnim = {}; // pre -> 当前显示值
+function animateNumber(el, newVal, unit) {
+  if (!el) return;
+  const target = parseFloat(newVal);
+  if (isNaN(target)) { el.textContent = '—'; return; }
+  const key = el.id || 'x';
+  const from = (_numAnim[key] !== undefined) ? _numAnim[key] : target;
+  _numAnim[key] = target;
+  if (Math.abs(target - from) < 0.01) { el.textContent = newVal + (unit || ''); return; }
+  const dur = 380, t0 = performance.now();
+  const fmt = (v) => {
+    // 保留与原值相同的小数位
+    const s = String(newVal);
+    const dec = s.includes('.') ? s.split('.')[1].length : 0;
+    return v.toFixed(dec) + (unit || '');
+  };
+  function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const ease = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    el.textContent = fmt(from + (target - from) * ease);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = newVal + (unit || '');
+  }
+  requestAnimationFrame(tick);
+}
+
 /* ═══ 触感反馈（震动） ═══ */
 function buzz(ms) {
   try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) {}
@@ -1592,15 +1682,26 @@ async function recomputeAll() {
   }));
 }
 
+let _lastTab = 'water';
 function showTab(name) {
   localStorage.setItem('last_tab', name);
   // 触感反馈（手机轻震）
   if (window.innerWidth < 560) buzz(10);
+  const TAB_IDX = { water: 0, salt: 1, calc: 2, dosing: 3 };
+  // 滑动方向：目标在右 → 内容从右滑入；目标在左 → 从左滑入
+  const dir = (TAB_IDX[name] > (TAB_IDX[_lastTab] ?? 0)) ? 'slide-in-right' : 'slide-in-left';
+  _lastTab = name;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const map = { water: 0, salt: 1, calc: 2, dosing: 3 };
-  document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
-  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn')[TAB_IDX[name]].classList.add('active');
+  const panel = document.getElementById('panel-' + name);
+  panel.classList.add('active', dir);
+  setTimeout(() => {
+    // 仅当该面板仍是激活面板时才移除动画类（防止快速切换误删）
+    if (panel.classList.contains('active')) {
+      panel.classList.remove('slide-in-right', 'slide-in-left');
+    }
+  }, 400);
   // 水体条只在「元素补充」和「滴定方案」页显示
   const tankBar = document.querySelector('.tank-bar');
   if (tankBar) {
@@ -1620,11 +1721,11 @@ function showTab(name) {
 function initDosing() {
   ['d_tank','g_pw','g_ro','g_f','g_l','g_d','m_pw','m_ro','m_f','m_l','m_d','k_pw','k_ro','k_f','k_l','k_d']
     .forEach(id => document.getElementById(id).addEventListener('input', calcDosing));
-  // 目标调节输入绑定：目标值/计划天数 → 实时计算
+  // 目标调节输入绑定：目标值/计划天数 → 更新目标调节界面 + 重算每天滴定量
   ['k','g','m'].forEach(pre => {
     [pre + '_t', pre + '_p'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('input', () => calcAdjust(pre));
+      if (el) el.addEventListener('input', () => { calcAdjust(pre); calcDosing(); });
     });
   });
   const saved = localStorage.getItem('tank_water');
@@ -1678,7 +1779,9 @@ function calcDosing() {
     const dose = (maintainDose + raiseDose) > 0 ? maintainDose + raiseDose : '';
     const doseRead = document.getElementById(s.pre + '_dose');
     if (doseRead) {
-      doseRead.textContent = dose !== '' ? dose : '—';
+      // 数字滚动动画（仅手机端生效，桌面直接显示）
+      if (dose !== '') animateNumber(doseRead, dose, '');
+      else doseRead.textContent = '—';
       // 有目标提升时，标题说明构成
       if (raiseDose > 0) {
         doseRead.title = '消耗维持 ' + maintainDose + 'ml + 目标提升 ' + raiseDose + 'ml = ' + dose + 'ml/天';
@@ -2409,7 +2512,7 @@ function renderWaterChart() {
 
   // 🌟 综合趋势模式：归一化所有元素
   if (el === '__all__') {
-    const colors = ['#0a6ea8', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
+    const colors = ['var(--ocean)', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
     const series = [];
     const allDates = [];
     const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
@@ -2430,7 +2533,7 @@ function renderWaterChart() {
       return;
     }
     chart.setOption({
-      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: '#173a52', fontSize: 12 },
+      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: 'var(--ink)', fontSize: 12 },
         formatter: function(params) {
           var d = new Date(params[0].value[0]);
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
@@ -2498,7 +2601,7 @@ function renderWaterChart() {
         }
       } else if (l.action === 'adjust') {
         // 调整 → 蓝色细线（带数值）
-        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
+        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: 'var(--ocean)', fontSize: narrow ? 8 : 9 }, lineStyle: { color: 'var(--ocean)', type: 'dotted', width: 1.2 } });
       }
     }
     if (openStart) {
@@ -2534,7 +2637,7 @@ function renderWaterChart() {
   // 数据点多时缩小符号防重叠：<=15 个点用 7，更多则递减到最小 3
   const pointSize = Math.max(3, 7 - Math.floor(tsValues.length / 15));
   const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: pointSize,
-    lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
+    lineStyle: { width: 2.5, color: 'var(--ocean)' }, itemStyle: { color: 'var(--ocean)' },
     markLine: markLine,
     markArea: markArea,
     areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'rgba(10,110,168,.25)'},{offset:1,color:'rgba(10,110,168,.02)'}]) } }];
@@ -2543,7 +2646,7 @@ function renderWaterChart() {
     series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
   }
   chart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: '#173a52', fontSize: 12 },
+    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: 'var(--ink)', fontSize: 12 },
       valueFormatter: function(v) { return v; } },
     legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: narrow ? 10 : 12 } },
     grid: { left: narrow ? 44 : 55, right: 14, top: narrow ? 36 : 42, bottom: narrow ? 80 : 92 },
@@ -2620,7 +2723,7 @@ function renderSaltBrands() {
     return '<tr style="cursor:pointer" onclick="pickSaltBrand(' + i + ')" title="点击用于配盐计算">' +
       '<td style="padding:7px;border:1px solid var(--border);font-weight:700">' + b[0] + '</td>' +
       '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[1] + '</td>' +
-      '<td style="padding:7px;border:1px solid var(--border);text-align:center;color:' + (khHot ? '#c0560e;font-weight:700' : '#0a6ea8;font-weight:700') + '">' + b[2] + '</td>' +
+      '<td style="padding:7px;border:1px solid var(--border);text-align:center;color:' + (khHot ? '#c0560e;font-weight:700' : 'var(--ocean);font-weight:700') + '">' + b[2] + '</td>' +
       '<td style="padding:7px;border:1px solid var(--border);text-align:center;font-weight:' + (caHigh ? '700' : '400') + '">' + b[3] + '</td>' +
       '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[4] + '</td>' +
       '<td style="padding:7px;border:1px solid var(--border);text-align:center">' + b[5] + '</td>' +
