@@ -241,17 +241,9 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
 
     coverage_label = f"{fresh_count}/{len(ELEMENT_ORDER)} 项仍在各自检测周期内"
     latest_date = newest.strftime("%Y-%m-%d") if newest else None
-    latest_dosing = {}
-    for log in dosing_logs:
-        key = log.get("element")
-        when = _as_datetime(log.get("recorded_at")) or datetime.min
-        if key and (key not in latest_dosing or when >= latest_dosing[key][0]):
-            latest_dosing[key] = (when, log.get("action"))
-
     return {
         "status": status,
         "coverage": {"count": fresh_count, "total": len(ELEMENT_ORDER), "latest_date": latest_date, "label": coverage_label},
         "evidence": evidence, "actions": actions, "rhythm": rhythm, "insights": insights,
         "basis_note": f"基于 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 的参考范围；只判断已记录的数据，不代替对生物状态和设备运行的观察。",
-        "active_dosing_count": sum(1 for _, action in latest_dosing.values() if action == "start"),
     }

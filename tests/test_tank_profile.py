@@ -87,7 +87,7 @@ class TestTankProfileApi:
     def test_backup_contains_profile_and_old_backup_remains_compatible(self, test_client):
         test_client.put("/api/tank", json=profile_payload("NPS"))
         backup = test_client.get("/api/export/json").json()
-        assert backup["schema_version"] == 4
+        assert backup["schema_version"] == 5
         assert backup["tank"]["tank_type"] == "NPS"
 
         old_backup = {
@@ -98,6 +98,30 @@ class TestTankProfileApi:
         result = test_client.post("/api/import", json=old_backup).json()
         assert result["inserted"] == 1
         assert test_client.get("/api/water/records").json()["records"][0]["tank_id"] == backup["tank"]["id"]
+
+    def test_dosing_mix_is_persisted_with_profile_and_backup(self, test_client):
+        test_client.put("/api/tank", json=profile_payload())
+        mix = {
+            "KH": {"powder_g": 50, "ro_water_ml": 1000},
+            "钙": {"powder_g": 500, "ro_water_ml": 2000},
+            "镁": {"powder_g": 1000, "ro_water_ml": 4000},
+        }
+        response = test_client.put("/api/tank/dosing-mix", json={"mix": mix})
+        assert response.status_code == 200
+        assert response.json()["dosing_mix"] == mix
+
+        # 普通档案编辑不能覆盖已经保存的配液。
+        test_client.put("/api/tank", json=profile_payload(name="改名后的鱼缸"))
+        assert test_client.get("/api/tank").json()["tank"]["dosing_mix"] == mix
+
+        backup = test_client.get("/api/export/json").json()
+        assert backup["schema_version"] == 5
+        assert backup["tank"]["dosing_mix"] == mix
+
+        other = {"KH": {"powder_g": 25, "ro_water_ml": 1000}}
+        test_client.put("/api/tank/dosing-mix", json={"mix": other})
+        test_client.post("/api/import", json=backup)
+        assert test_client.get("/api/tank").json()["tank"]["dosing_mix"] == mix
 
 
 def test_old_database_rows_are_migrated_to_default_tank(tmp_path, monkeypatch):
@@ -126,8 +150,10 @@ def test_old_database_rows_are_migrated_to_default_tank(tmp_path, monkeypatch):
 
     conn = sqlite3.connect(db_path)
     columns = {row[1] for row in conn.execute("PRAGMA table_info(water_records)").fetchall()}
+    tank_columns = {row[1] for row in conn.execute("PRAGMA table_info(tanks)").fetchall()}
     migrated = conn.execute("SELECT tank_id FROM water_records").fetchone()[0]
     tank_id = conn.execute("SELECT id FROM tanks WHERE is_active=1").fetchone()[0]
     conn.close()
     assert "tank_id" in columns
+    assert "dosing_mix" in tank_columns
     assert migrated == tank_id

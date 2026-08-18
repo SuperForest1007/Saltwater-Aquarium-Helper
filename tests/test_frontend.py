@@ -146,3 +146,38 @@ class TestFrontend:
         assert 'id="saltReferenceBody"' in html
         assert "updateSaltReferenceVisibility" in html
         assert "参考表已收起" in html
+
+    def test_product_flow_hierarchy_and_single_sources(self):
+        html = _read_index()
+        simple = html[html.index('id="wqSimple"'):html.index('id="wqPro"')]
+        pro = html[html.index('id="wqPro"'):html.index('<!-- Toast 提示 -->')]
+        assert 'id="wqLinkage"' not in simple
+        assert 'id="wqBalance"' not in simple
+        assert 'id="wqLinkage"' in pro
+        assert 'id="wqBalance"' in pro
+        assert "一次纠偏" in html
+        assert "长期维持" in html
+
+        salt = html[html.index('id="panel-salt"'):html.index('id="panel-water"')]
+        assert 'class="dose-card salt-calculator-card"' in salt
+        assert 'class="dose-card water-change-history-card"' in salt
+        assert '<details class="manual-record-details">' in salt
+        assert "#panel-salt .salt-calculator-card { order: 1; }" in html
+        assert "#panel-salt .water-change-history-card { order: 2; }" in html
+
+        dosing_code = html[html.index('async function initDosing'):html.index('function setCalcTab')]
+        assert "coef:" not in dosing_code
+        assert "/api/dosing/daily" in dosing_code
+        assert "localStorage.setItem('dosing_mix'" not in html
+        assert "localStorage.setItem('tank_water'" not in html
+        assert 'id="k_f" value=' not in html
+        assert 'id="g_f" value=' not in html
+        assert 'id="m_f" value=' not in html
+
+    def test_dosing_copy_describes_plan_state_not_device_control(self):
+        html = _read_index()
+        assert "只记录方案状态，不会控制设备" in html
+        assert "启用此方案" in html
+        assert "停用此方案" in html
+        assert "const actionMap = { start: '启用方案', end: '停用方案', adjust: '调整剂量' }" in html
+        assert "days > 14" not in html

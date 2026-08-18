@@ -101,6 +101,16 @@ class TestTodayDashboard:
         test_client.get("/api/today")
         test_client.post("/api/maintenance/event", json={"task_key": "skimmer_cup", "action": "complete"})
         backup = test_client.get("/api/export/json").json()
-        assert backup["schema_version"] == 4
+        assert backup["schema_version"] == 5
         assert len(backup["maintenance_rules"]) == 5
         assert backup["maintenance_events"][0]["task_key"] == "skimmer_cup"
+
+    def test_frequency_analysis_uses_custom_maintenance_interval(self, test_client):
+        test_client.put("/api/tank", json=_tank_payload())
+        test_client.get("/api/today")
+        test_client.put("/api/maintenance/rule/water_core", json={"interval_days": 21, "enabled": True})
+        _add_record(test_client, "KH", 8.0, 10)
+        kh = test_client.get("/api/analysis/frequency").json()["result"]["KH"]
+        assert kh["interval_days"] == 21
+        assert kh["stale"] is False
+        assert "21 天周期" in kh["msg"]

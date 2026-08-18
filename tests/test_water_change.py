@@ -51,6 +51,31 @@ class TestWaterChange:
         assert r.status_code == 200
         assert "result" in r.json()
 
+    def test_balance_uses_adjusted_active_dose_and_stops_after_end(self, test_client):
+        test_client.put("/api/tank", json={
+            "name": "测试缸", "water_liters": 100, "tank_type": "混养",
+            "stage": "稳定期", "started_at": "2025-01-01", "custom_targets": {}, "salt_brand": "",
+        })
+        test_client.put("/api/tank/dosing-mix", json={"mix": {
+            "KH": {"powder_g": 50, "ro_water_ml": 1000},
+        }})
+        for day, value in [("2025-01-01", 8.4), ("2025-01-03", 8.2), ("2025-01-05", 8.0)]:
+            test_client.post("/api/water/record", json={"element": "KH", "value": value, "recorded_at": day})
+        test_client.post("/api/dosing/log", json={
+            "element": "KH", "dose_ml": 30, "action": "start", "recorded_at": "2025-01-05",
+        })
+        test_client.post("/api/dosing/log", json={
+            "element": "KH", "dose_ml": 20, "action": "adjust", "recorded_at": "2025-01-06",
+        })
+        active = test_client.get("/api/analysis/balance").json()["result"]["KH"]
+        assert active["supply_g_per_day"] == 1.0
+
+        test_client.post("/api/dosing/log", json={
+            "element": "KH", "dose_ml": 20, "action": "end", "recorded_at": "2025-01-07",
+        })
+        stopped = test_client.get("/api/analysis/balance").json()["result"]["KH"]
+        assert stopped["supply_g_per_day"] == 0
+
 
 class TestAnalysis:
     def test_dosing_effect_with_data(self, test_client):

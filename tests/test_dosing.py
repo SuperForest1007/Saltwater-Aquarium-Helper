@@ -34,6 +34,15 @@ class TestDosing:
         assert data["per_ml_effect"] == 0.6  # 20*0.03
         # round(550 * (0.5/7) * 0.6) = round(23.57) = 24
         assert data["daily_dose_ml"] == 24
+        assert data["daily_consumption"] == pytest.approx(0.071, abs=0.001)
+
+    def test_dosing_element_is_restricted_to_supported_profile_elements(self, test_client):
+        r = test_client.post("/api/dosing/daily", json={
+            "ro_water_ml": 1000, "powder_g": 500, "element": "钾",
+            "tank_liters": 100, "first_value": 400, "last_value": 390,
+            "interval_days": 7,
+        })
+        assert r.status_code == 422
 
     def test_dosing_adjust(self, test_client):
         """调节表：钙目标420当前350，10天。"""

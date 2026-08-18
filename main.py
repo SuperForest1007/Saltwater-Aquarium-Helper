@@ -30,6 +30,7 @@ from water_store import (
     init_water_change, add_water_change, get_water_changes, delete_water_change,
     update_record, update_dosing_log, update_water_change,
     export_all, import_all, get_active_tank, update_active_tank,
+    update_dosing_mix,
     init_maintenance, ensure_maintenance_rules, get_maintenance_rules,
     update_maintenance_rule, add_maintenance_event, get_maintenance_events,
     TANK_TYPES, TANK_STAGES,
@@ -240,7 +241,7 @@ class MixRequest(BaseModel):
 class DoseRequest(BaseModel):
     ro_water_ml: PositiveFiniteFloat
     powder_g: PositiveFiniteFloat
-    element: str              # 钙/镁/KH/钾
+    element: DosingElement    # 钙/镁/KH
     tank_liters: PositiveFiniteFloat        # 缸实际水量(升)
     first_value: NonNegativeFiniteFloat     # 初次测试值
     last_value: NonNegativeFiniteFloat      # 最后测试值
@@ -249,7 +250,7 @@ class DoseRequest(BaseModel):
 class AdjustRequest(BaseModel):
     ro_water_ml: PositiveFiniteFloat
     powder_g: PositiveFiniteFloat
-    element: str
+    element: DosingElement
     tank_liters: PositiveFiniteFloat
     target_value: NonNegativeFiniteFloat    # 目标值
     current_value: NonNegativeFiniteFloat   # 当前测试值
@@ -290,10 +291,26 @@ def api_dosing_daily(req: DoseRequest):
     return {
         "concentration": mix_concentration(req.ro_water_ml, req.powder_g),
         "per_ml_effect": per_ml_effect(req.ro_water_ml, req.powder_g, req.element),
+        "daily_consumption": round(max((req.first_value - req.last_value) / req.interval_days, 0), 3),
         "daily_dose_ml": daily_dose(req.ro_water_ml, req.powder_g, req.element,
                                      req.tank_liters, req.first_value, req.last_value,
                                      req.interval_days),
     }
+
+
+class DosingMixItem(BaseModel):
+    powder_g: PositiveFiniteFloat
+    ro_water_ml: PositiveFiniteFloat
+
+
+class DosingMixRequest(BaseModel):
+    mix: dict[DosingElement, DosingMixItem] = Field(min_length=1, max_length=3)
+
+
+@app.put("/api/tank/dosing-mix")
+def api_tank_dosing_mix(req: DosingMixRequest):
+    tank = update_dosing_mix({key: value.model_dump() for key, value in req.mix.items()})
+    return {"ok": True, "dosing_mix": tank["dosing_mix"]}
 
 @app.post("/api/dosing/adjust")
 def api_dosing_adjust(req: AdjustRequest):
@@ -489,10 +506,15 @@ def _balance_result(tank_liters, mix_ratio=None):
 
 @app.get("/api/analysis/balance")
 def api_balance(tank_liters: float = None):
-    """未显式提供时使用鱼缸档案的实际水量；未设置档案则保持空结果。"""
+    """默认使用鱼缸档案的实际水量和配液；未设置档案则保持空结果。"""
+    tank = get_active_tank()
     if tank_liters is None:
-        tank_liters = get_active_tank().get("water_liters")
-    return _balance_result(tank_liters)
+        tank_liters = tank.get("water_liters")
+    mix_ratio = {}
+    for element, item in (tank.get("dosing_mix") or {}).items():
+        if isinstance(item, dict):
+            mix_ratio[element] = {"pw": item.get("powder_g"), "ro": item.get("ro_water_ml")}
+    return _balance_result(tank_liters, mix_ratio=mix_ratio)
 
 
 class BalanceRequest(BaseModel):
@@ -513,7 +535,14 @@ def api_frequency():
     data = {}
     for el, recs in grouped.items():
         data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
-    return {"result": test_frequency_health(data)}
+    _, rules = _maintenance_context()
+    intervals = {}
+    for rule in rules:
+        if rule.get("record_source") != "water" or not rule.get("enabled", True):
+            continue
+        for element in rule.get("elements", []):
+            intervals[element] = max(1, int(rule.get("interval_days") or 1))
+    return {"result": test_frequency_health(data, intervals=intervals)}
 
 @app.get("/api/analysis/linkage")
 def api_linkage():

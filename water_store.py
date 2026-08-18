@@ -46,6 +46,7 @@ def _ensure_active_tank(conn):
             stage TEXT NOT NULL DEFAULT '稳定期',
             started_at TEXT,
             custom_targets TEXT NOT NULL DEFAULT '{}',
+            dosing_mix TEXT NOT NULL DEFAULT '{}',
             salt_brand TEXT,
             is_active INTEGER NOT NULL DEFAULT 1,
             setup_complete INTEGER NOT NULL DEFAULT 0,
@@ -53,6 +54,7 @@ def _ensure_active_tank(conn):
             updated_at TEXT NOT NULL
         )
     """)
+    _ensure_column(conn, "tanks", "dosing_mix", "TEXT NOT NULL DEFAULT '{}'")
     row = conn.execute("SELECT id FROM tanks WHERE is_active=1 ORDER BY id LIMIT 1").fetchone()
     if row:
         return row["id"]
@@ -62,10 +64,10 @@ def _ensure_active_tank(conn):
         return row["id"]
     cur = conn.execute(
         """INSERT INTO tanks
-           (name, water_liters, tank_type, stage, started_at, custom_targets,
+           (name, water_liters, tank_type, stage, started_at, custom_targets, dosing_mix,
             salt_brand, is_active, setup_complete, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        ("我的鱼缸", None, "混养", "稳定期", "", "{}", "", 1, 0, _now(), _now()),
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        ("我的鱼缸", None, "混养", "稳定期", "", "{}", "{}", "", 1, 0, _now(), _now()),
     )
     return cur.lastrowid
 
@@ -110,6 +112,10 @@ def _tank_dict(row):
         data["custom_targets"] = json.loads(data.get("custom_targets") or "{}")
     except (TypeError, json.JSONDecodeError):
         data["custom_targets"] = {}
+    try:
+        data["dosing_mix"] = json.loads(data.get("dosing_mix") or "{}")
+    except (TypeError, json.JSONDecodeError):
+        data["dosing_mix"] = {}
     data["is_active"] = bool(data.get("is_active"))
     data["setup_complete"] = bool(data.get("setup_complete"))
     return data
@@ -125,7 +131,7 @@ def get_active_tank():
 
 
 def update_active_tank(name, water_liters, tank_type, stage, started_at="",
-                       custom_targets=None, salt_brand=""):
+                       custom_targets=None, salt_brand="", dosing_mix=None):
     """保存当前鱼缸；当前版本只开放一个活动鱼缸。"""
     if tank_type not in TANK_TYPES:
         raise ValueError("不支持的鱼缸类型")
@@ -135,13 +141,52 @@ def update_active_tank(name, water_liters, tank_type, stage, started_at="",
     if not math.isfinite(water_liters) or water_liters <= 0:
         raise ValueError("实际水量必须是大于 0 的有限数字")
     targets_json = json.dumps(custom_targets or {}, ensure_ascii=False, separators=(",", ":"))
+    mix_json = _dosing_mix_json(dosing_mix) if dosing_mix is not None else None
     conn = get_db()
     tank_id = _ensure_active_tank(conn)
+    fields = """name=?, water_liters=?, tank_type=?, stage=?, started_at=?,
+                custom_targets=?, salt_brand=?, setup_complete=1, updated_at=?"""
+    params = [(name or "我的鱼缸").strip()[:40], water_liters, tank_type, stage,
+              started_at or "", targets_json, (salt_brand or "").strip()[:80], _now()]
+    if mix_json is not None:
+        fields += ", dosing_mix=?"
+        params.append(mix_json)
+    params.append(tank_id)
+    conn.execute(f"UPDATE tanks SET {fields} WHERE id=?", params)
+    conn.commit()
+    conn.close()
+    return get_active_tank()
+
+
+def _dosing_mix_json(mix):
+    """校验并压缩保存 KH/钙/镁配液；避免坏值进入收支分析。"""
+    if not isinstance(mix, dict):
+        raise ValueError("滴定配液格式不正确")
+    cleaned = {}
+    for element in DOSING_ELEMENTS:
+        item = mix.get(element)
+        if item is None:
+            continue
+        if not isinstance(item, dict):
+            raise ValueError(f"{element} 配液格式不正确")
+        try:
+            powder_g = float(item["powder_g"])
+            ro_water_ml = float(item["ro_water_ml"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"{element} 配液需要粉剂克数和 RO 水量") from exc
+        if (not math.isfinite(powder_g) or not math.isfinite(ro_water_ml)
+                or powder_g <= 0 or ro_water_ml <= 0):
+            raise ValueError(f"{element} 配液必须使用大于 0 的有限数字")
+        cleaned[element] = {"powder_g": powder_g, "ro_water_ml": ro_water_ml}
+    return json.dumps(cleaned, ensure_ascii=False, separators=(",", ":"))
+
+
+def update_dosing_mix(mix, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
     conn.execute(
-        """UPDATE tanks SET name=?, water_liters=?, tank_type=?, stage=?, started_at=?,
-           custom_targets=?, salt_brand=?, setup_complete=1, updated_at=? WHERE id=?""",
-        ((name or "我的鱼缸").strip()[:40], water_liters, tank_type, stage,
-         started_at or "", targets_json, (salt_brand or "").strip()[:80], _now(), tank_id),
+        "UPDATE tanks SET dosing_mix=?, updated_at=? WHERE id=?",
+        (_dosing_mix_json(mix), _now(), tank_id),
     )
     conn.commit()
     conn.close()
@@ -537,7 +582,7 @@ def delete_water_change(rid):
 
 def export_all():
     return {
-        "schema_version": 4,
+        "schema_version": 5,
         "tank": get_active_tank(),
         "water_records": get_records(limit=100000),
         "dosing_log": get_dosing_logs(),
@@ -564,7 +609,7 @@ def import_all(data):
                 tank.get("name") or "我的鱼缸", tank["water_liters"],
                 tank.get("tank_type") or "混养", tank.get("stage") or "稳定期",
                 tank.get("started_at") or "", tank.get("custom_targets") or {},
-                tank.get("salt_brand") or "",
+                tank.get("salt_brand") or "", tank.get("dosing_mix"),
             )
         except (TypeError, ValueError):
             pass

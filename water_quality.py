@@ -543,6 +543,28 @@ def evaluate_dosing_effect(records_by_element, dosing_logs):
 
 
 # ============ A2: 消耗/补充平衡 ============
+def current_dosing_states(dosing_logs):
+    """把开始、调整、停用日志归并为每个元素的当前方案状态。"""
+    states = {}
+    ordered = sorted(
+        dosing_logs or [],
+        key=lambda item: (str(item.get("recorded_at") or ""), int(item.get("id") or 0)),
+    )
+    for log in ordered:
+        element = log.get("element")
+        action = log.get("action") or "start"
+        if not element:
+            continue
+        state = states.setdefault(element, {"active": False, "dose_ml": 0})
+        if action == "start":
+            state.update(active=True, dose_ml=log.get("dose_ml", 0))
+        elif action == "adjust" and state["active"]:
+            state["dose_ml"] = log.get("dose_ml", state["dose_ml"])
+        elif action == "end":
+            state.update(active=False, dose_ml=0)
+    return states
+
+
 def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=None):
     """
     估算"缸体消耗量" vs "滴定补充量"是否平衡。
@@ -555,6 +577,7 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=N
             tank_liters <= 0):
         return {}
     result = {}
+    dosing_states = current_dosing_states(dosing_logs)
     # (添加物分子量, 元素当量) — 用于 ppm→克 换算
     EL_COEF = {"KH": (84, 2.8), "钙": (147, 40), "镁": (204, 24)}
 
@@ -572,12 +595,9 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=N
         slope, _, _ = _linreg(xs, ys)
         consume_rate = -slope if slope < 0 else 0  # ppm/天下降
 
-        # 补充：该元素最近的开始滴定滴定量(ml/天)
-        el_logs = [l for l in dosing_logs if l.get("element") == el and l.get("action") == "start"]
-        dose_ml = 0
-        if el_logs:
-            latest = sorted(el_logs, key=lambda l: l["recorded_at"])[-1]
-            dose_ml = latest.get("dose_ml", 0)
+        # 补充：只使用当前仍启用的方案，调整剂量会更新当前值，停用后归零。
+        state = dosing_states.get(el, {})
+        dose_ml = state.get("dose_ml", 0) if state.get("active") else 0
         # 配液浓度必须来自用户真实配比；不同元素/配方不能共用假定默认浓度。
         mix = mix_ratio.get(el) if isinstance(mix_ratio, dict) else None
         if not isinstance(mix, dict):
@@ -632,10 +652,10 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=N
 
 
 # ============ B1: 测试频率健康度 ============
-def test_frequency_health(records_by_element, weeks=4):
+def test_frequency_health(records_by_element, weeks=4, intervals=None):
     """
-    评估测试频率：看"最近一条记录往前N周"内各元素测试了多少次。
-    若数据陈旧(距今天>4周)，标注"数据陈旧"而不是误报频率低。
+    评估测试频率：看"最近一条记录往前 N 周"内各元素测试了多少次，
+    并以用户当前维护周期判断完成度和数据是否过期。
     """
     from datetime import datetime, timedelta
 
@@ -654,20 +674,25 @@ def test_frequency_health(records_by_element, weeks=4):
         count = len(recent)
         per_week = count / weeks if weeks > 0 else 0
 
-        stale = days_since_last > 14  # 超过14天没记录视为数据陈旧
+        interval = max(1, int((intervals or {}).get(el, 7)))
+        expected_count = weeks * 7 / interval
+        completion = count / expected_count if expected_count else 0
+        stale = days_since_last > interval
         if stale:
             status = "stale"
-            msg = f"最后记录是{last_date.strftime('%Y-%m-%d')}(距今{days_since_last:.0f}天)，数据较旧，建议重新开始记录"
-        elif per_week >= 2:
+            msg = (f"最后记录是{last_date.strftime('%Y-%m-%d')}（距今{days_since_last:.0f}天），"
+                   f"已超过当前 {interval} 天周期，建议复测")
+        elif completion >= 1:
             status = "good"
-            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，频率良好"
-        elif per_week >= 1:
+            msg = f"近{weeks}周测试 {count} 次，符合当前 {interval} 天周期"
+        elif completion >= 0.6:
             status = "fair"
-            msg = f"近{weeks}周测试{count}次(每周{per_week:.1f}次)，略少，建议每周1-2次"
+            msg = f"近{weeks}周测试 {count} 次，略少于当前 {interval} 天周期"
         else:
             status = "low"
-            msg = f"近{weeks}周仅测试{count}次，频率偏低，趋势判断可能不准"
-        result[el] = {"count": count, "per_week": round(per_week, 1), "status": status, "msg": msg, "stale": stale}
+            msg = f"近{weeks}周仅测试 {count} 次，低于当前 {interval} 天周期，趋势判断可能不准"
+        result[el] = {"count": count, "per_week": round(per_week, 1), "interval_days": interval,
+                      "status": status, "msg": msg, "stale": stale}
     return result
 
 
