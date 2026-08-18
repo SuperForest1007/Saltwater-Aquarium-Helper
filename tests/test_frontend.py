@@ -97,3 +97,16 @@ class TestFrontend:
         assert '<div class="tank-bar"' not in html
         assert "不会把你锁进" not in html
         assert "不给你增加任务" not in html
+
+    def test_mobile_layout_guards(self):
+        """关键手机布局保持紧凑，不被行内样式或超窄屏断点改乱。"""
+        html = _read_index()
+        assert ".tank-type-grid { grid-template-columns: 1fr; }" not in html
+        assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in html
+        assert '<div class="chart-controls" style=' not in html
+        assert ".chart-controls { display: grid !important;" in html
+        assert "const chartZoom = narrow" in html
+        assert "return narrow ? month + '-' + day" in html
+        assert "show: !narrow" in html
+        assert 'class="est-row est-dim-row"' in html
+        assert 'class="est-dim-inputs"' in html

@@ -74,7 +74,7 @@ start.bat
 
 ---
 
-## 🧪 功能测试（113 项）
+## 🧪 功能测试（114 项）
 
 ```bash
 # Windows 一键
@@ -114,7 +114,7 @@ seawater-app/
 │   └── icon-*.png           # 应用图标（scripts/make_icon.py 可重新生成）
 ├── scripts/
 │   └── make_icon.py         # 图标生成器
-├── tests/                   # 113 项 pytest 测试
+├── tests/                   # 114 项 pytest 测试
 ├── run_tests.bat            # Windows 一键测试
 ├── start.bat                # Windows 一键启动（局域网可访问）
 └── requirements.txt         # fastapi + uvicorn

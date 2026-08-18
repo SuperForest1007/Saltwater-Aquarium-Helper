@@ -137,6 +137,8 @@
   .est-row input[type=number] { width: 72px; padding: 7px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); text-align: center; font-size: 14px; }
   .est-row input[type=number]:focus { outline: none; border-color: var(--ocean); }
   .est-row select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 13px; background: #fff; }
+  .est-dim-inputs { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .est-dim-inputs input[type=number] { min-width: 0; }
   .est-result { background: var(--ocean-soft); border-radius: var(--radius-sm); padding: 14px 16px; margin: 12px 0;
     font-size: 13px; color: var(--ink); line-height: 1.9; }
   .est-result .big { font-size: 20px; font-weight: 800; color: var(--ocean-deep); }
@@ -346,6 +348,8 @@
   .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
 
   .note { max-width: 780px; margin: 14px auto 0; font-size: 11px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
+  .chart-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  #wqChart { width: 100%; height: 320px; }
 
   /* 水滴装饰 */
   .deco-drops { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
@@ -438,14 +442,14 @@
     .dose-row .d-read { width: 100%; min-width: 0; }
     /* 配液行（mix-row）：克/毫升/浓度三项缩到一行 3 列 */
     .dose-row.mix-row { grid-template-columns: repeat(3, 1fr); }
-    /* 消耗测算行（consume-row）：上次值/本次值/间隔/每天消耗 4 列一行 */
-    .dose-row.consume-row { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
+    /* 消耗测算在手机上排成 2×2，保证输入框和结果都能看清 */
+    .dose-row.consume-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .dose-row.adjust-row { grid-template-columns: repeat(3, 1fr); }
     /* 表头行：手机上用 Grid 与输入行同列对齐 */
     .dose-head { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: center; padding-bottom: 8px; }
     .dose-head.mix-head { grid-template-columns: repeat(3, 1fr); }
-    .dose-head.consume-head { grid-template-columns: 1.1fr 1.1fr 0.9fr 1.3fr; }
-.dose-head.adjust-head { grid-template-columns: repeat(3, 1fr); }
+    .dose-head.consume-head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dose-head.adjust-head { grid-template-columns: repeat(3, 1fr); }
     .dose-head > span:not(.d-field) { display: none; }
     .dose-head .d-field { max-width: none !important; flex: none; width: 100%; text-align: center; }
     .dose-head .d-field .fl { font-size: 10px; }
@@ -467,10 +471,12 @@
     .dose-result { flex-wrap: wrap; gap: 8px; }
 
     /* ── 趋势图控制行：手机上 2 列网格 ── */
-    .chart-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .chart-controls { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .chart-controls .d-field:first-child { grid-column: 1 / -1; }
+    .chart-controls .d-field { min-width: 0; }
     .chart-controls .d-field select { width: 100%; min-width: 0; }
     .chart-controls .d-field .fl { font-size: 11px; }
+    #wqChart { height: 300px; margin: 0 -4px; width: calc(100% + 8px); }
   }
   @media (max-width: 400px) {
     .brand .tagline { font-size: 10px; letter-spacing: 1px; }
@@ -480,8 +486,10 @@
     .modal-field input, .modal-field select { font-size: 13px; }
     .record-form #wqElSeg { gap: 4px; }
     .record-form #wqElSeg .seg-btn { padding: 7px 8px; font-size: 12px; }
-    .tank-type-grid { grid-template-columns: 1fr; }
-    .tank-type-grid span { min-height: 50px; }
+    .tank-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .tank-type-grid span { min-height: 48px; padding: 7px 8px; }
+    .tank-type-grid strong { font-size: 11.5px; }
+    .tank-type-grid small { font-size: 9.5px; }
     .tank-help-btn { padding: 0 9px; }
   }
 
@@ -563,7 +571,7 @@
   .tank-step input, .tank-step select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
     border-radius: 12px; color: var(--ink); background: #fff; font-size: 14px; }
   .tank-step input:focus, .tank-step select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
-  .tank-type-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .tank-type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .tank-type-grid label { position: relative; }
   .tank-type-grid input { position: absolute; opacity: 0; pointer-events: none; }
   .tank-type-grid span { display: flex; flex-direction: column; justify-content: center; min-height: 58px; padding: 8px 10px;
@@ -611,13 +619,21 @@
     .tank-identity { margin-left: 0; margin-right: 0; padding: 11px 12px; }
     .tank-edit-hint { padding: 6px 8px; }
     .tank-setup-box { padding: 20px 17px; }
-    .tank-estimator .est-row label { width: 82px; }
+    .tank-estimator .est-row label { width: 82px; min-width: 82px; }
+    .estimator-modal-box .est-dim-row { align-items: flex-start; }
+    .estimator-modal-box .est-dim-inputs { flex: 1; }
+    .estimator-modal-box .est-dim-inputs input[type=number] { width: 100%; flex: 1; }
   }
   @media (max-width: 400px) {
-    .tank-type-grid { grid-template-columns: 1fr; }
-    .tank-type-grid span { min-height: 50px; }
+    .tank-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .tank-type-grid span { min-height: 48px; padding: 7px 8px; }
+    .tank-type-grid strong { font-size: 11.5px; }
+    .tank-type-grid small { font-size: 9.5px; }
     .tank-help-btn { padding: 0 9px; }
     .tank-optional-grid { grid-template-columns: 1fr; }
+    .estimator-modal-box .est-dim-row { display: block; }
+    .estimator-modal-box .est-dim-row label { display: block; width: auto; margin-bottom: 6px; }
+    .estimator-modal-box .est-dim-inputs { width: 100%; }
   }
 
 
@@ -1109,7 +1125,7 @@
     <div id="wqPro" style="display:none">
       <div class="dose-card">
         <div class="dc-title">📈 趋势图</div>
-        <div class="chart-controls" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="chart-controls">
           <span class="d-field"><span class="fl">元素</span>
             <select id="wqChartEl" class="ctl" onchange="onWqElChange()">
               <option value="__all__">🌟 综合趋势（归一化）</option>
@@ -1139,7 +1155,7 @@
             </select>
           </span>
         </div>
-        <div id="wqChart" style="width:100%;height:320px"></div>
+        <div id="wqChart"></div>
         <div class="dc-sub" style="margin-top:8px">🔍 可以缩放或拖动查看细节。红色虚线是当前缸型的参考上下限；「综合趋势」把不同单位换成相对变化，放在一起更好比较。</div>
       </div>
       <div class="dose-card">
@@ -1265,19 +1281,19 @@
           <option value="cube">方缸</option>
           <option value="rect" selected>长方体缸</option>
         </select></div>
-      <div class="est-row" id="estCubeRow" style="display:none">
-        <label>边长</label><input type="number" id="estSide" value="40" min="10" max="200" oninput="estCalc()"><span>cm</span>
+      <div class="est-row est-dim-row" id="estCubeRow" style="display:none">
+        <label>边长</label><div class="est-dim-inputs"><input type="number" id="estSide" value="40" min="10" max="200" oninput="estCalc()"><span>cm</span></div>
         <div class="square-presets" aria-label="常见方缸边长">
           <button type="button" onclick="setSquareSide(35)">35</button>
           <button type="button" onclick="setSquareSide(40)">40</button>
           <button type="button" onclick="setSquareSide(50)">50</button>
           <button type="button" onclick="setSquareSide(60)">60</button>
         </div></div>
-      <div class="est-row" id="estRectRow">
+      <div class="est-row est-dim-row" id="estRectRow">
         <label>长×宽×高</label>
-        <input type="number" id="estL" value="120" min="30" oninput="estCalc()">×
-        <input type="number" id="estW" value="50" min="20" oninput="estCalc()">×
-        <input type="number" id="estH" value="50" min="20" oninput="estCalc()"><span>cm</span></div>
+        <div class="est-dim-inputs"><input type="number" id="estL" value="120" min="30" oninput="estCalc()"><span>×</span>
+        <input type="number" id="estW" value="50" min="20" oninput="estCalc()"><span>×</span>
+        <input type="number" id="estH" value="50" min="20" oninput="estCalc()"><span>cm</span></div></div>
       <div class="est-row"><label>水位</label>
         <select id="estLevel" onchange="estCalc()">
           <option value="0.95">较满（距顶约2cm）</option>
@@ -2523,6 +2539,7 @@ function renderFrequency(result) {
 }
 
 let wqChartInstance = null;
+let wqChartResizeTimer = null;
 let dosingLogsCache = [];  // 滴定记录缓存（供趋势图标记）
 let waterChangeCache = []; // 换水记录缓存（供趋势图标记）
 
@@ -2805,14 +2822,30 @@ function renderWaterChart() {
   const chartEl = document.getElementById('wqChart');
   if (!wqChartInstance) {
     wqChartInstance = echarts.init(chartEl);
-    window.addEventListener('resize', () => wqChartInstance && wqChartInstance.resize());
+    window.addEventListener('resize', () => {
+      if (!wqChartInstance) return;
+      wqChartInstance.resize();
+      clearTimeout(wqChartResizeTimer);
+      wqChartResizeTimer = setTimeout(() => {
+        if (waterMode === 'pro') renderWaterChart();
+      }, 120);
+    });
   }
   const chart = wqChartInstance;
   chart.resize();
+  const chartDateLabel = function(v) {
+    var d = new Date(v);
+    var month = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return narrow ? month + '-' + day : d.getFullYear() + '-' + month + '-' + day;
+  };
+  const chartZoom = narrow
+    ? [{ type: 'inside' }, { type: 'slider', height: 14, bottom: 16, showDetail: false, showDataShadow: false, brushSelect: false }]
+    : [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36, showDetail: false }];
 
   // 🌟 综合趋势模式：归一化所有元素
   if (el === '__all__') {
-    const colors = ['var(--ocean)', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
+    const colors = ['#0a6ea8', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
     const series = [];
     const allDates = [];
     const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
@@ -2833,21 +2866,21 @@ function renderWaterChart() {
       return;
     }
     chart.setOption({
-      tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: 'var(--ink)', fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: '#fff', borderColor: '#d9e3e8', textStyle: { color: '#1e3a4d', fontSize: 12 },
         formatter: function(params) {
           var d = new Date(params[0].value[0]);
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
           params.forEach(function(p){ s += p.marker + ' ' + p.seriesName + ': ' + p.value[1] + '%<br>'; }); return s; } },
-      legend: { top: 0, type: 'scroll', itemWidth: narrow ? 14 : 20, itemHeight: narrow ? 8 : 12,
-        textStyle: { fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 10 : 12, pageTextStyle: { color: '#5c7a8c' } },
-      grid: { left: narrow ? 48 : 60, right: 16, top: narrow ? 34 : 40, bottom: narrow ? 80 : 92 },
-      dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
-      xAxis: { type: 'time', axisLine: { lineStyle: { color: 'var(--border-strong)' } },
-        axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
-          var d = new Date(v);
-          return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        } } },
-      yAxis: { type: 'value', name: '相对变化 %', scale: true, splitLine: { lineStyle: { color: 'var(--border-light)' } }, axisLabel: { color: '#5c7a8c', formatter: '{value}%' } },
+      legend: { top: 0, left: 4, right: 4, type: 'scroll', orient: 'horizontal', itemGap: narrow ? 8 : 10,
+        itemWidth: narrow ? 12 : 20, itemHeight: narrow ? 7 : 12,
+        textStyle: { fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 9 : 12,
+        pageButtonGap: 4, pageTextStyle: { color: '#5c7a8c', fontSize: 10 } },
+      grid: { left: narrow ? 42 : 60, right: narrow ? 8 : 16, top: narrow ? 42 : 40, bottom: narrow ? 58 : 92 },
+      dataZoom: chartZoom,
+      xAxis: { type: 'time', axisLine: { lineStyle: { color: '#b7cbd5' } },
+        axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
+      yAxis: { type: 'value', name: '相对变化 %', nameTextStyle: { fontSize: narrow ? 10 : 12 }, scale: true,
+        splitLine: { lineStyle: { color: '#edf2f4' } }, axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 12, formatter: '{value}%' } },
       series: series
     }, true);
     return;
@@ -2901,7 +2934,7 @@ function renderWaterChart() {
         }
       } else if (l.action === 'adjust') {
         // 调整 → 蓝色细线（带数值）
-        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: 'var(--ocean)', fontSize: narrow ? 8 : 9 }, lineStyle: { color: 'var(--ocean)', type: 'dotted', width: 1.2 } });
+        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
       }
     }
     if (openStart) {
@@ -2937,7 +2970,7 @@ function renderWaterChart() {
   // 数据点多时缩小符号防重叠：<=15 个点用 7，更多则递减到最小 3
   const pointSize = Math.max(3, 7 - Math.floor(tsValues.length / 15));
   const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: pointSize,
-    lineStyle: { width: 2.5, color: 'var(--ocean)' }, itemStyle: { color: 'var(--ocean)' },
+    lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
     markLine: markLine,
     markArea: markArea,
     areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'rgba(10,110,168,.25)'},{offset:1,color:'rgba(10,110,168,.02)'}]) } }];
@@ -2946,18 +2979,15 @@ function renderWaterChart() {
     series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
   }
   chart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: '#fff', borderColor: 'var(--border)', textStyle: { color: 'var(--ink)', fontSize: 12 },
+    tooltip: { trigger: 'axis', confine: true, backgroundColor: '#fff', borderColor: '#d9e3e8', textStyle: { color: '#1e3a4d', fontSize: 12 },
       valueFormatter: function(v) { return v; } },
-    legend: { data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: narrow ? 10 : 12 } },
-    grid: { left: narrow ? 44 : 55, right: 14, top: narrow ? 36 : 42, bottom: narrow ? 80 : 92 },
-    dataZoom: [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36 }],
-    xAxis: { type: 'time', axisLine: { lineStyle: { color: 'var(--border-strong)' } },
-      axisLabel: { color: '#5c7a8c', fontSize: 11, hideOverlap: true, formatter: function(v) {
-        var d = new Date(v);
-        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-      } } },
+    legend: { show: !narrow, data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: 12 } },
+    grid: { left: narrow ? 42 : 55, right: narrow ? 8 : 14, top: narrow ? 18 : 42, bottom: narrow ? 58 : 92 },
+    dataZoom: chartZoom,
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#b7cbd5' } },
+      axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
     yAxis: { type: 'value', scale: true, name: ideal ? ideal.unit : '', nameTextStyle: { color: '#5c7a8c', fontSize: 11 },
-      splitLine: { lineStyle: { color: 'var(--border-light)' } }, axisLabel: { color: '#5c7a8c' } },
+      splitLine: { lineStyle: { color: '#edf2f4' } }, axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 12 } },
     series: series
   }, true);  // notMerge: 切换"显示/隐藏理想范围"时清空旧series
 }
