@@ -10,6 +10,10 @@ from datetime import datetime
 DB_PATH = os.path.join(os.path.dirname(__file__), "water_records.db")
 TANK_TYPES = ("FOT", "软体", "LPS", "SPS", "NPS", "混养")
 TANK_STAGES = ("筹备中", "开缸期", "稳定期", "调整期")
+WATER_ELEMENTS = ("KH", "钙", "镁", "NO3", "PO4")
+DOSING_ELEMENTS = ("KH", "钙", "镁")
+DOSING_ACTIONS = ("start", "end", "adjust")
+ELEMENT_UNITS = {"KH": "dKH", "钙": "ppm", "镁": "ppm", "NO3": "ppm", "PO4": "ppm"}
 
 
 def get_db():
@@ -332,6 +336,7 @@ def init_water_change():
         CREATE TABLE IF NOT EXISTS water_change (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             water_liters REAL NOT NULL,
+            salt_grams REAL,
             salt_brand TEXT,
             note TEXT,
             recorded_at TEXT NOT NULL,
@@ -339,6 +344,7 @@ def init_water_change():
             tank_id INTEGER
         )
     """)
+    _ensure_column(conn, "water_change", "salt_grams", "REAL")
     _ensure_column(conn, "water_change", "tank_id", "INTEGER")
     conn.execute("UPDATE water_change SET tank_id=? WHERE tank_id IS NULL", (tank_id,))
     conn.execute("CREATE INDEX IF NOT EXISTS idx_change_tank_time ON water_change(tank_id, recorded_at)")
@@ -346,15 +352,147 @@ def init_water_change():
     conn.close()
 
 
-def add_water_change(water_liters, salt_brand="", note="", recorded_at=None, tank_id=None):
+def init_maintenance():
+    """初始化维护节奏与完成记录。"""
+    conn = get_db()
+    tank_id = _ensure_active_tank(conn)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS maintenance_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tank_id INTEGER NOT NULL,
+            task_key TEXT NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            interval_days INTEGER NOT NULL,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            is_custom INTEGER NOT NULL DEFAULT 0,
+            metadata TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(tank_id, task_key)
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS maintenance_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tank_id INTEGER NOT NULL,
+            task_key TEXT NOT NULL,
+            action TEXT NOT NULL,
+            note TEXT,
+            recorded_at TEXT NOT NULL,
+            snooze_until TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_maintenance_rule_tank ON maintenance_rules(tank_id, task_key)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_maintenance_event_tank_time ON maintenance_events(tank_id, task_key, recorded_at)")
+    conn.commit()
+    conn.close()
+
+
+def ensure_maintenance_rules(defaults, tank_id=None):
+    """写入默认规则；只更新未被用户自定义过的规则。"""
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    for item in defaults:
+        metadata = json.dumps({
+            "icon": item.get("icon", "·"),
+            "elements": item.get("elements", []),
+            "record_source": item.get("record_source", "maintenance"),
+        }, ensure_ascii=False, separators=(",", ":"))
+        existing = conn.execute(
+            "SELECT id, is_custom FROM maintenance_rules WHERE tank_id=? AND task_key=?",
+            (tank_id, item["task_key"]),
+        ).fetchone()
+        if existing is None:
+            conn.execute(
+                """INSERT INTO maintenance_rules
+                   (tank_id, task_key, title, category, interval_days, enabled, is_custom, metadata, created_at, updated_at)
+                   VALUES (?,?,?,?,?,1,0,?,?,?)""",
+                (tank_id, item["task_key"], item["title"], item["category"], int(item["interval_days"]),
+                 metadata, _now(), _now()),
+            )
+        elif not existing["is_custom"]:
+            conn.execute(
+                """UPDATE maintenance_rules SET title=?, category=?, interval_days=?, metadata=?, updated_at=?
+                   WHERE id=?""",
+                (item["title"], item["category"], int(item["interval_days"]), metadata, _now(), existing["id"]),
+            )
+    conn.commit()
+    conn.close()
+    return get_maintenance_rules(tank_id)
+
+
+def get_maintenance_rules(tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    rows = conn.execute(
+        "SELECT * FROM maintenance_rules WHERE tank_id=? ORDER BY id", (tank_id,)
+    ).fetchall()
+    conn.close()
+    result = []
+    for row in rows:
+        item = dict(row)
+        try:
+            item.update(json.loads(item.pop("metadata", "{}") or "{}"))
+        except (TypeError, json.JSONDecodeError):
+            item.pop("metadata", None)
+        item["enabled"] = bool(item.get("enabled"))
+        item["is_custom"] = bool(item.get("is_custom"))
+        result.append(item)
+    return result
+
+
+def update_maintenance_rule(task_key, interval_days, enabled=True, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    cur = conn.execute(
+        """UPDATE maintenance_rules SET interval_days=?, enabled=?, is_custom=1, updated_at=?
+           WHERE tank_id=? AND task_key=?""",
+        (int(interval_days), 1 if enabled else 0, _now(), tank_id, task_key),
+    )
+    conn.commit()
+    conn.close()
+    return cur.rowcount > 0
+
+
+def add_maintenance_event(task_key, action, note="", recorded_at=None, snooze_until=None, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    recorded_at = recorded_at or datetime.now().strftime("%Y-%m-%d %H:%M")
+    cur = conn.execute(
+        """INSERT INTO maintenance_events
+           (tank_id, task_key, action, note, recorded_at, snooze_until, created_at)
+           VALUES (?,?,?,?,?,?,?)""",
+        (tank_id, task_key, action, (note or "").strip()[:200], recorded_at, snooze_until, _now()),
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    return rid
+
+
+def get_maintenance_events(limit=500, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    rows = conn.execute(
+        """SELECT * FROM maintenance_events WHERE tank_id=?
+           ORDER BY recorded_at DESC, id DESC LIMIT ?""",
+        (tank_id, limit),
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def add_water_change(water_liters, salt_brand="", note="", recorded_at=None, tank_id=None, salt_grams=None):
     conn = get_db()
     tank_id = tank_id or get_active_tank_id(conn)
     recorded_at = recorded_at or datetime.now().strftime("%Y-%m-%d")
     cur = conn.execute(
         """INSERT INTO water_change
-           (water_liters, salt_brand, note, recorded_at, created_at, tank_id)
-           VALUES (?,?,?,?,?,?)""",
-        (water_liters, salt_brand, note, recorded_at, _now(), tank_id),
+           (water_liters, salt_grams, salt_brand, note, recorded_at, created_at, tank_id)
+           VALUES (?,?,?,?,?,?,?)""",
+        (water_liters, salt_grams, salt_brand, note, recorded_at, _now(), tank_id),
     )
     conn.commit()
     rid = cur.lastrowid
@@ -374,14 +512,14 @@ def get_water_changes(limit=100, tank_id=None):
     return [dict(r) for r in rows]
 
 
-def update_water_change(rid, water_liters, salt_brand="", note="", recorded_at=None):
+def update_water_change(rid, water_liters, salt_brand="", note="", recorded_at=None, salt_grams=None):
     recorded_at = recorded_at or datetime.now().strftime("%Y-%m-%d")
     conn = get_db()
     tank_id = get_active_tank_id(conn)
     cur = conn.execute(
-        """UPDATE water_change SET water_liters=?, salt_brand=?, note=?, recorded_at=?
+        """UPDATE water_change SET water_liters=?, salt_grams=?, salt_brand=?, note=?, recorded_at=?
            WHERE id=? AND tank_id=?""",
-        (water_liters, salt_brand, note, recorded_at, rid, tank_id),
+        (water_liters, salt_grams, salt_brand, note, recorded_at, rid, tank_id),
     )
     conn.commit()
     conn.close()
@@ -399,11 +537,13 @@ def delete_water_change(rid):
 
 def export_all():
     return {
-        "schema_version": 2,
+        "schema_version": 4,
         "tank": get_active_tank(),
         "water_records": get_records(limit=100000),
         "dosing_log": get_dosing_logs(),
         "water_change": get_water_changes(limit=100000),
+        "maintenance_rules": get_maintenance_rules(),
+        "maintenance_events": get_maintenance_events(limit=100000),
     }
 
 
@@ -438,8 +578,8 @@ def import_all(data):
         if not value:
             return False
         try:
-            datetime.fromisoformat(str(value))
-            return True
+            parsed = datetime.fromisoformat(str(value))
+            return parsed.date() <= datetime.now().date()
         except (TypeError, ValueError):
             return False
 
@@ -451,7 +591,8 @@ def import_all(data):
         except (KeyError, TypeError, ValueError):
             skipped += 1
             continue
-        if not math.isfinite(value) or value < 0 or not valid_date(recorded_at):
+        if (element not in WATER_ELEMENTS or not math.isfinite(value) or value < 0
+                or (value == 0 and element not in ("NO3", "PO4")) or not valid_date(recorded_at)):
             skipped += 1
             continue
         if _count_matching(conn, "water_records",
@@ -463,7 +604,7 @@ def import_all(data):
             """INSERT INTO water_records
                (element, value, unit, note, recorded_at, created_at, tank_id)
                VALUES (?,?,?,?,?,?,?)""",
-            (element, value, record.get("unit") or "", record.get("note") or "",
+            (element, value, ELEMENT_UNITS[element], str(record.get("note") or "")[:200],
              recorded_at, _now(), tank_id),
         )
         inserted += 1
@@ -476,7 +617,9 @@ def import_all(data):
         except (KeyError, TypeError, ValueError):
             skipped += 1
             continue
-        if not math.isfinite(dose_ml) or dose_ml <= 0 or not valid_date(recorded_at):
+        action = str(record.get("action") or "start")
+        if (element not in DOSING_ELEMENTS or action not in DOSING_ACTIONS
+                or not math.isfinite(dose_ml) or dose_ml <= 0 or not valid_date(recorded_at)):
             skipped += 1
             continue
         if _count_matching(conn, "dosing_log",
@@ -488,7 +631,7 @@ def import_all(data):
             """INSERT INTO dosing_log
                (element, dose_ml, note, action, recorded_at, created_at, tank_id)
                VALUES (?,?,?,?,?,?,?)""",
-            (element, dose_ml, record.get("note") or "", record.get("action") or "start",
+            (element, dose_ml, str(record.get("note") or "")[:200], action,
              recorded_at, _now(), tank_id),
         )
         inserted += 1
@@ -496,11 +639,15 @@ def import_all(data):
     for record in data.get("water_change") or []:
         try:
             water_liters = float(record["water_liters"])
+            salt_grams_raw = record.get("salt_grams")
+            salt_grams = float(salt_grams_raw) if salt_grams_raw not in (None, "") else None
             recorded_at = str(record.get("recorded_at") or "")
         except (KeyError, TypeError, ValueError):
             skipped += 1
             continue
-        if not math.isfinite(water_liters) or water_liters <= 0 or not valid_date(recorded_at):
+        if (not math.isfinite(water_liters) or water_liters <= 0
+                or (salt_grams is not None and (not math.isfinite(salt_grams) or salt_grams <= 0))
+                or not valid_date(recorded_at)):
             skipped += 1
             continue
         if _count_matching(conn, "water_change",
@@ -510,10 +657,67 @@ def import_all(data):
             continue
         conn.execute(
             """INSERT INTO water_change
-               (water_liters, salt_brand, note, recorded_at, created_at, tank_id)
-               VALUES (?,?,?,?,?,?)""",
-            (water_liters, record.get("salt_brand") or "", record.get("note") or "",
-             recorded_at, _now(), tank_id),
+               (water_liters, salt_grams, salt_brand, note, recorded_at, created_at, tank_id)
+               VALUES (?,?,?,?,?,?,?)""",
+            (water_liters, salt_grams, str(record.get("salt_brand") or "")[:80],
+             str(record.get("note") or "")[:200], recorded_at, _now(), tank_id),
+        )
+        inserted += 1
+
+    for rule in data.get("maintenance_rules") or []:
+        try:
+            task_key = str(rule["task_key"])
+            interval_days = int(rule["interval_days"])
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        if not task_key or not 1 <= interval_days <= 365:
+            skipped += 1
+            continue
+        metadata = json.dumps({
+            "icon": rule.get("icon", "·"), "elements": rule.get("elements", []),
+            "record_source": rule.get("record_source", "maintenance"),
+        }, ensure_ascii=False, separators=(",", ":"))
+        existing = conn.execute(
+            "SELECT id FROM maintenance_rules WHERE tank_id=? AND task_key=?", (tank_id, task_key)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """UPDATE maintenance_rules SET title=?, category=?, interval_days=?, enabled=?,
+                   is_custom=1, metadata=?, updated_at=? WHERE id=?""",
+                (str(rule.get("title") or task_key)[:80], str(rule.get("category") or "维护")[:40],
+                 interval_days, 1 if rule.get("enabled", True) else 0, metadata, _now(), existing["id"]),
+            )
+            skipped += 1
+        else:
+            conn.execute(
+                """INSERT INTO maintenance_rules
+                   (tank_id, task_key, title, category, interval_days, enabled, is_custom, metadata, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,1,?,?,?)""",
+                (tank_id, task_key, str(rule.get("title") or task_key)[:80],
+                 str(rule.get("category") or "维护")[:40], interval_days,
+                 1 if rule.get("enabled", True) else 0, metadata, _now(), _now()),
+            )
+            inserted += 1
+
+    for event in data.get("maintenance_events") or []:
+        task_key = str(event.get("task_key") or "")
+        action = str(event.get("action") or "")
+        recorded_at = str(event.get("recorded_at") or "")
+        if not task_key or action not in ("complete", "postpone") or not valid_date(recorded_at):
+            skipped += 1
+            continue
+        if _count_matching(conn, "maintenance_events",
+                           "tank_id=? AND task_key=? AND action=? AND recorded_at=?",
+                           (tank_id, task_key, action, recorded_at)):
+            skipped += 1
+            continue
+        conn.execute(
+            """INSERT INTO maintenance_events
+               (tank_id, task_key, action, note, recorded_at, snooze_until, created_at)
+               VALUES (?,?,?,?,?,?,?)""",
+            (tank_id, task_key, action, str(event.get("note") or "")[:200], recorded_at,
+             event.get("snooze_until"), _now()),
         )
         inserted += 1
 

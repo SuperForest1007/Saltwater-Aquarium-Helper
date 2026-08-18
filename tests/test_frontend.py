@@ -69,6 +69,12 @@ class TestFrontend:
             "openEstimatorModal", # 独立二级估算弹窗
             "closeEstimatorModal",
             "setSquareSide",    # 常见方缸尺寸快选
+            "todayBoard",       # 本缸今日海况
+            "loadTodayDashboard",
+            "todayEvidence",    # 专业判断依据
+            "todayRhythm",      # 智能维护节奏
+            "maintenanceModal", # 周期调整
+            "completeMaintenance",
         ]
         for c in checks:
             assert c in html, f"缺少关键元素: {c}"
@@ -105,8 +111,38 @@ class TestFrontend:
         assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in html
         assert '<div class="chart-controls" style=' not in html
         assert ".chart-controls { display: grid !important;" in html
+        assert ".dose-row.consume-row { grid-template-columns: repeat(4, minmax(0, 1fr));" in html
+        assert ".dose-head.consume-head { grid-template-columns: repeat(4, minmax(0, 1fr));" in html
         assert "const chartZoom = narrow" in html
         assert "return narrow ? month + '-' + day" in html
         assert "show: !narrow" in html
         assert 'class="est-row est-dim-row"' in html
         assert 'class="est-dim-inputs"' in html
+        assert 'class="today-board tone-neutral"' in html
+        assert "最多只列三项" in html
+        assert "查看判断依据与维护节奏" in html
+
+    def test_public_beta_stability_guards(self):
+        """网络中断、零基准与历史内容都有明确保护。"""
+        html = _read_index()
+        assert 'id="connectionState"' in html
+        assert "async function apiResponse" in html
+        assert "method === 'GET' ? 1 : 0" in html
+        assert "window.addEventListener('offline'" in html
+        assert "@media (prefers-reduced-motion: reduce)" in html
+        assert "const denominator = Math.abs(base)" in html
+        assert "escapeToday(r.note || '')" in html
+        assert "escapeToday(l.element)" in html
+        assert "escapeToday(c.salt_brand || '—')" in html
+        # 业务代码不得绕开统一请求层；唯一 fetch 位于 apiResponse 内。
+        assert html.count("fetch(") == 1
+
+    def test_salt_calculation_can_record_completed_water_change(self):
+        html = _read_index()
+        assert 'id="saltRecordBtn"' in html
+        assert "recordCalculatedWaterChange" in html
+        assert "salt_grams: grams" in html
+        assert 'id="wcSaltGrams"' in html
+        assert 'id="saltReferenceBody"' in html
+        assert "updateSaltReferenceVisibility" in html
+        assert "参考表已收起" in html

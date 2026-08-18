@@ -60,7 +60,7 @@ class TestImport:
                 {"element": "KH", "dose_ml": 25, "action": "start", "note": "", "recorded_at": "2025-06-03"},
             ],
             "water_change": [
-                {"water_liters": 40, "salt_brand": "红海", "note": "", "recorded_at": "2025-06-04"},
+                {"water_liters": 40, "salt_grams": 1440, "salt_brand": "红海", "note": "", "recorded_at": "2025-06-04"},
             ],
         }
         r = test_client.post("/api/import", json=payload)
@@ -74,7 +74,9 @@ class TestImport:
         recs = test_client.get("/api/water/records").json()["records"]
         assert len(recs) == 2
         assert test_client.get("/api/dosing/logs").json()["logs"][0]["dose_ml"] == 25
-        assert test_client.get("/api/water-change").json()["changes"][0]["water_liters"] == 40
+        imported_change = test_client.get("/api/water-change").json()["changes"][0]
+        assert imported_change["water_liters"] == 40
+        assert imported_change["salt_grams"] == 1440
 
     def test_import_deduplicates(self, test_client):
         """重复导入同一数据应跳过。"""

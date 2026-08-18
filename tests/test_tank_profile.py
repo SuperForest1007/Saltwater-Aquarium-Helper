@@ -87,7 +87,7 @@ class TestTankProfileApi:
     def test_backup_contains_profile_and_old_backup_remains_compatible(self, test_client):
         test_client.put("/api/tank", json=profile_payload("NPS"))
         backup = test_client.get("/api/export/json").json()
-        assert backup["schema_version"] == 2
+        assert backup["schema_version"] == 4
         assert backup["tank"]["tank_type"] == "NPS"
 
         old_backup = {

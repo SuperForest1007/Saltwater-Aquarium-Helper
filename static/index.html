@@ -346,6 +346,18 @@
   .dose-result .dr-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .dose-result .dr-value { font-size: 30px; font-weight: 800; color: var(--ocean-deep); }
   .dose-result .dr-unit { font-size: 12px; color: var(--ink-soft); }
+  .salt-record-actions { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .salt-complete-btn { min-width: 142px; }
+  .salt-complete-btn:disabled { opacity: .48; cursor: not-allowed; transform: none; box-shadow: none; }
+  .salt-record-meta { font-size: 11px; color: var(--ink-faint); }
+  .salt-ref-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .salt-ref-head-copy { min-width: 0; }
+  .salt-ref-toggle { flex: 0 0 auto; border: 1px solid var(--border-strong); border-radius: 999px; padding: 7px 11px;
+    background: #fff; color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
+  .salt-reference-card.collapsed { padding-top: 14px; padding-bottom: 14px; background: rgba(255,255,255,.72); }
+  .salt-reference-card.collapsed .dc-title { margin-bottom: 2px; font-size: 13px; }
+  .salt-reference-card.collapsed .dc-sub { margin-bottom: 0; }
+  .salt-reference-body[hidden] { display: none; }
 
   .note { max-width: 780px; margin: 14px auto 0; font-size: 11px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
   .chart-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -431,6 +443,11 @@
     .record-form .d-field input,
     .record-form .d-field select { width: 100% !important; }
     .record-form .ctl-btn { width: 100%; }
+    .salt-ref-head { align-items: stretch; flex-direction: column; gap: 8px; }
+    .salt-ref-toggle { align-self: flex-start; min-height: 40px; }
+    .salt-record-actions { align-items: stretch; flex-direction: column; }
+    .salt-complete-btn { width: 100%; min-height: 44px; }
+    .salt-record-meta { text-align: center; }
     .record-form #wqElSeg { width: 100%; justify-content: space-between; }
     .record-form #wqElSeg .seg-btn { flex: 1; min-width: 0; }
 
@@ -442,13 +459,16 @@
     .dose-row .d-read { width: 100%; min-width: 0; }
     /* 配液行（mix-row）：克/毫升/浓度三项缩到一行 3 列 */
     .dose-row.mix-row { grid-template-columns: repeat(3, 1fr); }
-    /* 消耗测算在手机上排成 2×2，保证输入框和结果都能看清 */
-    .dose-row.consume-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 消耗测算保持四项单排，方便横向对照上次、本次、间隔与结果 */
+    .dose-row.consume-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .dose-row.consume-row input[type=number],
+    .dose-row.consume-row .d-read { padding-left: 4px; padding-right: 4px; font-size: 12px; }
+    .dose-row.consume-row .d-read { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .dose-row.adjust-row { grid-template-columns: repeat(3, 1fr); }
     /* 表头行：手机上用 Grid 与输入行同列对齐 */
     .dose-head { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: center; padding-bottom: 8px; }
     .dose-head.mix-head { grid-template-columns: repeat(3, 1fr); }
-    .dose-head.consume-head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dose-head.consume-head { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
     .dose-head.adjust-head { grid-template-columns: repeat(3, 1fr); }
     .dose-head > span:not(.d-field) { display: none; }
     .dose-head .d-field { max-width: none !important; flex: none; width: 100%; text-align: center; }
@@ -486,6 +506,9 @@
     .modal-field input, .modal-field select { font-size: 13px; }
     .record-form #wqElSeg { gap: 4px; }
     .record-form #wqElSeg .seg-btn { padding: 7px 8px; font-size: 12px; }
+    .dose-row.consume-row input[type=number],
+    .dose-row.consume-row .d-read { font-size: 11px; padding-left: 2px; padding-right: 2px; }
+    .dose-head.consume-head .d-field .fl { font-size: 9px; }
     .tank-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
     .tank-type-grid span { min-height: 48px; padding: 7px 8px; }
     .tank-type-grid strong { font-size: 11.5px; }
@@ -503,6 +526,26 @@
   .toast.ok { background: linear-gradient(135deg, #0a8f6e, #0d7a5f); }
   .toast.err { background: linear-gradient(135deg, var(--danger), #a93226); }
   .toast.info { background: linear-gradient(135deg, var(--ocean), var(--ocean-deep)); }
+
+  /* ─── 服务连接状态：像设备面板上的状态灯，常态不打扰 ─── */
+  #connectionState { position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
+    z-index: 8800; display: flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.75);
+    border-radius: 999px; background: rgba(255,255,255,.94); color: var(--ink-soft); box-shadow: var(--shadow);
+    font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transform: translateY(8px);
+    pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+  #connectionState.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #connectionState::before { content: ''; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #d58a1f;
+    box-shadow: 0 0 0 4px rgba(213,138,31,.12); }
+  #connectionState.offline { color: #8b2f2a; border-color: rgba(192,57,43,.25); }
+  #connectionState.offline::before { background: var(--danger); box-shadow: 0 0 0 4px rgba(192,57,43,.12); }
+  #connectionState.online { color: #16745e; }
+  #connectionState.online::before { background: #169873; box-shadow: 0 0 0 4px rgba(22,152,115,.12); }
+
+  :where(button, [role="button"], input, select):focus-visible { outline: 3px solid rgba(10,110,168,.28); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
 
   /* ─── 编辑弹窗 ─── */
   .modal-mask { position: fixed; inset: 0; background: rgba(10,30,45,.45); backdrop-filter: blur(3px);
@@ -636,6 +679,113 @@
     .estimator-modal-box .est-dim-inputs { width: 100%; }
   }
 
+  /* ─── 本缸今日状态：结论在前，依据与节奏按需展开 ─── */
+  .today-board { position: relative; overflow: hidden; margin: 0 0 14px; border: 1px solid rgba(15,95,134,.18);
+    border-radius: 22px; background: linear-gradient(145deg,#fff 0%,#f4f9fb 68%,#edf6f7 100%);
+    box-shadow: 0 8px 28px rgba(10,61,92,.08); }
+  .today-board::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--ocean); }
+  .today-board.tone-ok::before { background: var(--ok); }
+  .today-board.tone-warn::before { background: var(--warn); }
+  .today-board.tone-danger::before { background: var(--danger); }
+  .today-main { padding: 17px 18px 15px 20px; }
+  .today-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .today-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 1.4px; color: var(--ocean); }
+  .today-date { margin-top: 3px; color: var(--ink-faint); font-size: 10px; }
+  .today-status { flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--border-strong); border-radius: 999px;
+    background: rgba(255,255,255,.78); color: var(--ocean-deep); font-size: 11px; font-weight: 800; }
+  .tone-ok .today-status { color: #176b4a; border-color: rgba(46,139,87,.28); background: rgba(215,240,224,.7); }
+  .tone-warn .today-status { color: #9a5719; border-color: rgba(217,130,43,.3); background: rgba(253,240,221,.76); }
+  .tone-danger .today-status { color: #9f3025; border-color: rgba(192,57,43,.28); background: rgba(253,232,229,.76); }
+  .today-tide { position: relative; height: 5px; margin: 14px 0 12px; border-radius: 99px;
+    background: linear-gradient(90deg,#cddce4 0 20%,#9fcbbb 20% 62%,#edc694 62% 82%,#e5a39b 82%); }
+  .today-tide-marker { position: absolute; top: 50%; left: 12%; width: 13px; height: 13px; border: 3px solid #fff;
+    border-radius: 50%; background: var(--ink-faint); box-shadow: 0 2px 7px rgba(18,48,68,.22); transform: translate(-50%,-50%); transition: left .35s ease; }
+  .tone-ok .today-tide-marker { left: 42%; background: var(--ok); }
+  .tone-warn .today-tide-marker { left: 72%; background: var(--warn); }
+  .tone-danger .today-tide-marker { left: 91%; background: var(--danger); }
+  .today-summary { max-width: 660px; color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.65; }
+  .today-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 13px; }
+  .today-metric { min-width: 0; padding: 9px 10px; border: 1px solid rgba(15,95,134,.1); border-radius: 12px; background: rgba(255,255,255,.68); }
+  .today-metric-label { display: block; color: var(--ink-faint); font-size: 9.5px; }
+  .today-metric-value { display: block; margin-top: 3px; color: var(--ocean-deep); font-size: 11.5px; font-weight: 800;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .today-actions { margin-top: 13px; }
+  .today-actions-title { display: flex; align-items: baseline; gap: 7px; margin-bottom: 7px; font-size: 11px; font-weight: 800; color: var(--ink); }
+  .today-actions-title small { color: var(--ink-faint); font-size: 9.5px; font-weight: 500; }
+  .today-action-list { display: grid; gap: 6px; }
+  .today-action { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 9px;
+    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 13px; background: #fff; }
+  .today-action-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px;
+    background: var(--ocean-soft); color: var(--ocean-deep); font-size: 14px; font-weight: 900; }
+  .today-action-title { color: var(--ink); font-size: 11.5px; font-weight: 800; }
+  .today-action-reason { margin-top: 2px; color: var(--ink-faint); font-size: 9.5px; line-height: 1.45;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .today-action-buttons { display: flex; gap: 5px; }
+  .today-small-btn { min-height: 34px; padding: 6px 9px; border: 1px solid var(--border-strong); border-radius: 10px;
+    background: #fff; color: var(--ocean-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
+  .today-small-btn.primary { border-color: var(--ocean); background: var(--ocean); color: #fff; }
+  .today-empty-action { padding: 10px 12px; border-radius: 12px; background: rgba(215,240,224,.48);
+    color: #27694f; font-size: 11px; line-height: 1.55; }
+  .today-expand { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 12px;
+    padding: 9px 2px 0; border: none; border-top: 1px solid rgba(15,95,134,.1); background: transparent;
+    color: var(--ocean-deep); font-size: 10.5px; font-weight: 800; cursor: pointer; }
+  .today-detail { padding: 0 18px 18px 20px; }
+  .today-detail[hidden] { display: none; }
+  .today-section { padding-top: 13px; border-top: 1px solid rgba(15,95,134,.1); }
+  .today-section + .today-section { margin-top: 14px; }
+  .today-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .today-section-title { font-size: 11.5px; font-weight: 800; color: var(--ink); }
+  .today-section-sub { color: var(--ink-faint); font-size: 9.5px; }
+  .today-evidence { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px; }
+  .today-evidence-item { min-width: 0; padding: 9px 8px; border: 1px solid var(--border-light); border-radius: 11px; background: #fff; }
+  .today-evidence-top { display: flex; justify-content: space-between; gap: 4px; color: var(--ink-soft); font-size: 9.5px; font-weight: 700; }
+  .today-evidence-value { margin-top: 5px; color: var(--ink); font-size: 13px; font-weight: 800; white-space: nowrap; }
+  .today-evidence-value small { color: var(--ink-faint); font-size: 8.5px; font-weight: 600; }
+  .today-evidence-state { margin-top: 3px; color: var(--ink-faint); font-size: 8.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .today-evidence-item.low .today-evidence-state, .today-evidence-item.high .today-evidence-state { color: var(--warn); }
+  .today-evidence-item.missing .today-evidence-value, .today-evidence-item.stale .today-evidence-value { color: var(--ink-faint); }
+  .today-insights { display: grid; gap: 5px; margin-top: 8px; }
+  .today-insight { padding: 8px 10px; border-left: 3px solid var(--border-strong); border-radius: 0 9px 9px 0;
+    background: rgba(255,255,255,.65); color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+  .rhythm-list { display: grid; gap: 6px; }
+  .rhythm-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 8px; align-items: center;
+    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 11px; background: rgba(255,255,255,.76); }
+  .rhythm-title { color: var(--ink); font-size: 10.5px; font-weight: 800; }
+  .rhythm-reason { margin-top: 2px; color: var(--ink-faint); font-size: 9px; }
+  .rhythm-timing { color: var(--ink-soft); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+  .rhythm-row.overdue .rhythm-timing, .rhythm-row.due .rhythm-timing { color: var(--warn); }
+  .today-basis { margin-top: 10px; color: var(--ink-faint); font-size: 9px; line-height: 1.55; }
+  .maintenance-settings { display: grid; gap: 8px; }
+  .maintenance-rule-row { display: grid; grid-template-columns: minmax(0,1fr) 76px 54px; align-items: center; gap: 8px;
+    padding: 9px 0; border-bottom: 1px solid var(--border-light); }
+  .maintenance-rule-row:last-child { border-bottom: none; }
+  .maintenance-rule-name { font-size: 11.5px; font-weight: 800; color: var(--ink); }
+  .maintenance-rule-category { margin-top: 2px; font-size: 9.5px; color: var(--ink-faint); }
+  .maintenance-rule-days { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ink-soft); }
+  .maintenance-rule-days input { width: 48px; padding: 8px 5px; border: 1.5px solid var(--border); border-radius: 9px; text-align: center; }
+  .maintenance-toggle { accent-color: var(--ocean); width: 18px; height: 18px; justify-self: center; }
+
+  @media (max-width: 560px) {
+    .today-main { padding: 15px 14px 13px 17px; }
+    .today-detail { padding: 0 14px 15px 17px; }
+    .today-summary { font-size: 13px; }
+    .today-metrics { gap: 5px; }
+    .today-metric { padding: 8px 7px; }
+    .today-metric-value { font-size: 10.5px; }
+    .today-action { grid-template-columns: 30px minmax(0,1fr); }
+    .today-action-buttons { grid-column: 1 / -1; }
+    .today-action-buttons .today-small-btn { flex: 1; }
+    .today-evidence { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .rhythm-row { grid-template-columns: minmax(0,1fr) auto; }
+    .rhythm-row .today-small-btn { grid-column: 1 / -1; width: 100%; }
+  }
+  @media (max-width: 380px) {
+    .today-status { padding: 6px 8px; font-size: 10px; }
+    .today-metrics { grid-template-columns: 1fr 1fr; }
+    .today-metric:first-child { grid-column: 1 / -1; }
+    .today-evidence { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  }
+
 
   /* ─── 模式切换滑块 ─── */
   .mode-switch { position: relative; display: inline-flex; background: var(--border-light); border-radius: var(--radius-pill);
@@ -763,6 +913,37 @@
     </span>
     <span class="tank-edit-hint" id="tankEditHint">开始设置</span>
   </button>
+
+  <section class="today-board tone-neutral" id="todayBoard" aria-live="polite">
+    <div class="today-main">
+      <div class="today-head">
+        <div><div class="today-eyebrow">本缸今日海况</div><div class="today-date" id="todayDate">正在读取这口缸的记录…</div></div>
+        <div class="today-status" id="todayStatus">准备中</div>
+      </div>
+      <div class="today-tide" aria-hidden="true"><span class="today-tide-marker"></span></div>
+      <div class="today-summary" id="todaySummary">正在整理水质、换水和维护记录。</div>
+      <div class="today-metrics" id="todayMetrics"></div>
+      <div class="today-actions" id="todayActions"></div>
+      <button class="today-expand" id="todayExpand" type="button" onclick="toggleTodayDetail()" aria-expanded="false">
+        <span>查看判断依据与维护节奏</span><span id="todayExpandArrow">⌄</span>
+      </button>
+    </div>
+    <div class="today-detail" id="todayDetail" hidden>
+      <div class="today-section">
+        <div class="today-section-head"><div><div class="today-section-title">判断依据</div><div class="today-section-sub">最新读数与数据新鲜度</div></div></div>
+        <div class="today-evidence" id="todayEvidence"></div>
+        <div class="today-insights" id="todayInsights"></div>
+      </div>
+      <div class="today-section">
+        <div class="today-section-head">
+          <div><div class="today-section-title">维护节奏</div><div class="today-section-sub">从真实完成时间继续往后排</div></div>
+          <button class="today-small-btn" type="button" onclick="openMaintenanceSettings()">调整节奏</button>
+        </div>
+        <div class="rhythm-list" id="todayRhythm"></div>
+        <div class="today-basis" id="todayBasis"></div>
+      </div>
+    </div>
+  </section>
 
   <!-- Tabs -->
   <div class="tabs">
@@ -994,6 +1175,7 @@
       <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。换水频率和比例应结合营养盐、生物负载、补充体系与实际状态决定，不必机械追求固定百分比。</div>
       <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
+        <div class="d-field"><span class="fl">配盐(克，可选)</span><input type="number" id="wcSaltGrams" class="ctl" placeholder="如 1080" style="width:120px"></div>
         <div class="d-field"><span class="fl">盐品牌</span>
           <select id="wcBrand" class="ctl" style="width:150px"></select>
         </div>
@@ -1002,7 +1184,7 @@
         <button onclick="addWaterChange()" class="ctl-btn">✓ 记录</button>
       </div>
       <div style="overflow-x:auto;margin-top:10px"><table class="data-table">
-        <thead><tr><th>日期</th><th>换水量</th><th>盐品牌</th><th>备注</th><th></th></tr></thead>
+        <thead><tr><th>日期</th><th>换水量</th><th>配盐</th><th>盐品牌</th><th>备注</th><th></th></tr></thead>
         <tbody id="wcList"></tbody>
       </table></div>
       <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px">
@@ -1032,13 +1214,24 @@
           <span class="dr-unit">克</span>
           <span class="dr-label" id="saltKg" style="margin-left:8px;font-size:12px;color:var(--ink-faint)"></span>
         </div>
+        <div class="salt-record-actions">
+          <button id="saltRecordBtn" type="button" class="ctl-btn salt-complete-btn" onclick="recordCalculatedWaterChange()" disabled>✓ 已换水</button>
+          <span class="salt-record-meta" id="saltRecordMeta">选好品牌并填写水量后可直接记入换水记录</span>
+        </div>
         <div class="dc-sub" style="margin-top:10px">💡 实际用量以盐袋说明为准；化盐建议 <b>25°C</b>、充分搅拌溶解后再测盐度微调。</div>
       </div>
     </div>
 
-    <div class="dose-card">
-      <div class="dc-title">📊 海盐品牌用户实测参考（原样品比重1.025）</div>
-      <div class="dc-sub">本站暂定证据等级 C：单一公开来源、未独立复现。用于了解不同样品的实测差异，不能代替品牌说明或当前批次复测，也不直接参与自动补充建议。点击品牌行可把该记录中的克/升带入配盐计算。</div>
+    <div class="dose-card salt-reference-card" id="saltReferenceCard">
+      <div class="salt-ref-head">
+        <div class="salt-ref-head-copy">
+          <div class="dc-title">📊 海盐品牌用户实测参考</div>
+          <div class="dc-sub" id="saltReferenceSummary">选盐时可以对照看看；数据来自单一公开分享，未独立复现。</div>
+        </div>
+        <button id="saltReferenceToggle" type="button" class="salt-ref-toggle" onclick="toggleSaltReference()" aria-expanded="true" hidden>查看其他海盐参考</button>
+      </div>
+      <div class="salt-reference-body" id="saltReferenceBody">
+      <div class="dc-sub">原样品比重 1.025，本站暂定证据等级 C。数据用于了解不同样品的实测差异，不能代替品牌说明或当前批次复测，也不直接参与自动补充建议。点击品牌行可带入配盐计算。</div>
       <div style="overflow-x:auto">
       <table style="width:100%;max-width:100%;border-collapse:collapse;margin-top:4px">
         <thead><tr><th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">品牌/类型</th>
@@ -1054,6 +1247,7 @@
       </table>
       </div>
       <div class="dc-sub" style="margin-top:10px">来源说明：数据整理自小红书用户实测分享；据原分享使用了 Hanna 数字比色计，但当前资料未记录每一列对应的具体型号、试剂和方法，也未独立复现。“无色/略有颜色”为原记录中的定性描述，PO₄括号内为溶解后的后续读数。仪器虽能减少肉眼判色差异，但试剂批次、干扰物、样品温度/盐度、操作和海盐批次仍会影响结果。请将本表视为社区实测参考，不作为加药依据。</div>
+      </div>
     </div>
   </div>
 
@@ -1177,6 +1371,7 @@
 
 <!-- Toast 提示 -->
 <div id="toastBox"></div>
+<button id="connectionState" type="button" aria-live="polite" onclick="checkConnection()">正在连接服务</button>
 
 <!-- 新手引导卡片（首次自动弹出，可随时从「入门指南」找回） -->
 <div class="guide-mask" id="guideMask" onclick="if(event.target===this)closeGuide()">
@@ -1317,6 +1512,19 @@
   </div>
 </div>
 
+<!-- 维护节奏设置 -->
+<div class="modal-mask" id="maintenanceModal" onclick="if(event.target===this)closeMaintenanceSettings()">
+  <div class="modal-box">
+    <div class="modal-title">调整维护节奏</div>
+    <div class="modal-sub" id="maintenanceNote">这里是起始建议，按自己的设备、负载和维护习惯修改即可。</div>
+    <div class="maintenance-settings" id="maintenanceSettings"></div>
+    <div class="modal-actions">
+      <button class="m-cancel" type="button" onclick="closeMaintenanceSettings()">取消</button>
+      <button class="m-save" type="button" onclick="saveMaintenanceSettings()">保存节奏</button>
+    </div>
+  </div>
+</div>
+
 <!-- 数据备份弹窗 -->
 <div class="modal-mask" id="backupModal" onclick="if(event.target===this)closeBackup()">
   <div class="modal-box">
@@ -1408,35 +1616,248 @@ function todayLocal() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-/* ═══ 统一 fetch 封装：自动 JSON、统一错误提示 ═══ */
+/* ═══ 统一请求：GET短重试、超时、连接状态与一致的错误反馈 ═══ */
+let connectionMode = 'online';
+let connectionHideTimer = null;
+
+function setConnectionState(mode) {
+  const el = document.getElementById('connectionState');
+  if (!el) return;
+  clearTimeout(connectionHideTimer);
+  connectionMode = mode;
+  el.className = mode === 'offline' ? 'visible offline' : (mode === 'online' ? 'visible online' : 'visible');
+  el.textContent = mode === 'offline' ? '连接中断 · 点此重试' : (mode === 'online' ? '已重新连上' : '正在重新连接');
+  if (mode === 'online') connectionHideTimer = setTimeout(() => { el.className = ''; }, 1400);
+}
+
+function waitMs(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function apiResponse(url, opts) {
+  opts = Object.assign({}, opts || {});
+  const silent = Boolean(opts.silent);
+  const timeoutMs = Number(opts.timeoutMs || 8000);
+  delete opts.silent;
+  delete opts.timeoutMs;
+  const method = String(opts.method || 'GET').toUpperCase();
+  const retryCount = opts.retries === undefined ? (method === 'GET' ? 1 : 0) : Number(opts.retries);
+  delete opts.retries;
+  opts.headers = Object.assign({}, opts.headers || {});
+  let lastError;
+
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, Object.assign({}, opts, { signal: controller.signal }));
+      clearTimeout(timer);
+      if (connectionMode !== 'online') setConnectionState('online');
+      if (!res.ok) {
+        let detail = '请求失败 (' + res.status + ')';
+        try { const j = await res.clone().json(); if (j.detail) detail = typeof j.detail === 'string' ? j.detail : detail; } catch (e) {}
+        if (!silent) toast(detail, 'err');
+        const error = new Error(detail);
+        error.status = res.status;
+        throw error;
+      }
+      return res;
+    } catch (error) {
+      clearTimeout(timer);
+      if (error.status) throw error;
+      lastError = error;
+      if (attempt < retryCount) {
+        setConnectionState('checking');
+        await waitMs(350 * (attempt + 1));
+        continue;
+      }
+    }
+  }
+
+  const wasOffline = connectionMode === 'offline';
+  setConnectionState('offline');
+  if (!silent && !wasOffline) toast('连接断开了，已填写的内容还在；重新连上后再试一次', 'err');
+  throw lastError || new Error('连接服务失败');
+}
+
 async function api(url, opts) {
-  opts = opts || {};
+  opts = Object.assign({}, opts || {});
   opts.headers = Object.assign({}, opts.headers || {});
   if (opts.body && typeof opts.body !== 'string') {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(opts.body);
   }
-  let res;
-  try {
-    res = await fetch(url, opts);
-  } catch (e) {
-    toast('网络错误，请确认服务已启动', 'err');
-    throw e;
-  }
-  if (!res.ok) {
-    let detail = '请求失败 (' + res.status + ')';
-    try { const j = await res.json(); if (j.detail) detail = typeof j.detail === 'string' ? j.detail : detail; } catch (e) {}
-    toast(detail, 'err');
-    throw new Error(detail);
-  }
+  const res = await apiResponse(url, opts);
   return await res.json();
 }
+
+async function checkConnection() {
+  setConnectionState('checking');
+  try { await api('/health', { silent: true, retries: 0, timeoutMs: 3500 }); }
+  catch (e) { /* 状态灯已经给出重试入口 */ }
+}
+
+window.addEventListener('offline', () => setConnectionState('offline'));
+window.addEventListener('online', checkConnection);
 
 /* ═══ 我的鱼缸：全站唯一上下文 ═══ */
 let tankProfile = null;
 let tankWaterSaveTimer = null;
 let tankOptions = [];
 let tankEffectiveTargets = {};
+let todayDashboard = null;
+let maintenanceRules = [];
+
+function escapeToday(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+
+function todayDisplayDate() {
+  return new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function toggleTodayDetail(force) {
+  const detail = document.getElementById('todayDetail');
+  const button = document.getElementById('todayExpand');
+  const shouldOpen = typeof force === 'boolean' ? force : detail.hidden;
+  detail.hidden = !shouldOpen;
+  button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  document.getElementById('todayExpandArrow').textContent = shouldOpen ? '⌃' : '⌄';
+  button.querySelector('span:first-child').textContent = shouldOpen ? '收起专业详情' : '查看判断依据与维护节奏';
+  localStorage.setItem('today_detail_open', shouldOpen ? '1' : '0');
+}
+
+function renderTodayEvidence(items) {
+  const wrap = document.getElementById('todayEvidence');
+  wrap.innerHTML = (items || []).map(item => {
+    const hasValue = item.value !== undefined;
+    return '<div class="today-evidence-item ' + escapeToday(item.state) + '">' +
+      '<div class="today-evidence-top"><span>' + escapeToday(item.label) + '</span><span>' + (hasValue ? escapeToday(item.measured_at.slice(5)) : '—') + '</span></div>' +
+      '<div class="today-evidence-value">' + (hasValue ? escapeToday(item.value) + ' <small>' + escapeToday(item.unit) + '</small>' : '未记录') + '</div>' +
+      '<div class="today-evidence-state">' + escapeToday(item.state_label) + '</div></div>';
+  }).join('') || '<div class="today-empty-action" style="grid-column:1/-1">完成鱼缸设置后，这里会显示每项数据的判断依据。</div>';
+}
+
+function todayTaskButtons(task) {
+  const key = escapeToday(task.task_key);
+  if (task.action_type === 'record') {
+    const go = '<button class="today-small-btn primary" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\')">去记录</button>';
+    if (task.task_key === 'water_warning') return go;
+    return go + '<button class="today-small-btn" type="button" onclick="postponeMaintenance(\'' + key + '\',1)">晚一天</button>';
+  }
+  return '<button class="today-small-btn primary" type="button" onclick="completeMaintenance(\'' + key + '\')">完成</button>' +
+    '<button class="today-small-btn" type="button" onclick="postponeMaintenance(\'' + key + '\',1)">晚一天</button>';
+}
+
+function renderTodayActions(actions) {
+  const wrap = document.getElementById('todayActions');
+  if (!actions || actions.length === 0) {
+    wrap.innerHTML = '<div class="today-actions-title">今天的动作 <small>根据已有记录安排</small></div>' +
+      '<div class="today-empty-action">今天没有必须处理的项目。照常观察生物状态和设备运行即可。</div>';
+    return;
+  }
+  wrap.innerHTML = '<div class="today-actions-title">今天优先看这 ' + actions.length + ' 项 <small>最多只列三项</small></div><div class="today-action-list">' +
+    actions.map(task => '<div class="today-action"><div class="today-action-icon">' + escapeToday(task.icon || '·') + '</div>' +
+      '<div><div class="today-action-title">' + escapeToday(task.title) + ' · ' + escapeToday(task.timing) + '</div>' +
+      '<div class="today-action-reason">' + escapeToday(task.reason || task.category) + '</div></div>' +
+      '<div class="today-action-buttons">' + todayTaskButtons(task) + '</div></div>').join('') + '</div>';
+}
+
+function renderTodayRhythm(items) {
+  document.getElementById('todayRhythm').innerHTML = (items || []).map(task => {
+    const action = task.action_type === 'complete'
+      ? '<button class="today-small-btn" type="button" onclick="completeMaintenance(\'' + escapeToday(task.task_key) + '\')">' + (task.state === 'untracked' ? '今天做了' : '完成') + '</button>'
+      : '<button class="today-small-btn" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\')">去记录</button>';
+    return '<div class="rhythm-row ' + escapeToday(task.state) + '"><div><div class="rhythm-title">' + escapeToday(task.icon) + ' ' + escapeToday(task.title) + '</div>' +
+      '<div class="rhythm-reason">' + escapeToday(task.reason) + '</div></div><div class="rhythm-timing">' + escapeToday(task.timing) + '</div>' + action + '</div>';
+  }).join('') || '<div class="today-empty-action">当前没有启用的维护项目，可以在“调整节奏”里重新开启。</div>';
+}
+
+function renderTodayDashboard(data) {
+  todayDashboard = data;
+  const board = document.getElementById('todayBoard');
+  board.classList.remove('tone-neutral', 'tone-ok', 'tone-warn', 'tone-danger');
+  board.classList.add('tone-' + ((data.status && data.status.tone) || 'neutral'));
+  document.getElementById('todayDate').textContent = todayDisplayDate() + (tankProfile && tankProfile.name ? ' · ' + tankProfile.name : '');
+  document.getElementById('todayStatus').textContent = data.status.label;
+  document.getElementById('todaySummary').textContent = data.status.summary;
+  const rhythm = data.rhythm || [];
+  const next = rhythm.find(item => item.state !== 'untracked');
+  document.getElementById('todayMetrics').innerHTML =
+    '<div class="today-metric"><span class="today-metric-label">数据覆盖</span><span class="today-metric-value">' + escapeToday(data.coverage.label) + '</span></div>' +
+    '<div class="today-metric"><span class="today-metric-label">最近水质</span><span class="today-metric-value">' + escapeToday(data.coverage.latest_date || '暂无记录') + '</span></div>' +
+    '<div class="today-metric"><span class="today-metric-label">下一节奏</span><span class="today-metric-value">' + escapeToday(next ? next.title + ' · ' + next.timing : '待建立') + '</span></div>';
+  renderTodayActions(data.actions || []);
+  renderTodayEvidence(data.evidence || []);
+  document.getElementById('todayInsights').innerHTML = (data.insights || []).map(item => '<div class="today-insight">' + escapeToday(item) + '</div>').join('');
+  renderTodayRhythm(rhythm);
+  document.getElementById('todayBasis').textContent = data.basis_note || '';
+  if (localStorage.getItem('today_detail_open') === '1') toggleTodayDetail(true);
+}
+
+async function loadTodayDashboard() {
+  try {
+    const data = await api('/api/today');
+    renderTodayDashboard(data);
+  } catch (e) {
+    document.getElementById('todayStatus').textContent = '暂时没连上';
+    document.getElementById('todaySummary').textContent = '其他功能仍可使用，稍后刷新页面会重新读取今日状态。';
+  }
+}
+
+function goToTodayTask(tab) {
+  showTab(tab || 'water');
+  const panel = document.getElementById('panel-' + (tab || 'water'));
+  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function completeMaintenance(taskKey) {
+  await api('/api/maintenance/event', { method: 'POST', body: { task_key: taskKey, action: 'complete' } });
+  buzz(12); toast('记下了，下次会从今天继续算 ✓', 'ok');
+  await loadTodayDashboard();
+}
+
+async function postponeMaintenance(taskKey, days) {
+  await api('/api/maintenance/event', { method: 'POST', body: { task_key: taskKey, action: 'postpone', snooze_days: days || 1 } });
+  toast('已顺延 ' + (days || 1) + ' 天', 'info');
+  await loadTodayDashboard();
+}
+
+async function openMaintenanceSettings() {
+  const data = await api('/api/maintenance');
+  maintenanceRules = data.rules || [];
+  document.getElementById('maintenanceNote').textContent = data.note || '';
+  document.getElementById('maintenanceSettings').innerHTML = maintenanceRules.map(rule =>
+    '<div class="maintenance-rule-row"><div><div class="maintenance-rule-name">' + escapeToday(rule.title) + '</div>' +
+    '<div class="maintenance-rule-category">' + escapeToday(rule.category) + '</div></div>' +
+    '<label class="maintenance-rule-days"><input type="number" min="1" max="365" id="mr_days_' + escapeToday(rule.task_key) + '" value="' + Number(rule.interval_days) + '">天</label>' +
+    '<input class="maintenance-toggle" type="checkbox" id="mr_on_' + escapeToday(rule.task_key) + '" aria-label="启用' + escapeToday(rule.title) + '"' + (rule.enabled ? ' checked' : '') + '></div>'
+  ).join('');
+  document.getElementById('maintenanceModal').classList.add('open');
+  document.body.classList.add('lock-scroll');
+}
+
+function closeMaintenanceSettings() {
+  document.getElementById('maintenanceModal').classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+}
+
+async function saveMaintenanceSettings() {
+  try {
+    const payloads = maintenanceRules.map(rule => {
+      const days = parseInt(document.getElementById('mr_days_' + rule.task_key).value, 10);
+      const enabled = document.getElementById('mr_on_' + rule.task_key).checked;
+      if (!Number.isFinite(days) || days < 1 || days > 365) throw new Error(rule.title + ' 的周期需要在 1–365 天之间');
+      return api('/api/maintenance/rule/' + encodeURIComponent(rule.task_key), { method: 'PUT', body: { interval_days: days, enabled: enabled } });
+    });
+    await Promise.all(payloads);
+    closeMaintenanceSettings();
+    toast('维护节奏已更新 ✓', 'ok');
+    await loadTodayDashboard();
+  } catch (e) {
+    toast(e.message || '维护周期没有保存成功', 'err');
+  }
+}
 
 function formatTargetNumber(value) {
   const number = Number(value);
@@ -1564,6 +1985,7 @@ async function saveTankSetup() {
     closeTankSetup();
     toast('保存好了，水质和计算已换成这口缸的数据 ✓', 'ok');
     loadWater();
+    loadTodayDashboard();
   } catch (e) { /* api 已提示 */ }
 }
 
@@ -1642,8 +2064,7 @@ async function exportJson() {
 }
 async function exportCsv(kind) {
   try {
-    const res = await fetch('/api/export/csv?kind=' + kind);
-    if (!res.ok) throw new Error('导出失败');
+    const res = await apiResponse('/api/export/csv?kind=' + kind);
     const text = await res.text();
     const names = { water: '水质记录', dosing: '滴定记录', change: '换水记录' };
     _download(text, 'reefpal_' + kind + '_' + todayLocal().replace(/-/g, '') + '.csv', 'text/csv;charset=utf-8');
@@ -1907,11 +2328,9 @@ async function calcRow(gi, ei) {
   const addSel = row.querySelector('.add-in');
   const ai = addSel ? parseInt(addSel.value) : 0;
   const add = elem.additives[ai];
-  const res = await fetch('/api/calc/additive', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ water_liters: water, conc_delta: conc, v1: add[1], v2: add[2] })
+  const data = await api('/api/calc/additive', {
+    method: 'POST', body: { water_liters: water, conc_delta: conc, v1: add[1], v2: add[2] }
   });
-  const data = await res.json();
   resEl.value = data.grams;
   refreshMl(gi, ei);
 }
@@ -1967,11 +2386,9 @@ async function autoJudge(gi, ei) {
     return;
   }
   const add = elem.additives[0];
-  const res = await fetch('/api/calc/auto', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ water_liters: water, current_value: val, ideal_low: low, ideal_high: high, v1: add[1], v2: add[2], unit: elem.unit })
+  const d = await api('/api/calc/auto', {
+    method: 'POST', body: { water_liters: water, current_value: val, ideal_low: low, ideal_high: high, v1: add[1], v2: add[2], unit: elem.unit }
   });
-  const d = await res.json();
   msgEl.textContent = d.message + (d.grams ? '（约 ' + d.grams + ' 克 ' + add[0] + '）' : '');
   msgEl.className = 'auto-msg ' + d.status;
 }
@@ -2226,7 +2643,7 @@ async function importDoseFromRecords() {
 
 /* ═══ 滴定开始/结束记录 ═══ */
 const doseRunning = {};  // 各元素是否在滴定中（k/g/m）
-function toggleDose(pre, elName) {
+async function toggleDose(pre, elName) {
   const btn = document.getElementById(pre + '_doseBtn');
   const doseEl = document.getElementById(pre + '_dose');
   const dose = parseFloat(doseEl.textContent);
@@ -2234,15 +2651,25 @@ function toggleDose(pre, elName) {
   const isRunning = doseRunning[pre];
   const action = isRunning ? 'end' : 'start';
   const today = todayLocal();
-  fetch('/api/dosing/log', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ element: elName, dose_ml: dose, note: action === 'start' ? '开始滴定' : '结束滴定', action: action, recorded_at: today })
-  }).then(res => res.json()).then(() => {
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = action === 'start' ? '正在记录…' : '正在结束…';
+  try {
+    await api('/api/dosing/log', {
+      method: 'POST',
+      body: { element: elName, dose_ml: dose, note: action === 'start' ? '开始滴定' : '结束滴定', action: action, recorded_at: today }
+    });
     doseRunning[pre] = !isRunning;
     renderDoseBtn(pre);
     // 同步刷新记录管理列表 + 缓存（供图表标记）
-    renderDoseLogList();
-  }).catch(() => {});
+    await renderDoseLogList();
+    await loadTodayDashboard();
+    toast(action === 'start' ? '已记下开始滴定' : '已记下结束滴定', 'ok');
+  } catch (e) {
+    btn.textContent = originalText;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function renderDoseBtn(pre) {
@@ -2265,15 +2692,14 @@ function toggleDoseLogMenu() {
 
 async function renderDoseLogList() {
   const tbody = document.getElementById('dlmListBody');
-  const logsRes = await fetch('/api/dosing/logs');
-  const data = await logsRes.json();
+  const data = await api('/api/dosing/logs');
   dosingLogsCache = data.logs || [];
   const actionMap = { start: '▶ 开始', end: '⏹ 结束', adjust: '🔧 调整' };
   const rows = dosingLogsCache.slice().reverse().map(l => '<tr>' +
-    '<td>' + l.recorded_at.slice(0, 10) + '</td>' +
-    '<td>' + l.element + '</td>' +
-    '<td>' + l.dose_ml + 'ml</td>' +
-    '<td>' + (actionMap[l.action] || l.note || '') + '</td>' +
+    '<td>' + escapeToday((l.recorded_at || '').slice(0, 10)) + '</td>' +
+    '<td>' + escapeToday(l.element) + '</td>' +
+    '<td>' + escapeToday(l.dose_ml) + 'ml</td>' +
+    '<td>' + escapeToday(actionMap[l.action] || l.note || '') + '</td>' +
     '<td style="text-align:center;white-space:nowrap">' +
       '<button class="icon-btn" title="编辑" onclick="editDoseLog(' + l.id + ')">✏️</button>' +
       '<button class="icon-btn" title="删除" onclick="delDoseLog(' + l.id + ')">🗑</button></td>' +
@@ -2299,6 +2725,7 @@ async function addDoseLogManual() {
   renderDoseLogList();
   // 同步开始/结束按钮状态
   syncDoseButtonsFromLogs();
+  loadTodayDashboard();
   buzz(15); toast('滴定记录已保存 ✓', 'ok');
 }
 
@@ -2307,6 +2734,7 @@ async function delDoseLog(id) {
   const res = await api('/api/dosing/log/' + id, { method: 'DELETE' });
   renderDoseLogList();
   syncDoseButtonsFromLogs();
+  loadTodayDashboard();
   buzz(8); toast('滴定记录已删除', 'info');
 }
 
@@ -2328,33 +2756,31 @@ let waterMode = 'simple';
 let waterAnalysis = null;
 
 async function loadWater() {
-  const res = await fetch('/api/water/analysis');
-  const data = await res.json();
-  waterAnalysis = data.analysis;
-  // 加载滴定记录（供趋势图标记 + 恢复按钮状态）
   try {
-    const logsRes = await fetch('/api/dosing/logs');
-    const logsData = await logsRes.json();
+    const [data, logsData, wcData] = await Promise.all([
+      api('/api/water/analysis'),
+      api('/api/dosing/logs', { silent: true }),
+      api('/api/water-change', { silent: true })
+    ]);
+    waterAnalysis = data.analysis;
     dosingLogsCache = logsData.logs || [];
     syncDoseButtonsFromLogs();
-  } catch (e) { dosingLogsCache = []; }
-  // 加载换水记录（供趋势图标记）
-  try {
-    const wcRes = await fetch('/api/water-change');
-    const wcData = await wcRes.json();
     waterChangeCache = wcData.changes || [];
-  } catch (e) { waterChangeCache = []; }
-  renderSimple();
-  renderPro();
-  loadAnalysisCards();
+    renderSimple();
+    renderPro();
+    await Promise.all([loadAnalysisCards(), loadTodayDashboard()]);
+  } catch (e) {
+    if (!waterAnalysis) {
+      document.getElementById('wqSimpleCards').innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1">暂时没读到水质记录。重新连上后点右下角状态灯再试。</div>';
+    }
+  }
 }
 
 /* ═══ 综合分析卡片（滴定效果/收支平衡/测试频率） ═══ */
 async function loadAnalysisCards() {
   try {
     // A1 滴定效果
-    const effectRes = await fetch('/api/analysis/dosing-effect');
-    const effectData = await effectRes.json();
+    const effectData = await api('/api/analysis/dosing-effect', { silent: true });
     renderDosingEffect(effectData.result || {});
 
     // A2 收支平衡：只使用真实水量与用户保存的各元素配液，不设静默默认值
@@ -2374,18 +2800,19 @@ async function loadAnalysisCards() {
     renderBalance(balanceData.result || {});
 
     // B1 测试频率
-    const freqRes = await fetch('/api/analysis/frequency');
-    const freqData = await freqRes.json();
+    const freqData = await api('/api/analysis/frequency', { silent: true });
     renderFrequency(freqData.result || {});
 
     // 元素联动诊断
-    const linkageRes = await fetch('/api/analysis/linkage');
-    const linkageData = await linkageRes.json();
+    const linkageData = await api('/api/analysis/linkage', { silent: true });
     renderLinkage(linkageData.findings || []);
 
     // 🟢 跨系统联动提示：换水提醒 + 收支平衡异常（注入智能建议区顶部）
     renderSystemAlerts(balanceData.result || {});
-  } catch (e) { /* 忽略加载失败 */ }
+  } catch (e) {
+    const body = document.getElementById('wqSimpleAdviceBody');
+    if (body) body.insertAdjacentHTML('afterbegin', '<div class="sys-alert warn">部分联动分析暂时没读到，水质记录本身不受影响。</div>');
+  }
 }
 
 /* ═══ 跨系统联动：把换水/收支平衡信号注入智能建议 ═══ */
@@ -2609,8 +3036,7 @@ async function jumpToDosing(btn) {
 
   // 4. 自动填目标值（理想下限）+ 计划天数默认7，并触发目标调节计算
   try {
-    const idealsRes = await fetch('/api/water/ideals');
-    const idealsData = await idealsRes.json();
+    const idealsData = await api('/api/water/ideals', { silent: true });
     const ideal = idealsData.ideals && idealsData.ideals[element];
     if (ideal) {
       // 目标 = 理想下限（提升至下限即达标，保守稳妥）
@@ -2765,16 +3191,17 @@ let wqFilterEl = null;   // 当前过滤元素（null=全部）
 let wqPage = 1;
 const WQ_PAGE_SIZE = 8;
 
-function renderPro() {
-  fetch('/api/water/records').then(r => r.json()).then(data => {
+async function renderPro() {
+  try {
+    const data = await api('/api/water/records', { silent: true });
     wqAllRecords = data.records || [];
     // 按趋势图选中元素过滤
     const chartEl = document.getElementById('wqChartEl').value;
     wqFilterEl = (chartEl === '__all__') ? null : chartEl;
     wqPage = 1;
     renderHistoryTable();
-  });
-  if (waterMode === 'pro') setTimeout(() => renderWaterChart(), 60);
+    if (waterMode === 'pro') setTimeout(() => renderWaterChart(), 60);
+  } catch (e) { /* 保留当前列表，连接状态灯会提供重试入口 */ }
 }
 
 function renderHistoryTable() {
@@ -2787,10 +3214,10 @@ function renderHistoryTable() {
   const start = (wqPage - 1) * WQ_PAGE_SIZE;
   const pageRecs = recs.slice(start, start + WQ_PAGE_SIZE);
   tbody.innerHTML = pageRecs.map(r => '<tr>' +
-    '<td style="white-space:nowrap">' + (r.recorded_at || '').slice(0, 10) + '</td>' +
-    '<td>' + r.element + '</td>' +
-    '<td style="text-align:center;font-weight:700">' + r.value + '</td>' +
-    '<td>' + (r.note || '') + '</td>' +
+    '<td style="white-space:nowrap">' + escapeToday((r.recorded_at || '').slice(0, 10)) + '</td>' +
+    '<td>' + escapeToday(r.element) + '</td>' +
+    '<td style="text-align:center;font-weight:700">' + escapeToday(r.value) + '</td>' +
+    '<td>' + escapeToday(r.note || '') + '</td>' +
     '<td style="text-align:center;white-space:nowrap">' +
       '<button class="icon-btn" title="编辑" onclick="editWaterRecord(' + r.id + ')">✏️</button>' +
       '<button onclick="delWaterRecord(' + r.id + ')" class="icon-btn" title="删除">🗑</button></td>' +
@@ -2847,7 +3274,6 @@ function renderWaterChart() {
   if (el === '__all__') {
     const colors = ['#0a6ea8', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
     const series = [];
-    const allDates = [];
     const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
     let ci = 0;
     for (const key of order) {
@@ -2855,8 +3281,11 @@ function renderWaterChart() {
       if (!a || !a.records || a.records.length < 2) continue;
       const vals = a.records.map(r => r.value);
       const base = vals[0];
-      // 归一化为相对变化百分比，数据点 [时间戳, 百分比]
-      const pctData = a.records.map((r, i) => [r.ts, +((vals[i] - base) / base * 100).toFixed(2)]);
+      const target = tankEffectiveTargets[key] || (a.ideal || {});
+      const targetMid = (Number(target.low) + Number(target.high)) / 2;
+      // 首测为0时不能计算相对百分比，改用本缸参考范围中值作为安全基准。
+      const denominator = Math.abs(base) > 1e-12 ? Math.abs(base) : (targetMid > 0 ? targetMid : 1);
+      const pctData = a.records.map((r, i) => [r.ts, +((vals[i] - base) / denominator * 100).toFixed(2)]);
       series.push({ name: a.display || key, type: 'line', data: pctData, smooth: true, symbolSize: 6,
         lineStyle: { width: 2 }, itemStyle: { color: colors[ci % colors.length] } });
       ci++;
@@ -2906,7 +3335,6 @@ function renderWaterChart() {
     // 按日期排序（同日多条按id顺序）
     const sorted = logs.slice().sort((a, b) => (a.recorded_at + '|' + (a.id||0)).localeCompare(b.recorded_at + '|' + (b.id||0)));
     let openStart = null;      // 未闭合的start（存储 {date, dose}）
-    const sameDayLogs = [];    // 当日所有记录（用于同日开始结束合计）
     for (const l of sorted) {
       const d = l.recorded_at.slice(0, 10);
       if (l.action === 'start') {
@@ -3042,7 +3470,11 @@ function renderSaltBrands() {
   const sel = document.getElementById('saltBrand');
   sel.innerHTML = '<option value="">选择品牌</option>' + SALT_BRANDS.map((b, i) =>
     '<option value="' + i + '">' + b[0] + '（' + b[1] + '克/升）</option>').join('');
-  sel.addEventListener('change', () => { calcSalt(); });
+  sel.addEventListener('change', () => {
+    saltReferenceManuallyOpen = false;
+    calcSalt();
+    updateSaltReferenceVisibility();
+  });
 
   // 数据表
   const tbody = document.getElementById('saltTableBody');
@@ -3064,10 +3496,45 @@ function renderSaltBrands() {
   }).join('');
 }
 
+let saltReferenceManuallyOpen = false;
+
 function pickSaltBrand(i) {
   const sel = document.getElementById('saltBrand');
   sel.value = i;
+  saltReferenceManuallyOpen = false;
   calcSalt();
+  updateSaltReferenceVisibility();
+}
+
+function updateSaltReferenceVisibility() {
+  const sel = document.getElementById('saltBrand');
+  const card = document.getElementById('saltReferenceCard');
+  const body = document.getElementById('saltReferenceBody');
+  const toggle = document.getElementById('saltReferenceToggle');
+  const summary = document.getElementById('saltReferenceSummary');
+  if (!sel || !card || !body || !toggle || !summary) return;
+  const idx = sel.value !== '' ? parseInt(sel.value) : -1;
+  const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
+  if (!brand) {
+    body.hidden = false;
+    toggle.hidden = true;
+    toggle.setAttribute('aria-expanded', 'true');
+    card.classList.remove('collapsed');
+    summary.textContent = '选盐时可以对照看看；数据来自单一公开分享，未独立复现。';
+    return;
+  }
+  const open = saltReferenceManuallyOpen;
+  body.hidden = !open;
+  toggle.hidden = false;
+  toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  toggle.textContent = open ? '收起参考' : '查看其他海盐参考';
+  card.classList.toggle('collapsed', !open);
+  summary.textContent = '已选 ' + brand[0] + ' · ' + brand[1] + ' 克/升' + (open ? '' : '，参考表已收起');
+}
+
+function toggleSaltReference() {
+  saltReferenceManuallyOpen = !saltReferenceManuallyOpen;
+  updateSaltReferenceVisibility();
 }
 
 function calcSalt() {
@@ -3078,20 +3545,63 @@ function calcSalt() {
   const perLiter = document.getElementById('saltPerLiter');
   const total = document.getElementById('saltTotal');
   const kg = document.getElementById('saltKg');
+  const recordBtn = document.getElementById('saltRecordBtn');
+  const recordMeta = document.getElementById('saltRecordMeta');
+  const manualBrand = document.getElementById('wcBrand');
+  if (brand && manualBrand) manualBrand.value = brand[0];
   if (!brand || water <= 0) {
     perLiter.textContent = brand ? brand[1] : '—';
     total.textContent = brand && water > 0 ? Math.round(water * brand[1]) : '—';
     kg.textContent = brand && water > 0 ? '≈ ' + (water * brand[1] / 1000).toFixed(2) + ' kg' : '';
+    recordBtn.disabled = true;
+    recordMeta.textContent = !brand ? '先选海盐品牌' : '填写本次实际换水量';
     return;
   }
   perLiter.textContent = brand[1];
   const grams = Math.round(water * brand[1]);
   total.textContent = grams;
   kg.textContent = '≈ ' + (grams / 1000).toFixed(2) + ' kg';
+  recordBtn.disabled = false;
+  recordMeta.textContent = brand[0] + ' · ' + water + ' L · ' + grams + ' 克';
+}
+
+async function recordCalculatedWaterChange() {
+  const sel = document.getElementById('saltBrand');
+  const idx = sel.value !== '' ? parseInt(sel.value) : -1;
+  const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
+  const water = parseFloat(document.getElementById('saltWater').value);
+  const grams = brand && water > 0 ? Math.round(water * brand[1]) : 0;
+  if (!brand || !Number.isFinite(water) || water <= 0 || grams <= 0) {
+    toast('先选好海盐品牌并填写本次换水量', 'err');
+    return;
+  }
+  const button = document.getElementById('saltRecordBtn');
+  button.disabled = true;
+  button.textContent = '正在记录…';
+  try {
+    await api('/api/water-change', {
+      method: 'POST',
+      body: { water_liters: water, salt_grams: grams, salt_brand: brand[0], note: '', recorded_at: todayLocal() }
+    });
+    document.getElementById('wcWater').value = water;
+    document.getElementById('wcSaltGrams').value = grams;
+    document.getElementById('wcBrand').value = brand[0];
+    document.getElementById('wcDate').value = todayLocal();
+    await loadWaterChanges();
+    await refreshWaterChangeCache();
+    buzz(15);
+    toast('已记录 ' + brand[0] + ' · ' + water + 'L · ' + grams + '克 ✓', 'ok');
+    button.textContent = '✓ 已记录';
+    setTimeout(() => { button.textContent = '✓ 已换水'; button.disabled = false; }, 1400);
+  } catch (e) {
+    button.textContent = '✓ 已换水';
+    button.disabled = false;
+  }
 }
 document.getElementById('saltWater').addEventListener('input', calcSalt);
 renderSaltBrands();
 calcSalt();
+updateSaltReferenceVisibility();
 
 /* ═══ 换水记录 ═══ */
 async function initWaterChange() {
@@ -3100,6 +3610,8 @@ async function initWaterChange() {
   if (wcBrand) {
     wcBrand.innerHTML = '<option value="">不选/自配</option>' + SALT_BRANDS.map((b, i) =>
       '<option value="' + b[0] + '">' + b[0] + '</option>').join('');
+    const selectedSalt = document.getElementById('saltBrand').value;
+    if (selectedSalt !== '') wcBrand.value = SALT_BRANDS[parseInt(selectedSalt)][0];
   }
   // 日期默认今天
   const wcDate = document.getElementById('wcDate');
@@ -3116,11 +3628,11 @@ const WC_PAGE_SIZE = 5;
 async function loadWaterChanges() {
   const tbody = document.getElementById('wcList');
   if (!tbody) return;
-  const res = await fetch('/api/water-change');
-  const data = await res.json();
+  const data = await api('/api/water-change');
   wcAllChanges = data.changes || [];
   wcPage = 1;
   renderWcTable();
+  if (tankProfile) loadTodayDashboard();
 }
 
 function renderWcTable() {
@@ -3131,14 +3643,15 @@ function renderWcTable() {
   const start = (wcPage - 1) * WC_PAGE_SIZE;
   const pageItems = wcAllChanges.slice(start, start + WC_PAGE_SIZE);
   tbody.innerHTML = pageItems.map(c => '<tr>' +
-    '<td style="white-space:nowrap">' + c.recorded_at.slice(0, 10) + '</td>' +
-    '<td>' + c.water_liters + 'L</td>' +
-    '<td>' + (c.salt_brand || '—') + '</td>' +
-    '<td>' + (c.note || '') + '</td>' +
+    '<td style="white-space:nowrap">' + escapeToday((c.recorded_at || '').slice(0, 10)) + '</td>' +
+    '<td>' + escapeToday(c.water_liters) + 'L</td>' +
+    '<td>' + (c.salt_grams ? escapeToday(c.salt_grams) + 'g' : '—') + '</td>' +
+    '<td>' + escapeToday(c.salt_brand || '—') + '</td>' +
+    '<td>' + escapeToday(c.note || '') + '</td>' +
     '<td style="text-align:center;white-space:nowrap">' +
       '<button class="icon-btn" title="编辑" onclick="editWaterChange(' + c.id + ')">✏️</button>' +
       '<button class="icon-btn" title="删除" onclick="delWaterChange(' + c.id + ')">🗑</button></td>' +
-    '</tr>').join('') || '<tr><td colspan="5" style="padding:8px;color:var(--ink-faint)">暂无换水记录</td></tr>';
+    '</tr>').join('') || '<tr><td colspan="6" style="padding:8px;color:var(--ink-faint)">暂无换水记录</td></tr>';
   // 分页信息
   document.getElementById('wcPageInfo').textContent = total === 0 ? '0 条记录' : (pages === 1 ? '共 ' + total + ' 条' : '第 ' + wcPage + ' / ' + pages + ' 页 · 共 ' + total + ' 条');
   document.getElementById('wcPagePrev').disabled = wcPage <= 1;
@@ -3152,13 +3665,16 @@ function wcTurnPage(dir) {
 
 async function addWaterChange() {
   const water = parseFloat(document.getElementById('wcWater').value);
+  const gramsRaw = document.getElementById('wcSaltGrams').value;
+  const grams = gramsRaw === '' ? null : parseFloat(gramsRaw);
   const brand = document.getElementById('wcBrand').value;
   const date = document.getElementById('wcDate').value;
   const note = document.getElementById('wcNote').value.trim();
   if (!water || water <= 0) { toast('请输入有效的换水量(升)', 'err'); return; }
+  if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数需要大于0，也可以留空', 'err'); return; }
   const res = await api('/api/water-change', {
     method: 'POST',
-    body: { water_liters: water, salt_brand: brand, note: note, recorded_at: date }
+    body: { water_liters: water, salt_grams: grams, salt_brand: brand, note: note, recorded_at: date }
   });
   document.getElementById('wcNote').value = '';
   await loadWaterChanges();
@@ -3189,8 +3705,8 @@ function editWaterRecord(id) {
     '<div class="modal-field"><label>元素</label><select id="me_element">' + els + '</select></div>' +
     '<div class="modal-field"><label>测试值</label><input type="number" step="0.1" id="me_value" value="' + rec.value + '"></div>' +
     '<div class="modal-row">' +
-      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + (rec.recorded_at || '').slice(0, 10) + '"></div>' +
-      '<div class="modal-field"><label>备注</label><input type="text" id="me_note" value="' + (rec.note || '').replace(/"/g, '&quot;') + '"></div>' +
+      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + escapeToday((rec.recorded_at || '').slice(0, 10)) + '"></div>' +
+      '<div class="modal-field"><label>备注</label><input type="text" id="me_note" maxlength="200" value="' + escapeToday(rec.note || '') + '"></div>' +
     '</div>';
   openEditModal('✏️ 编辑水质记录', rec.element + ' · 记录于 ' + (rec.recorded_at || '').slice(0, 10), {
     type: 'water', id: id,
@@ -3226,7 +3742,7 @@ function editDoseLog(id) {
     '</div>' +
     '<div class="modal-row">' +
       '<div class="modal-field"><label>动作</label><select id="me_action">' + acts + '</select></div>' +
-      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + (rec.recorded_at || '').slice(0, 10) + '"></div>' +
+      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + escapeToday((rec.recorded_at || '').slice(0, 10)) + '"></div>' +
     '</div>';
   openEditModal('✏️ 编辑滴定记录', rec.element + ' · ' + (rec.note || ''), {
     type: 'dose', id: id,
@@ -3254,21 +3770,25 @@ function editWaterChange(id) {
   const fields =
     '<div class="modal-row">' +
       '<div class="modal-field"><label>换水量(升)</label><input type="number" step="0.1" id="me_value" value="' + rec.water_liters + '"></div>' +
-      '<div class="modal-field"><label>盐品牌</label><select id="me_brand">' + brands + '</select></div>' +
+      '<div class="modal-field"><label>配盐(克，可选)</label><input type="number" step="0.1" id="me_salt_grams" value="' + (rec.salt_grams || '') + '"></div>' +
     '</div>' +
     '<div class="modal-row">' +
-      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + (rec.recorded_at || '').slice(0, 10) + '"></div>' +
-      '<div class="modal-field"><label>备注</label><input type="text" id="me_note" value="' + (rec.note || '').replace(/"/g, '&quot;') + '"></div>' +
-    '</div>';
+      '<div class="modal-field"><label>盐品牌</label><select id="me_brand">' + brands + '</select></div>' +
+      '<div class="modal-field"><label>日期</label><input type="date" id="me_date" value="' + escapeToday((rec.recorded_at || '').slice(0, 10)) + '"></div>' +
+    '</div>' +
+    '<div class="modal-field"><label>备注</label><input type="text" id="me_note" maxlength="200" value="' + escapeToday(rec.note || '') + '"></div>';
   openEditModal('✏️ 编辑换水记录', '换水于 ' + (rec.recorded_at || '').slice(0, 10), {
     type: 'change', id: id,
     save: async function() {
       const water = parseFloat(document.getElementById('me_value').value);
+      const gramsRaw = document.getElementById('me_salt_grams').value;
+      const grams = gramsRaw === '' ? null : parseFloat(gramsRaw);
       const brand = document.getElementById('me_brand').value;
       const date = document.getElementById('me_date').value;
       const note = document.getElementById('me_note').value.trim();
       if (isNaN(water) || water <= 0) { toast('请输入有效的换水量(升)', 'err'); throw new Error('invalid'); }
-      await api('/api/water-change/' + id, { method: 'PUT', body: { water_liters: water, salt_brand: brand, note: note, recorded_at: date } });
+      if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数需要大于0，也可以留空', 'err'); throw new Error('invalid'); }
+      await api('/api/water-change/' + id, { method: 'PUT', body: { water_liters: water, salt_grams: grams, salt_brand: brand, note: note, recorded_at: date } });
       await loadWaterChanges();
       await refreshWaterChangeCache();
       buzz(15); toast('换水记录已更新 ✓', 'ok');
@@ -3279,8 +3799,7 @@ function editWaterChange(id) {
 /* 重新加载换水缓存并刷新趋势图标记 */
 async function refreshWaterChangeCache() {
   try {
-    const res = await fetch('/api/water-change');
-    const data = await res.json();
+    const data = await api('/api/water-change', { silent: true });
     waterChangeCache = data.changes || [];
     // 深度模式且换水标记开启时重新渲染
     if (waterMode === 'pro' && document.getElementById('wqChartWC').value === '1') {
@@ -3318,7 +3837,7 @@ initWaterChange();
   let startX = 0, startY = 0, tracking = false;
   const TAB_ORDER = ['water', 'salt', 'calc', 'dosing'];
   const isOverlayOpen = () => {
-    return ['tankModal', 'estimatorModal', 'guideMask', 'editModal', 'backupModal'].some(id => {
+    return ['tankModal', 'estimatorModal', 'guideMask', 'editModal', 'backupModal', 'maintenanceModal'].some(id => {
       const el = document.getElementById(id);
       return el && el.classList.contains('open');
     });

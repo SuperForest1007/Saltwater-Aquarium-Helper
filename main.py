@@ -3,8 +3,8 @@
 海水缸管理App - FastAPI 后端入口
 """
 import os
-from datetime import date
-from typing import Literal
+from datetime import date, timedelta
+from typing import Literal, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,12 +23,15 @@ from water_quality import (
     linkage_diagnosis, get_ideals_for_tank, TANK_TYPE_DESCRIPTIONS,
     TANK_TYPE_TARGETS, TANK_TYPE_FOCUS,
 )
+from today_status import maintenance_defaults, build_today_dashboard
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
     init_water_change, add_water_change, get_water_changes, delete_water_change,
     update_record, update_dosing_log, update_water_change,
     export_all, import_all, get_active_tank, update_active_tank,
+    init_maintenance, ensure_maintenance_rules, get_maintenance_rules,
+    update_maintenance_rule, add_maintenance_event, get_maintenance_events,
     TANK_TYPES, TANK_STAGES,
 )
 
@@ -38,6 +41,7 @@ app = FastAPI(title="海水缸管理App", version="0.5.0")
 init_db()
 init_dosing_log()
 init_water_change()
+init_maintenance()
 
 # 项目根目录（基于文件位置，避免工作目录不同导致找不到文件）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +53,27 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 
 PositiveFiniteFloat = confloat(gt=0, allow_inf_nan=False)
 NonNegativeFiniteFloat = confloat(ge=0, allow_inf_nan=False)
+WaterElement = Literal["KH", "钙", "镁", "NO3", "PO4"]
+DosingElement = Literal["KH", "钙", "镁"]
+DosingAction = Literal["start", "end", "adjust"]
+
+
+def _validate_recorded_at(value: str):
+    """记录日期只接收本地日历日期，避免坏数据让后续趋势解析失败。"""
+    if not value:
+        return
+    try:
+        recorded = date.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="记录日期必须使用 YYYY-MM-DD") from exc
+    if recorded > date.today():
+        raise HTTPException(status_code=422, detail="记录日期不能晚于今天")
+
+
+def _not_found(ok: bool, label: str):
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"没有找到这条{label}")
+    return {"ok": True}
 
 
 def _active_context():
@@ -127,6 +152,71 @@ def api_tank_update(req: TankProfileRequest):
         "tank": tank,
         "effective_targets": get_ideals_for_tank(tank["tank_type"], tank.get("custom_targets")),
     }
+
+
+class MaintenanceRuleRequest(BaseModel):
+    interval_days: int = Field(ge=1, le=365)
+    enabled: bool = True
+
+
+class MaintenanceEventRequest(BaseModel):
+    task_key: str = Field(min_length=1, max_length=60)
+    action: Literal["complete", "postpone"]
+    snooze_days: int = Field(default=1, ge=1, le=30)
+    note: str = Field(default="", max_length=200)
+
+
+def _maintenance_context():
+    tank = get_active_tank()
+    rules = ensure_maintenance_rules(maintenance_defaults(tank))
+    return tank, rules
+
+
+@app.get("/api/today")
+def api_today():
+    """今日海况、判断依据与轻量维护节奏。"""
+    tank, rules = _maintenance_context()
+    ideals = get_ideals_for_tank(tank["tank_type"], tank.get("custom_targets"))
+    return build_today_dashboard(
+        tank=tank,
+        ideals=ideals,
+        records_by_element=get_records_grouped(),
+        water_changes=get_water_changes(),
+        dosing_logs=get_dosing_logs(),
+        rules=rules,
+        events=get_maintenance_events(),
+    )
+
+
+@app.get("/api/maintenance")
+def api_maintenance():
+    tank, rules = _maintenance_context()
+    return {
+        "rules": rules,
+        "events": get_maintenance_events(limit=100),
+        "note": f"这是按{tank['tank_type']} · {tank['stage']}生成的起始节奏，可以按自己的设备和习惯调整。",
+    }
+
+
+@app.put("/api/maintenance/rule/{task_key}")
+def api_maintenance_rule_update(task_key: str, req: MaintenanceRuleRequest):
+    _, rules = _maintenance_context()
+    if task_key not in {rule["task_key"] for rule in rules}:
+        raise HTTPException(status_code=404, detail="没有找到这个维护项目")
+    update_maintenance_rule(task_key, req.interval_days, req.enabled)
+    return {"ok": True, "rules": get_maintenance_rules()}
+
+
+@app.post("/api/maintenance/event")
+def api_maintenance_event_add(req: MaintenanceEventRequest):
+    _, rules = _maintenance_context()
+    if req.task_key not in {rule["task_key"] for rule in rules}:
+        raise HTTPException(status_code=404, detail="没有找到这个维护项目")
+    snooze_until = None
+    if req.action == "postpone":
+        snooze_until = (date.today() + timedelta(days=req.snooze_days)).isoformat()
+    rid = add_maintenance_event(req.task_key, req.action, req.note, snooze_until=snooze_until)
+    return {"ok": True, "id": rid, "snooze_until": snooze_until}
 
 class AdditiveRequest(BaseModel):
     water_liters: PositiveFiniteFloat       # 水量(升)
@@ -213,51 +303,61 @@ def api_dosing_adjust(req: AdjustRequest):
                        req.plan_days, req.current_dose_ml)
 
 class DosingLogRequest(BaseModel):
-    element: str
+    element: DosingElement
     dose_ml: PositiveFiniteFloat = Field(description="滴定量必须为正数")
-    note: str = ""
-    action: str = "start"   # start=开始滴定 / end=结束滴定
-    recorded_at: str = ""
+    note: str = Field(default="", max_length=200)
+    action: DosingAction = "start"   # start=开始滴定 / end=结束滴定
+    recorded_at: str = Field(default="", max_length=10)
 
 @app.post("/api/dosing/log")
 def api_dosing_log_add(req: DosingLogRequest):
     """记录一次滴定设置变化（前端自动调用）。"""
+    _validate_recorded_at(req.recorded_at)
     rid = add_dosing_log(req.element, req.dose_ml, req.note, req.recorded_at or None, req.action)
     return {"id": rid, "ok": True}
 
 @app.get("/api/dosing/logs")
-def api_dosing_logs(element: str = None):
+def api_dosing_logs(element: Optional[DosingElement] = None):
     """获取滴定记录（供趋势图标记）。"""
     return {"logs": get_dosing_logs(element)}
 
 @app.delete("/api/dosing/log/{rid}")
 def api_dosing_log_delete(rid: int):
     """删除一条滴定记录。"""
-    return {"ok": delete_dosing_log(rid)}
+    return _not_found(delete_dosing_log(rid), "滴定记录")
 
 class DosingLogUpdateRequest(BaseModel):
-    element: str
+    element: DosingElement
     dose_ml: PositiveFiniteFloat
-    note: str = ""
-    action: str = "start"
-    recorded_at: str = ""
+    note: str = Field(default="", max_length=200)
+    action: DosingAction = "start"
+    recorded_at: str = Field(default="", max_length=10)
 
 @app.put("/api/dosing/log/{rid}")
 def api_dosing_log_update(rid: int, req: DosingLogUpdateRequest):
     """更新一条滴定记录。"""
-    return {"ok": update_dosing_log(rid, req.element, req.dose_ml, req.note, req.recorded_at or None, req.action)}
+    _validate_recorded_at(req.recorded_at)
+    return _not_found(
+        update_dosing_log(rid, req.element, req.dose_ml, req.note, req.recorded_at or None, req.action),
+        "滴定记录",
+    )
 
 # ---------- 换水记录 API ----------
 
 class WaterChangeRequest(BaseModel):
     water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
-    salt_brand: str = ""
-    note: str = ""
-    recorded_at: str = ""
+    salt_grams: Optional[PositiveFiniteFloat] = Field(default=None, description="实际配盐克数可留空")
+    salt_brand: str = Field(default="", max_length=80)
+    note: str = Field(default="", max_length=200)
+    recorded_at: str = Field(default="", max_length=10)
 
 @app.post("/api/water-change")
 def api_water_change_add(req: WaterChangeRequest):
-    rid = add_water_change(req.water_liters, req.salt_brand, req.note, req.recorded_at or None)
+    _validate_recorded_at(req.recorded_at)
+    rid = add_water_change(
+        req.water_liters, req.salt_brand, req.note, req.recorded_at or None,
+        salt_grams=req.salt_grams,
+    )
     return {"id": rid, "ok": True}
 
 @app.get("/api/water-change")
@@ -266,25 +366,33 @@ def api_water_change_list():
 
 @app.delete("/api/water-change/{rid}")
 def api_water_change_delete(rid: int):
-    return {"ok": delete_water_change(rid)}
+    return _not_found(delete_water_change(rid), "换水记录")
 
 class WaterChangeUpdateRequest(BaseModel):
     water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
-    salt_brand: str = ""
-    note: str = ""
-    recorded_at: str = ""
+    salt_grams: Optional[PositiveFiniteFloat] = Field(default=None, description="实际配盐克数可留空")
+    salt_brand: str = Field(default="", max_length=80)
+    note: str = Field(default="", max_length=200)
+    recorded_at: str = Field(default="", max_length=10)
 
 @app.put("/api/water-change/{rid}")
 def api_water_change_update(rid: int, req: WaterChangeUpdateRequest):
-    return {"ok": update_water_change(rid, req.water_liters, req.salt_brand, req.note, req.recorded_at or None)}
+    _validate_recorded_at(req.recorded_at)
+    return _not_found(
+        update_water_change(
+            rid, req.water_liters, req.salt_brand, req.note, req.recorded_at or None,
+            salt_grams=req.salt_grams,
+        ),
+        "换水记录",
+    )
 
 # ---------- 水质记录与分析 API ----------
 
 class RecordRequest(BaseModel):
-    element: str
+    element: WaterElement
     value: NonNegativeFiniteFloat = Field(description="测试值不能为负数；NO3、PO4等允许记录0")
-    note: str = ""
-    recorded_at: str = ""   # 可选，默认当前时间
+    note: str = Field(default="", max_length=200)
+    recorded_at: str = Field(default="", max_length=10)   # 可选，默认当前时间
 
 
 def _validate_zero_value(element: str, value: float):
@@ -304,7 +412,7 @@ def api_water_ideals():
     }
 
 @app.get("/api/water/records")
-def api_water_records(element: str = None):
+def api_water_records(element: Optional[WaterElement] = None):
     """获取记录（可按元素过滤）。"""
     return {"records": get_records(element)}
 
@@ -316,28 +424,30 @@ def api_water_elements():
 @app.post("/api/water/record")
 def api_water_add(req: RecordRequest):
     _validate_zero_value(req.element, req.value)
+    _validate_recorded_at(req.recorded_at)
     _, ideals = _active_context()
     rid = add_record(req.element, req.value, ideals.get(req.element, {}).get("unit", "ppm"), req.note, req.recorded_at or None)
     return {"id": rid, "ok": True}
 
 @app.delete("/api/water/record/{rid}")
 def api_water_delete(rid: int):
-    return {"ok": delete_record(rid)}
+    return _not_found(delete_record(rid), "水质记录")
 
 class RecordUpdateRequest(BaseModel):
-    element: str
+    element: WaterElement
     value: NonNegativeFiniteFloat = Field(description="测试值不能为负数；NO3、PO4等允许记录0")
-    note: str = ""
-    recorded_at: str = ""
+    note: str = Field(default="", max_length=200)
+    recorded_at: str = Field(default="", max_length=10)
 
 @app.put("/api/water/record/{rid}")
 def api_water_update(rid: int, req: RecordUpdateRequest):
     _validate_zero_value(req.element, req.value)
+    _validate_recorded_at(req.recorded_at)
     _, ideals = _active_context()
     rid_ok = update_record(rid, req.element, req.value,
                            ideals.get(req.element, {}).get("unit", "ppm"),
                            req.note, req.recorded_at or None)
-    return {"ok": rid_ok}
+    return _not_found(rid_ok, "水质记录")
 
 @app.get("/api/water/analysis")
 def api_water_analysis():

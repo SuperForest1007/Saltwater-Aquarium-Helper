@@ -52,12 +52,11 @@ class TestWaterRecordUpdate:
             assert resp.status_code == 422, f"值{bad}应被拒绝"
 
     def test_update_water_record_not_found(self, test_client):
-        """更新不存在的记录应返回ok=False。"""
+        """更新不存在的记录应明确返回404。"""
         r = test_client.put("/api/water/record/99999", json={
             "element": "KH", "value": 8.0, "recorded_at": "2025-02-02"
         })
-        assert r.status_code == 200
-        assert r.json()["ok"] is False
+        assert r.status_code == 404
 
 
 class TestWaterChangeUpdate:
@@ -69,7 +68,7 @@ class TestWaterChangeUpdate:
         cid = r.json()["id"]
 
         r = test_client.put(f"/api/water-change/{cid}", json={
-            "water_liters": 45, "salt_brand": "法红", "note": "修改", "recorded_at": "2025-03-05"
+            "water_liters": 45, "salt_grams": 1710, "salt_brand": "法红", "note": "修改", "recorded_at": "2025-03-05"
         })
         assert r.status_code == 200
         assert r.json()["ok"] is True
@@ -78,6 +77,7 @@ class TestWaterChangeUpdate:
         assert len(changes) == 1
         c = changes[0]
         assert c["water_liters"] == 45
+        assert c["salt_grams"] == 1710
         assert c["salt_brand"] == "法红"
         assert c["note"] == "修改"
 
@@ -90,6 +90,12 @@ class TestWaterChangeUpdate:
                 "water_liters": bad, "recorded_at": "2025-03-05"
             })
             assert resp.status_code == 422
+
+    def test_update_water_change_not_found(self, test_client):
+        r = test_client.put("/api/water-change/99999", json={
+            "water_liters": 30, "recorded_at": "2025-03-05"
+        })
+        assert r.status_code == 404
 
 
 class TestDosingLogUpdate:
@@ -125,3 +131,9 @@ class TestDosingLogUpdate:
                 "element": "KH", "dose_ml": bad, "recorded_at": "2025-04-02"
             })
             assert resp.status_code == 422
+
+    def test_update_dosing_log_not_found(self, test_client):
+        r = test_client.put("/api/dosing/log/99999", json={
+            "element": "KH", "dose_ml": 30, "recorded_at": "2025-04-02"
+        })
+        assert r.status_code == 404

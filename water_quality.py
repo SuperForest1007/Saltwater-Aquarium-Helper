@@ -150,9 +150,16 @@ def analyze_element(records, element, ideal=None):
     if not records:
         return {"element": element, "status": "no_data", "signals": {}, "advice": "暂无该元素记录，请添加几次测试值后开始分析。"}
 
-    # 时间序列
-    dates = [datetime.fromisoformat(d) if isinstance(d, str) else d for d, _ in records]
-    values = [float(v) for _, v in records]
+    # 展示保留完整记录；判断使用近期窗口，避免几个月前的数据冲淡刚发生的变化。
+    all_dates = [datetime.fromisoformat(d) if isinstance(d, str) else d for d, _ in records]
+    all_values = [float(v) for _, v in records]
+    window_start = all_dates[-1] - timedelta(days=60)
+    recent_pairs = [(d, v) for d, v in zip(all_dates, all_values) if d >= window_start][-20:]
+    if len(recent_pairs) < 2:
+        recent_pairs = list(zip(all_dates, all_values))[-2:]
+    dates = [item[0] for item in recent_pairs]
+    values = [item[1] for item in recent_pairs]
+
     # 转为"天"序号
     t0 = dates[0]
     xs = [(d - t0).total_seconds() / 86400.0 for d in dates]
@@ -248,6 +255,8 @@ def analyze_element(records, element, ideal=None):
         "r2": round(r2, 3),
         "current": round(cur, 2),
         "count": len(records),
+        "trend_count": len(values),
+        "trend_days": max(0, (dates[-1] - dates[0]).days),
     }
     advice = _compose_advice(element, signals, low, high, unit, prediction)
 
@@ -260,7 +269,7 @@ def analyze_element(records, element, ideal=None):
         "signals": signals,
         "prediction": prediction,
         "advice": advice,
-        "records": [{"date": d.strftime("%Y-%m-%d"), "value": v, "ts": int(d.timestamp() * 1000)} for d, v in zip(dates, values)],
+        "records": [{"date": d.strftime("%Y-%m-%d"), "value": v, "ts": int(d.timestamp() * 1000)} for d, v in zip(all_dates, all_values)],
     }
 
 
