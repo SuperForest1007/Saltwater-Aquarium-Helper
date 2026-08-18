@@ -6,8 +6,11 @@
   - 核心组(最常用): 钙/KH/镁 —— 珊瑚日常消耗最大, 几乎每周都要补
   - 进阶组: 锶/钾 —— 视饲养方向补充
   - 微量组: 碘/溴/氟 —— 换水通常可维持
-  - 营养组: NO3/磷酸盐 —— 控制性元素
-  - 治疗组(不常用, 折叠): 铜/福马林 —— 仅在治疗时使用
+  - 营养组: NO3/磷酸盐 —— 仅提供可按化学计量验证的补充计算
+
+安全边界:
+  - 碳源降 NO3 受菌群、PO4、蛋分和溶氧等影响，不能套用分子量公式，故不提供自动剂量。
+  - 铜药/福马林等治疗浓度随制剂和隔离缸条件变化，故不在通用计算器中提供。
 
 每组带说明文字(detail), 帮助用户理解每个元素的意义。
 """
@@ -34,16 +37,16 @@ ADDITIVE_GROUPS = [
     {
         "id": "core",
         "title": "核心元素",
-        "badge": "每周必测",
+        "badge": "优先关注",
         "collapsed": False,
-        "note": "珊瑚骨骼生长消耗最大的三项，建议每周测试并补充。",
+        "note": "礁岩缸常关注的三项；测试频率应按缸体阶段、消耗速度和近期调整决定，测试后也不等于必须补充。",
         "elements": [
             {
                 "name": "KH 碱度",
-                "ideal": "8-12",
+                "ideal": "7-11",
                 "unit": "dKH",
-                "detail": "维持水体pH稳定和珊瑚钙化速度，波动大会引发珊瑚应激。",
-                "tip": "理想范围 8-12dKH（SPS建议8-9），每天波动不宜超过 ±0.5dKH。",
+                "detail": "参与海水缓冲体系并影响钙化；短期大幅变化通常比处于参考区间内的细小差异更值得警惕。",
+                "tip": "通用参考约 7-11dKH；具体目标需结合营养盐、珊瑚类型和长期稳定值，不必追求单一数字。",
                 "direction": "up",
                 "conc_presets": ["0.1", "0.5", "1", "2", "3", "4", "5"],
                 "additives": [
@@ -55,7 +58,7 @@ ADDITIVE_GROUPS = [
                 "ideal": "400-450",
                 "unit": "ppm",
                 "detail": "珊瑚骨骼和藻类生长的核心元素，SPS硬骨消耗尤其快。",
-                "tip": "理想范围 400-450ppm（SPS建议420-450），低于 380ppm 珊瑚生长会受影响。",
+                "tip": "通用参考约 400-450ppm；请结合盐度、测试误差与碱度趋势判断，不建议仅凭一次读数追值。",
                 "direction": "up",
                 "conc_presets": ["5", "10", "20", "30", "40", "50", "75"],
                 "additives": [
@@ -66,10 +69,10 @@ ADDITIVE_GROUPS = [
             },
             {
                 "name": "镁 Mg",
-                "ideal": "1300-1400",
+                "ideal": "1250-1400",
                 "unit": "ppm",
-                "detail": "维持钙与碱度的平衡，镁偏低会导致钙析出沉淀。",
-                "tip": "理想范围 1300-1400ppm（SPS建议1350-1400），镁是钙KH稳定的前提。",
+                "detail": "参与维持钙、碱度与碳酸盐体系的稳定；镁偏低时碳酸钙更容易非生物沉淀。",
+                "tip": "通用参考约 1250-1400ppm（随盐度而变），先确认盐度和复测结果再调整。",
                 "direction": "up",
                 "conc_presets": ["30", "50", "75", "100", "150", "200"],
                 "additives": [
@@ -93,8 +96,8 @@ ADDITIVE_GROUPS = [
                 "name": "锶 Sr",
                 "ideal": "8-9",
                 "unit": "ppm",
-                "detail": "参与珊瑚骨骼形成，通常随钙一起消耗。",
-                "tip": "理想范围 8-9ppm，与钙同步消耗时一起补充。",
+                "detail": "可进入珊瑚骨骼，但其实际需求与独立补充收益并不能仅由钙消耗直接推定。",
+                "tip": "海水中常见约 8ppm；没有可靠检测或明确方案时，不建议为追数值单独补充。",
                 "direction": "up",
                 "conc_presets": ["1", "2", "3", "5", "8", "10", "20"],
                 "additives": [
@@ -105,8 +108,8 @@ ADDITIVE_GROUPS = [
                 "name": "钾 K",
                 "ideal": "380-420",
                 "unit": "ppm",
-                "detail": "对珊瑚发色有一定帮助，但过量有风险，谨慎添加。",
-                "tip": "天然海水约 400ppm，理想范围 380-420ppm，超量可能抑制钙吸收。",
+                "detail": "海水中的主要离子之一；缺乏可靠测试依据时，不应把发色变化简单归因于钾。",
+                "tip": "海水中常见约 400ppm；过量同样有风险，仅依据可靠检测和明确产品说明调整。",
                 "direction": "up",
                 "conc_presets": ["5", "10", "20", "30", "40", "50", "100"],
                 "additives": [
@@ -166,30 +169,17 @@ ADDITIVE_GROUPS = [
     # ═══════════ 营养组: NO3/磷酸盐 ═══════════
     {
         "id": "nutrient",
-        "title": "营养控制",
-        "badge": "控制性元素",
+        "title": "营养盐补充",
+        "badge": "谨慎使用",
         "collapsed": True,
-        "note": "维持较低营养盐，过高会抑制珊瑚、助长藻类。",
+        "note": "仅提供可按化学计量验证的 NO3/PO4 补充；碳源降 NO3 不适用本计算器。",
         "elements": [
-            {
-                "name": "硝酸盐 NO3（降低）",
-                "ideal": "2-10",
-                "unit": "ppm",
-                "detail": "NO3偏高时使用：碳源（酒精/伏特加）喂养细菌消耗氮，需要配合蛋分和稳定菌群。",
-                "tip": "SPS建议 5-10ppm，LPS 2-5ppm。仅当实测高于理想上限时使用本组；偏低请用下方「提升」组。",
-                "direction": "down",
-                "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2", "0.3", "0.5", "1"],
-                "additives": [
-                    ("95%酒精（碳源）", 1, 3, "降NO3"),
-                    ("伏特加40%（碳源）", 1, 7.5, "降NO3"),
-                ],
-            },
             {
                 "name": "硝酸盐 NO3（提升）",
                 "ideal": "2-10",
                 "unit": "ppm",
                 "detail": "NO3偏低或水体氮匮乏时使用：硝酸钙/硝酸钾补充氮源，让珊瑚恢复生长。",
-                "tip": "SPS建议 5-10ppm，LPS 2-5ppm。仅当实测低于理想下限时使用本组；偏高请用上方「降低」组（碳源法）。",
+                "tip": "仅在确认 NO3 偏低且明确需要补氮时使用；少量分次添加并复测，NO3 偏高时不要使用。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1"],
                 "additives": [
@@ -202,7 +192,7 @@ ADDITIVE_GROUPS = [
                 "ideal": "0.03-0.05",
                 "unit": "ppm",
                 "detail": "藻类养分，过高容易爆藻，需要控制。",
-                "tip": "SPS建议 0.03-0.05ppm，LPS可到0.08ppm；过低珊瑚会发白褪色，提升需谨慎。",
+                "tip": "常见参考约 0.03-0.08ppm，但需结合系统类型与检测下限；长期不可检出可能增加营养限制风险，提升需谨慎。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2"],
                 "additives": [
@@ -212,42 +202,6 @@ ADDITIVE_GROUPS = [
         ],
     },
 
-    # ═══════════ 治疗组: 铜/福马林 ═══════════
-    {
-        "id": "treatment",
-        "title": "治疗用药",
-        "badge": "仅在治疗时使用",
-        "collapsed": True,
-        "note": "以下为鱼病治疗浓度，请勿日常添加；用量务必精确。",
-        "elements": [
-            {
-                "name": "铜 Cu",
-                "ideal": "0.15-0.25",
-                "unit": "ppm",
-                "detail": "治疗白点等寄生虫，有软体珊瑚的缸严禁使用铜。",
-                "tip": "治疗浓度 0.15-0.25ppm；无脊椎动物缸禁用。",
-                "direction": "up",
-                "conc_presets": ["0.1", "0.15", "0.2", "0.25", "0.3", "0.4", "0.5"],
-                "additives": [
-                    ("无水硫酸铜 CuSO4", 63.5, 159.6, "316(0°C)"),
-                    ("硫酸铜 CuSO4·5H2O", 63.5, 249.7, "316(0°C)"),
-                    ("醋酸铜 Cu(CH3COO)2·H2O", 63.5, 199.6, "316(0°C)"),
-                ],
-            },
-            {
-                "name": "福马林",
-                "ideal": "25-50",
-                "unit": "ppm",
-                "detail": "治疗寄生虫/鳃病，毒性强，注意通风与防护。",
-                "tip": "治疗浓度 25-50ppm，鱼病治疗常用下限浓度以降低毒性；勿用37%高浓度甲醛。",
-                "direction": "up",
-                "conc_presets": ["50", "55", "60"],
-                "additives": [
-                    ("甲醛(24%) HCHO", 1, 1, "勿用37%"),
-                ],
-            },
-        ],
-    },
 ]
 
 # 计算函数 ------------------------------------------------------------------
@@ -261,8 +215,10 @@ def calc_additive(water_liters: float, conc_delta: float, v1: float, v2: float) 
     import math
     if (water_liters is None or conc_delta is None or
             not isinstance(water_liters, (int, float)) or not isinstance(conc_delta, (int, float)) or
+            not isinstance(v1, (int, float)) or not isinstance(v2, (int, float)) or
             not math.isfinite(water_liters) or not math.isfinite(conc_delta) or
-            water_liters <= 0 or conc_delta <= 0):
+            not math.isfinite(v1) or not math.isfinite(v2) or
+            water_liters <= 0 or conc_delta <= 0 or v1 <= 0 or v2 <= 0):
         return 0.0
     return round(conc_delta * (v2 / v1) * water_liters) / 1000
 
@@ -287,6 +243,17 @@ def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
     低于下限: 建议补到下限 (保守) 或中值 (推荐)
     高于上限: 提示偏高(不建议强行降低)
     """
+    import math
+    values = [water_liters, current_value, ideal_low, ideal_high, v1, v2]
+    if (any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in values) or
+            water_liters <= 0 or current_value < 0 or ideal_low < 0 or ideal_high <= ideal_low or
+            v1 <= 0 or v2 <= 0):
+        return {
+            "status": "invalid",
+            "message": "参数无效：请检查实际水量、实测值、目标区间和添加物数据",
+            "recommend_delta": 0,
+            "grams": 0,
+        }
     if current_value >= ideal_low and current_value <= ideal_high:
         return {
             "status": "ok",

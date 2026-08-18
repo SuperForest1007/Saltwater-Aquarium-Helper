@@ -68,10 +68,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
   /* ── 跟手反馈：按压缩放 + 卡片悬停 ── */
-  button, .preset, .seg-btn, .tab-btn, .mini-btn, .pager-btn, .mr-btn, .dose-toggle, .ctl-btn, .icon-btn, .dose-link-btn {
+  button, .seg-btn, .tab-btn, .mini-btn, .pager-btn, .mr-btn, .dose-toggle, .ctl-btn, .icon-btn, .dose-link-btn {
     -webkit-tap-highlight-color: transparent;
   }
-  button:active, .preset:active, .seg-btn:active, .mini-btn:active, .pager-btn:active, .mr-btn:active, .dose-toggle:active, .ctl-btn:active, .dose-link-btn:active {
+  button:active, .seg-btn:active, .mini-btn:active, .pager-btn:active, .mr-btn:active, .dose-toggle:active, .ctl-btn:active, .dose-link-btn:active {
     transform: scale(.96);
     transition: transform .12s ease;
   }
@@ -126,36 +126,7 @@
   /* ─── 容器 ─── */
   .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px; }
 
-  /* ─── 水量条 ─── */
-  .tank-bar {
-    background: var(--card); border-radius: var(--radius); padding: 16px 18px;
-    box-shadow: var(--shadow); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    justify-content: center; border: 1px solid rgba(10,110,168,.08); margin-bottom: 16px;
-    position: sticky; top: 10px; z-index: 20;
-  }
-  .tank-bar .tb-label { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
-  .tank-bar input[type=number] {
-    width: 88px; padding: 9px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); text-align: center;
-    font-size: 16px; font-weight: 700; color: var(--ocean-deep); background: var(--ocean-soft); transition: border .2s;
-  }
-  .tank-bar input[type=number]:focus { outline: none; border-color: var(--ocean); }
-  .tank-bar .preset {
-    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid var(--border-strong);
-    border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
-  }
-  .tank-bar .preset:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
-  .preset-btn {
-    padding: 6px 13px; background: #fff; color: var(--ocean-deep); border: 1.5px solid var(--ocean);
-    border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .18s;
-  }
-  .preset-btn:hover { background: var(--ocean-soft); transform: translateY(-1px); }
   .save-hint { font-size: 11px; color: var(--ink-faint); }
-  .tank-bar-toggle { display: none; cursor: pointer; color: var(--ocean); font-size: 13px; font-weight: 700;
-    padding: 5px 10px; border: 1.5px solid var(--ocean); border-radius: var(--radius-pill); background: var(--ocean-soft);
-    transition: transform .2s ease; line-height: 1; }
-  .tank-bar-toggle:hover { background: var(--ocean); color: #fff; }
-  .tank-presets { display: contents; } /* 桌面：presets 直接内联 */
-  .tank-bar .preset { display: inline-block; }
 
   /* ─── 估算器 ─── */
   .estimator { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
@@ -387,7 +358,6 @@
   @media (max-width: 560px) {
     .brand .logo { font-size: 22px; }
     .calc-row .add-in { width: 100%; }
-    .tank-bar { position: static; }
     .wave-top { height: 60px; }
     .brand { margin-top: -20px; }
     /* 手机 App 化：底部导航遮挡补偿 */
@@ -405,6 +375,9 @@
       transition: background .2s; margin-bottom: 2px; }
     .tab-btn.active .tb-ico { background: rgba(255,255,255,.2); }
     .toolbar { flex-wrap: wrap; }
+    .tank-identity { margin-left: 0; margin-right: 0; padding: 11px 12px; }
+    .tank-edit-hint { padding: 6px 8px; }
+    .tank-setup-box { padding: 20px 17px; }
     .wrap { padding: 0 12px; }
     .d-field .ctl { min-width: 0 !important; }
     input[type=number], input[type=date], input[type=text], select.ctl { max-width: 100%; }
@@ -448,11 +421,6 @@
     .elem-head .elem-ideal { white-space: normal; overflow: visible; min-width: 0; line-height: 1.5; }
 
     /* ── 记录表单：手机上纵向堆叠，避免突兀换行 ── */
-    /* 水体条：手机默认收起 preset，点 ▾ 展开 */
-    .tank-bar-toggle { display: inline-block; padding: 8px 14px; font-size: 13px; }
-    .tank-presets { display: none; }
-    .tank-bar.open .tank-presets { display: contents; }
-    .tank-bar .preset { padding: 8px 14px; } /* 触摸目标加大 */
     .record-form { flex-direction: column; align-items: stretch; gap: 8px; }
     .record-form .d-field { width: 100%; }
     .record-form .d-field .ctl,
@@ -512,6 +480,9 @@
     .modal-field input, .modal-field select { font-size: 13px; }
     .record-form #wqElSeg { gap: 4px; }
     .record-form #wqElSeg .seg-btn { padding: 7px 8px; font-size: 12px; }
+    .tank-type-grid { grid-template-columns: 1fr; }
+    .tank-type-grid span { min-height: 50px; }
+    .tank-help-btn { padding: 0 9px; }
   }
 
   /* ─── Toast 轻提示 ─── */
@@ -560,6 +531,94 @@
     color: var(--ocean-deep); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600;
     transition: all .18s; backdrop-filter: blur(4px); }
   .mini-btn:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
+
+  /* ─── 我的鱼缸：一条持续存在的缸体上下文 ─── */
+  .tank-identity { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px;
+    max-width: 780px; margin: 0 auto 14px; padding: 13px 15px; border-radius: 18px;
+    border: 1px solid rgba(15,95,134,.16); background: linear-gradient(115deg,#fff 0%,#f2fafc 72%,#fff8ec 100%);
+    box-shadow: 0 6px 22px rgba(10,61,92,.07); cursor: pointer; text-align: left; }
+  .tank-identity::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: linear-gradient(90deg,var(--ocean-deep),var(--ocean),#0a8f6e,var(--accent)); opacity: .9; }
+  .tank-identity:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .tank-avatar { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 14px;
+    display: grid; place-items: center; color: #fff; font-size: 20px;
+    background: linear-gradient(150deg,var(--ocean),var(--ocean-deep)); box-shadow: 0 5px 14px rgba(10,61,92,.24); }
+  .tank-identity-main { min-width: 0; flex: 1; }
+  .tank-identity-name { font-size: 14px; font-weight: 800; color: var(--ocean-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tank-identity-meta { margin-top: 3px; font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
+  .tank-edit-hint { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.8);
+    border: 1px solid var(--border); color: var(--ocean); font-size: 11px; font-weight: 700; }
+  .tank-setup-box { max-width: 540px; padding: 24px; }
+  .tank-setup-kicker { color: var(--ocean); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px; }
+  .tank-setup-title { font-size: 21px; color: var(--ocean-deep); font-weight: 800; margin-bottom: 5px; }
+  .tank-setup-sub { color: var(--ink-soft); font-size: 12px; line-height: 1.7; margin-bottom: 18px; }
+  .tank-setup-flow { position: relative; padding-left: 18px; }
+  .tank-setup-flow::before { content: ''; position: absolute; left: 3px; top: 7px; bottom: 7px; width: 3px;
+    border-radius: 5px; background: linear-gradient(180deg,var(--ocean),#52b8c2,#0a8f6e); }
+  .tank-step { position: relative; margin-bottom: 16px; }
+  .tank-step::before { content: ''; position: absolute; left: -20px; top: 5px; width: 7px; height: 7px;
+    border: 3px solid #fff; border-radius: 50%; background: var(--ocean); box-shadow: 0 0 0 1px var(--border-strong); }
+  .tank-step-label { display: flex; gap: 8px; align-items: baseline; margin-bottom: 7px; font-size: 13px; font-weight: 800; color: var(--ink); }
+  .tank-step-label small { color: var(--ink-faint); font-size: 10px; font-weight: 500; }
+  .tank-step input, .tank-step select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
+    border-radius: 12px; color: var(--ink); background: #fff; font-size: 14px; }
+  .tank-step input:focus, .tank-step select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
+  .tank-type-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .tank-type-grid label { position: relative; }
+  .tank-type-grid input { position: absolute; opacity: 0; pointer-events: none; }
+  .tank-type-grid span { display: flex; flex-direction: column; justify-content: center; min-height: 58px; padding: 8px 10px;
+    border: 1.5px solid var(--border); border-radius: 11px; text-align: left; color: var(--ink-soft); cursor: pointer; background: #fff; }
+  .tank-type-grid strong { font-size: 12px; color: var(--ink); }
+  .tank-type-grid small { margin-top: 3px; font-size: 10px; line-height: 1.35; color: var(--ink-faint); }
+  .tank-type-grid input:checked + span { color: var(--ocean-deep); border-color: var(--ocean); background: var(--ocean-soft); box-shadow: inset 0 0 0 1px var(--ocean); }
+  .tank-type-grid input:checked + span strong { color: var(--ocean-deep); }
+  .tank-water-line { display: flex; align-items: stretch; gap: 8px; }
+  .tank-water-line input { flex: 1; min-width: 0; }
+  .tank-help-btn { flex: 0 0 auto; padding: 0 12px; border: 1.5px solid var(--ocean); border-radius: 12px;
+    background: var(--ocean-soft); color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
+  .tank-type-info { margin-top: 9px; padding: 10px 11px; border-radius: 12px; background: var(--surface-2); }
+  .tank-type-desc { font-size: 11px; color: var(--ink-soft); line-height: 1.55; }
+  .tank-focus-title { margin-top: 8px; font-size: 10px; font-weight: 700; color: var(--ink-faint); }
+  .tank-focus-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+  .tank-focus-item { padding: 5px 8px; border-radius: 9px; background: #e9f5f2; color: #176b5a;
+    font-size: 10px; line-height: 1.35; }
+  .tank-target-title { margin-top: 8px; font-size: 10px; font-weight: 700; color: var(--ink-faint); }
+  .tank-targets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+  .tank-target { padding: 4px 7px; border-radius: 8px; background: #fff; border: 1px solid var(--border-light);
+    color: var(--ink-soft); font-size: 10px; white-space: nowrap; }
+  .tank-target b { color: var(--ocean-deep); }
+  .tank-estimator { margin: 10px 0 0; padding: 14px; border-radius: 14px; box-shadow: none; background: #f8fbfc; }
+  .tank-estimator .est-title { margin-bottom: 10px; font-size: 13px; }
+  .tank-estimator .est-row { margin-bottom: 9px; }
+  .tank-estimator .est-row label { width: 92px; }
+  .tank-estimator .est-actions { margin-bottom: 5px; }
+  .tank-estimator .est-actions button { flex: 1; padding: 9px 12px; }
+  .estimator-mask { z-index: 9300; background: rgba(5,24,36,.58); backdrop-filter: blur(6px); }
+  .estimator-modal-box { max-width: 500px; }
+  .estimator-modal-box .tank-estimator { margin: 0; padding: 2px 0 0; background: transparent; }
+  .estimator-modal-box .est-result { margin-top: 14px; }
+  .square-presets { display: flex; gap: 5px; flex-wrap: wrap; }
+  .square-presets button { min-width: 38px; padding: 6px 7px; border: 1px solid var(--border-strong); border-radius: 9px;
+    background: #fff; color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
+  .square-presets button:hover { background: var(--ocean-soft); border-color: var(--ocean); }
+  .tank-optional { margin: 2px 0 14px 18px; }
+  .tank-optional summary { cursor: pointer; font-size: 11px; color: var(--ink-faint); }
+  .tank-optional-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .tank-setup-note { margin-top: 4px; padding: 10px 12px; border-radius: 12px; background: #fff8ec;
+    color: #795a2e; font-size: 11px; line-height: 1.6; }
+
+  @media (max-width: 560px) {
+    .tank-identity { margin-left: 0; margin-right: 0; padding: 11px 12px; }
+    .tank-edit-hint { padding: 6px 8px; }
+    .tank-setup-box { padding: 20px 17px; }
+    .tank-estimator .est-row label { width: 82px; }
+  }
+  @media (max-width: 400px) {
+    .tank-type-grid { grid-template-columns: 1fr; }
+    .tank-type-grid span { min-height: 50px; }
+    .tank-help-btn { padding: 0 9px; }
+    .tank-optional-grid { grid-template-columns: 1fr; }
+  }
 
 
   /* ─── 模式切换滑块 ─── */
@@ -680,6 +739,15 @@
 </div>
 
 <div class="wrap">
+  <button class="tank-identity" id="tankIdentity" type="button" onclick="openTankSetup(true)" aria-label="查看或编辑我的鱼缸">
+    <span class="tank-avatar">◒</span>
+    <span class="tank-identity-main">
+      <span class="tank-identity-name" id="tankIdentityName">我的鱼缸</span>
+      <span class="tank-identity-meta" id="tankIdentityMeta">设置实际水量和缸型，让所有功能围绕同一口缸运转</span>
+    </span>
+    <span class="tank-edit-hint" id="tankEditHint">开始设置</span>
+  </button>
+
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico">📈</span><span>水质</span></button>
@@ -688,56 +756,8 @@
     <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico">💧</span><span>滴定</span></button>
   </div>
 
-  <!-- 水量条（仅元素补充/滴定方案页显示） -->
-  <div class="tank-bar" style="display:none">
-    <span class="tb-label">水体</span>
-    <input type="number" id="globalWater" placeholder="升" min="1">
-    <span class="tank-bar-toggle" id="tankBarToggle" onclick="toggleTankPresets()">更多缸型 ▾</span>
-    <span class="tank-presets" id="tankPresets">
-      <span class="preset" data-w="46" title="40×40×40cm 方缸">40方缸</span>
-      <span class="preset" data-w="156" title="60×60×60cm 方缸">60方缸</span>
-      <span class="preset" data-w="162" title="90×50×50cm">90缸</span>
-      <span class="preset" data-w="216" title="120×50×50cm">120缸</span>
-    </span>
-    <button class="preset-btn" onclick="toggleEstimator()">📐 估算</button>
-    <span class="save-hint">自动保存</span>
-  </div>
-
-  <!-- 估算器 -->
-  <div id="estimator" class="estimator" style="display:none">
-    <div class="est-title">🫧 缸体水量估算</div>
-    <div class="est-row"><label>缸型</label>
-      <select id="estShape" onchange="estCalc()">
-        <option value="cube">方缸（40/60缸）</option>
-        <option value="rect" selected>长方体缸（90/120缸）</option>
-      </select></div>
-    <div class="est-row" id="estCubeRow" style="display:none">
-      <label>边长</label><input type="number" id="estSide" value="60" min="10" max="200" oninput="estCalc()"><span>cm</span></div>
-    <div class="est-row" id="estRectRow">
-      <label>长×宽×高</label>
-      <input type="number" id="estL" value="120" min="30" oninput="estCalc()">×
-      <input type="number" id="estW" value="50" min="20" oninput="estCalc()">×
-      <input type="number" id="estH" value="50" min="20" oninput="estCalc()"><span>cm</span></div>
-    <div class="est-row"><label>水位</label>
-      <select id="estLevel" onchange="estCalc()">
-        <option value="0.95">满水（距顶2cm）</option>
-        <option value="0.9" selected>正常（距顶5cm）</option>
-        <option value="0.85">偏低（距顶8cm）</option>
-      </select></div>
-    <div class="est-row"><label>造景占位</label>
-      <select id="estRock" onchange="estCalc()">
-        <option value="0.9">少石</option>
-        <option value="0.8" selected>中等</option>
-        <option value="0.7">厚景</option>
-      </select></div>
-    <div class="est-row"><label>底缸水体</label><input type="number" id="estSump" value="0" min="0" oninput="estCalc()"><span>升</span></div>
-    <div class="est-result" id="estResult"></div>
-    <div class="est-actions">
-      <button onclick="estApply()">✓ 应用此水量</button>
-      <button onclick="toggleEstimator()">取消</button>
-    </div>
-    <div class="est-note">标称 = 长×宽×高(cm)÷1000；实际水体按水位与造景打折，通常为标称 60~75%。</div>
-  </div>
+  <!-- 计算仍使用“我的鱼缸”水量；不再在补充/滴定页重复显示设置条。 -->
+  <input type="hidden" id="globalWater">
 
   <!-- 元素补充 -->
   <div id="panel-calc" class="panel">
@@ -754,7 +774,7 @@
       <div class="dc-sub">先设<b>缸总水量</b>（与「元素补充」联动），再配置各元素<b>配液</b>（分析纯粉末 + RO纯净水）。</div>
       <div class="dc-tank">
         <label>缸总水量</label>
-        <input type="number" id="d_tank" value="550">
+        <input type="number" id="d_tank" placeholder="先设置水量" min="1">
         <span class="unit">升</span>
       </div>
       <div class="dose-head mix-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
@@ -893,7 +913,7 @@
         <span class="d-read hot" id="m_adjust">—</span>
         <div class="rate-warn" id="m_rateWarn"></div>
       </div>
-      <div class="dc-sub" style="margin-top:8px">💡 目标值可从「水质」页理想范围参考（如钙理想下限 400）。结果 = 每天滴定泵该设的总量，已包含每日消耗补偿。</div>
+      <div class="dc-sub" style="margin-top:8px">💡 目标值可以参考「水质」页显示的本缸范围。结果是滴定泵每天要设的总量，其中已经算上日常消耗。</div>
       </div>
     </div>
 
@@ -912,7 +932,7 @@
         <span class="dr-label">镁</span><span class="dr-value" id="m_dose">—</span><span class="dr-unit">毫升/天</span>
         <button class="dose-toggle" id="m_doseBtn" onclick="toggleDose('m', '镁')">▶ 开始滴定</button>
       </div>
-      <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 每毫升提升量。建议少量多次，分2~4次滴入。</div>
+      <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 配液单位需求系数。必须先确认实际水量、配液原料与浓度；建议少量多次，分2~4次滴入。</div>
       <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：滴定讲究"稳"，宁可每天少滴一点，也不要在某天猛加；固定时间滴入、每周测一次校准，水质才能长期稳定。</div>
     </div>
 
@@ -955,7 +975,7 @@
     <!-- 换水记录 -->
     <div class="dose-card">
       <div class="dc-title">📒 换水记录</div>
-      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。建议每周换水 10-15%，能补充微量元素并稀释积累的有机物。</div>
+      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。换水频率和比例应结合营养盐、生物负载、补充体系与实际状态决定，不必机械追求固定百分比。</div>
       <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
         <div class="d-field"><span class="fl">盐品牌</span>
@@ -978,7 +998,7 @@
 
     <div class="dose-card">
       <div class="dc-title">🧂 配盐计算</div>
-      <div class="dc-sub">目标盐度 <b>1.025</b>：选择你的海盐品牌，自动按该品牌用量计算。</div>
+      <div class="dc-sub">原实测样品比重 <b>1.025</b>：品牌克数仅作为首次配水估算起点，溶解后必须用已校准仪器复测并微调。</div>
       <div class="dose-card" style="box-shadow:none;border:1.5px dashed var(--border-strong);margin-bottom:0">
         <div class="dc-tank">
           <label>品牌</label>
@@ -1001,8 +1021,8 @@
     </div>
 
     <div class="dose-card">
-      <div class="dc-title">📊 海盐品牌元素配比（比重1.025 溶解后）</div>
-      <div class="dc-sub">不同品牌侧重不同：SPS 硬骨缸选高钙高KH，LPS/软体缸选均衡型。点击品牌行可直接用于配盐计算。</div>
+      <div class="dc-title">📊 海盐品牌用户实测参考（原样品比重1.025）</div>
+      <div class="dc-sub">本站暂定证据等级 C：单一公开来源、未独立复现。用于了解不同样品的实测差异，不能代替品牌说明或当前批次复测，也不直接参与自动补充建议。点击品牌行可把该记录中的克/升带入配盐计算。</div>
       <div style="overflow-x:auto">
       <table style="width:100%;max-width:100%;border-collapse:collapse;margin-top:4px">
         <thead><tr><th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">品牌/类型</th>
@@ -1012,12 +1032,12 @@
           <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Mg</th>
           <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">K</th>
           <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Sr</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">NO₃</th>
+          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">NO₃原记录</th>
           <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">PO₄</th></tr></thead>
         <tbody id="saltTableBody"></tbody>
       </table>
       </div>
-      <div class="dc-sub" style="margin-top:10px">NO₃/PO₄ 为化盐后初始值（ppm），括号内为溶解充分后的稳定值。数据整理自小红书用户分享，仅作参考，实际以各品牌盐袋批次为准。</div>
+      <div class="dc-sub" style="margin-top:10px">来源说明：数据整理自小红书用户实测分享；据原分享使用了 Hanna 数字比色计，但当前资料未记录每一列对应的具体型号、试剂和方法，也未独立复现。“无色/略有颜色”为原记录中的定性描述，PO₄括号内为溶解后的后续读数。仪器虽能减少肉眼判色差异，但试剂批次、干扰物、样品温度/盐度、操作和海盐批次仍会影响结果。请将本表视为社区实测参考，不作为加药依据。</div>
     </div>
   </div>
 
@@ -1041,7 +1061,7 @@
         <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wqNote" class="ctl" placeholder="如 换水后" style="width:130px"></div>
         <button onclick="addWaterRecord()" class="ctl-btn">✓ 保存</button>
       </div>
-      <div class="dc-sub" style="margin-top:8px">💡 建议每周测试1-2次并记录，记录越多分析越准。测试剂读数通常有 ±5% 误差，小幅波动属正常，看趋势比看单次数值更可靠。水温保持 25-27°C、盐度 35ppt 也是珊瑚健康的基础。</div>
+      <div class="dc-sub" style="margin-top:8px">💡 测试频率应按开缸阶段、消耗速度和近期操作调整。不同试剂与仪器的误差并不统一，异常读数应先复测；长期趋势通常比一次读数更有价值。很多礁岩缸运行在约 24-26°C、约 35ppt，但稳定性、校准和适合本缸的长期目标更重要。</div>
     </div>
 
     <!-- 模式切换（轻量条，居中 + 滑块动效） -->
@@ -1064,7 +1084,7 @@
       <!-- 元素联动诊断（智能建议下方） -->
       <div class="dose-card" style="margin-top:14px">
         <div class="dc-title">🧬 元素联动诊断</div>
-        <div class="dc-sub">跨元素分析：单看一个元素可能漏掉真正原因，这里找元素间的因果关系。</div>
+        <div class="dc-sub">跨元素分析：单看一个元素可能漏掉重要线索；这里寻找关联与待复核的可能原因，不把相关性当作确定因果。</div>
         <div id="wqLinkage" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">—</div>
       </div>
 
@@ -1100,7 +1120,7 @@
               <option value="PO4">PO₄</option>
             </select>
           </span>
-          <span class="d-field"><span class="fl">理想范围</span>
+          <span class="d-field"><span class="fl">本缸参考</span>
             <select id="wqChartRange" class="ctl" onchange="renderWaterChart()">
               <option value="1">显示</option>
               <option value="0">隐藏</option>
@@ -1120,7 +1140,7 @@
           </span>
         </div>
         <div id="wqChart" style="width:100%;height:320px"></div>
-        <div class="dc-sub" style="margin-top:8px">🔍 可滚轮缩放、拖拽查看细节。红色虚线=理想范围上下限。「综合趋势」将各元素归一化为相对变化(%)，便于对比不同尺度元素的走势。</div>
+        <div class="dc-sub" style="margin-top:8px">🔍 可以缩放或拖动查看细节。红色虚线是当前缸型的参考上下限；「综合趋势」把不同单位换成相对变化，放在一起更好比较。</div>
       </div>
       <div class="dose-card">
         <div class="dc-title">📊 历史记录 <span class="save-hint" style="font-size:11px">(跟随趋势图筛选元素)</span></div>
@@ -1172,6 +1192,111 @@
     <div class="guide-actions">
       <button class="guide-later" onclick="closeGuide()">稍后再说</button>
       <button class="guide-start" onclick="closeGuide();showTab('water')">开始使用 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 我的鱼缸：首次只需水量 / 类型 / 阶段，之后可从铭牌编辑 -->
+<div class="modal-mask" id="tankModal" onclick="if(event.target===this)closeTankSetup()">
+  <div class="modal-box tank-setup-box">
+    <div class="tank-setup-kicker">MY REEF · 我的鱼缸</div>
+    <div class="tank-setup-title" id="tankSetupTitle">先认识一下你的鱼缸</div>
+    <div class="tank-setup-sub">填好这三项，水质、补充和滴定就能自动带上这口缸的数据。</div>
+    <div class="tank-setup-flow">
+      <div class="tank-step">
+        <div class="tank-step-label">1 · 实际水量 <small>不清楚的话，可以按缸体尺寸估一下</small></div>
+        <div class="tank-water-line">
+          <input type="number" id="tankSetupWater" min="1" step="1" placeholder="例如 156">
+          <button class="tank-help-btn" type="button" onclick="openEstimatorModal()">按尺寸估算</button>
+        </div>
+      </div>
+      <div class="tank-step">
+        <div class="tank-step-label">2 · 主要类型 <small>不确定就先选混养，以后可以改</small></div>
+        <div class="tank-type-grid" id="tankTypeGrid">
+          <label><input type="radio" name="tankType" value="FOT" onchange="renderTankTypeInfo()"><span><strong>FOT · 纯鱼</strong><small>Fish Only，只养鱼</small></span></label>
+          <label><input type="radio" name="tankType" value="软体" onchange="renderTankTypeInfo()"><span><strong>软体 / 海葵</strong><small>软体珊瑚或红奶嘴缸</small></span></label>
+          <label><input type="radio" name="tankType" value="LPS" onchange="renderTankTypeInfo()"><span><strong>LPS</strong><small>大水螅体硬骨珊瑚</small></span></label>
+          <label><input type="radio" name="tankType" value="SPS" onchange="renderTankTypeInfo()"><span><strong>SPS</strong><small>小水螅体硬骨珊瑚</small></span></label>
+          <label><input type="radio" name="tankType" value="NPS" onchange="renderTankTypeInfo()"><span><strong>NPS</strong><small>非光合珊瑚</small></span></label>
+          <label><input type="radio" name="tankType" value="混养" onchange="renderTankTypeInfo()" checked><span><strong>混养</strong><small>鱼和几类珊瑚都有</small></span></label>
+        </div>
+        <div class="tank-type-info">
+          <div class="tank-type-desc" id="tankTypeDescription">鱼和几类珊瑚都有；暂时分不清也可以先选这个</div>
+          <div class="tank-focus-title">这类缸平时更该盯什么</div>
+          <div class="tank-focus-list" id="tankFocusPreview"></div>
+          <div class="tank-target-title">基础水质参考 · 不同缸型本来就比较接近</div>
+          <div class="tank-targets" id="tankTargetPreview">正在读取参考范围…</div>
+        </div>
+      </div>
+      <div class="tank-step">
+        <div class="tank-step-label">3 · 当前阶段 <small>按这口缸现在的情况选</small></div>
+        <select id="tankSetupStage">
+          <option value="筹备中">筹备中</option>
+          <option value="开缸期">开缸期</option>
+          <option value="稳定期" selected>稳定期</option>
+          <option value="调整期">调整期</option>
+        </select>
+      </div>
+    </div>
+    <details class="tank-optional">
+      <summary>补充信息（可选）</summary>
+      <div class="tank-optional-grid">
+        <div class="modal-field"><label>鱼缸名称</label><input type="text" id="tankSetupName" maxlength="40" value="我的鱼缸"></div>
+        <div class="modal-field"><label>开缸日期</label><input type="date" id="tankSetupDate"></div>
+      </div>
+    </details>
+    <div class="tank-setup-note">这些范围先拿来作参考。缸里状态好、走势也稳，就不用为了贴数字来回折腾。</div>
+    <div class="modal-actions">
+      <button class="m-cancel" id="tankSetupLater" type="button" onclick="closeTankSetup()">稍后设置</button>
+      <button class="m-save" type="button" onclick="saveTankSetup()">保存并联动</button>
+    </div>
+  </div>
+</div>
+
+<!-- 二级弹窗：叠加在“我的鱼缸”之上，估算后回填实际水量 -->
+<div class="modal-mask estimator-mask" id="estimatorModal" onclick="if(event.target===this)closeEstimatorModal()">
+  <div class="modal-box estimator-modal-box">
+    <div class="tank-setup-kicker">WATER VOLUME · 水量估算</div>
+    <div class="modal-title">按缸体尺寸估算</div>
+    <div class="modal-sub">先算一个接近实际的水量，回到鱼缸设置后再确认保存。</div>
+    <div id="estimator" class="estimator tank-estimator">
+      <div class="est-row"><label>缸体形状</label>
+        <select id="estShape" onchange="estCalc()">
+          <option value="cube">方缸</option>
+          <option value="rect" selected>长方体缸</option>
+        </select></div>
+      <div class="est-row" id="estCubeRow" style="display:none">
+        <label>边长</label><input type="number" id="estSide" value="40" min="10" max="200" oninput="estCalc()"><span>cm</span>
+        <div class="square-presets" aria-label="常见方缸边长">
+          <button type="button" onclick="setSquareSide(35)">35</button>
+          <button type="button" onclick="setSquareSide(40)">40</button>
+          <button type="button" onclick="setSquareSide(50)">50</button>
+          <button type="button" onclick="setSquareSide(60)">60</button>
+        </div></div>
+      <div class="est-row" id="estRectRow">
+        <label>长×宽×高</label>
+        <input type="number" id="estL" value="120" min="30" oninput="estCalc()">×
+        <input type="number" id="estW" value="50" min="20" oninput="estCalc()">×
+        <input type="number" id="estH" value="50" min="20" oninput="estCalc()"><span>cm</span></div>
+      <div class="est-row"><label>水位</label>
+        <select id="estLevel" onchange="estCalc()">
+          <option value="0.95">较满（距顶约2cm）</option>
+          <option value="0.9" selected>正常（距顶约5cm）</option>
+          <option value="0.85">偏低（距顶约8cm）</option>
+        </select></div>
+      <div class="est-row"><label>石头与底砂</label>
+        <select id="estRock" onchange="estCalc()">
+          <option value="0.9">比较少</option>
+          <option value="0.8" selected>中等</option>
+          <option value="0.7">比较多</option>
+        </select></div>
+      <div class="est-row"><label>底缸水量</label><input type="number" id="estSump" value="0" min="0" oninput="estCalc()"><span>升</span></div>
+      <div class="est-result" id="estResult"></div>
+      <div class="est-note">这是按尺寸、水位和造景占位算出的近似值。以后拿到更准的数据，可以回来改。</div>
+    </div>
+    <div class="modal-actions">
+      <button class="m-cancel" type="button" onclick="closeEstimatorModal()">返回</button>
+      <button class="m-save" type="button" onclick="estApply()">填入这个水量</button>
     </div>
   </div>
 </div>
@@ -1291,6 +1416,157 @@ async function api(url, opts) {
   return await res.json();
 }
 
+/* ═══ 我的鱼缸：全站唯一上下文 ═══ */
+let tankProfile = null;
+let tankWaterSaveTimer = null;
+let tankOptions = [];
+let tankEffectiveTargets = {};
+
+function formatTargetNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return value;
+  return number < 1 ? String(Number(number.toFixed(3))) : String(Number(number.toFixed(1)));
+}
+
+function renderTankTypeInfo() {
+  const selected = document.querySelector('input[name="tankType"]:checked');
+  if (!selected) return;
+  const option = tankOptions.find(item => item.value === selected.value);
+  const desc = document.getElementById('tankTypeDescription');
+  const focus = document.getElementById('tankFocusPreview');
+  const preview = document.getElementById('tankTargetPreview');
+  if (!option) {
+    desc.textContent = selected.value === '混养' ? '鱼和几类珊瑚都有；暂时分不清也可以先选这个' : '';
+    focus.innerHTML = '';
+    preview.textContent = '正在读取参考范围…';
+    return;
+  }
+  desc.textContent = option.description;
+  focus.innerHTML = (option.focus || []).map(item => '<span class="tank-focus-item">' + item + '</span>').join('');
+  const labels = { KH: 'KH', '钙': '钙', '镁': '镁', NO3: 'NO₃', PO4: 'PO₄' };
+  preview.innerHTML = ['KH', '钙', '镁', 'NO3', 'PO4'].map(key => {
+    const target = option.targets[key];
+    return '<span class="tank-target">' + labels[key] + ' <b>' + formatTargetNumber(target.low) + '–' +
+      formatTargetNumber(target.high) + '</b> ' + target.unit + '</span>';
+  }).join('');
+}
+
+function tankTargetKey(name) {
+  if (name.includes('KH')) return 'KH';
+  if (name.includes('钙')) return '钙';
+  if (name.includes('镁')) return '镁';
+  if (name.includes('硝酸盐') || name.includes('NO3')) return 'NO3';
+  if (name.includes('磷酸盐') || name.includes('PO4')) return 'PO4';
+  return null;
+}
+
+function applyTankTargetsToGroups() {
+  if (!groupData || !tankEffectiveTargets) return;
+  groupData.forEach(group => group.elements.forEach(element => {
+    const key = tankTargetKey(element.name);
+    const target = key && tankEffectiveTargets[key];
+    if (!target) return;
+    element.ideal = formatTargetNumber(target.low) + '-' + formatTargetNumber(target.high);
+    element.unit = target.unit;
+    element.tip = target.hint;
+  }));
+}
+
+function renderTankIdentity() {
+  if (!tankProfile) return;
+  const ready = !!tankProfile.setup_complete;
+  document.getElementById('tankIdentityName').textContent = tankProfile.name || '我的鱼缸';
+  document.getElementById('tankIdentityMeta').textContent = ready
+    ? tankProfile.tank_type + ' · ' + tankProfile.stage + ' · 实际水量 ' + Number(tankProfile.water_liters).toFixed(0) + ' L'
+    : '设置实际水量和缸型，让所有功能围绕同一口缸运转';
+  document.getElementById('tankEditHint').textContent = ready ? '编辑' : '开始设置';
+}
+
+function fillTankSetup() {
+  const savedWater = localStorage.getItem('tank_water') || '';
+  const tank = tankProfile || {};
+  document.getElementById('tankSetupWater').value = tank.water_liters || savedWater;
+  document.getElementById('tankSetupName').value = tank.name || '我的鱼缸';
+  document.getElementById('tankSetupDate').value = tank.started_at || '';
+  document.getElementById('tankSetupStage').value = tank.stage || '稳定期';
+  const type = tank.tank_type || '混养';
+  document.querySelectorAll('input[name="tankType"]').forEach(el => { el.checked = el.value === type; });
+  renderTankTypeInfo();
+}
+
+function openTankSetup(editing) {
+  fillTankSetup();
+  const ready = tankProfile && tankProfile.setup_complete;
+  document.getElementById('tankSetupTitle').textContent = ready ? '编辑我的鱼缸' : '先认识一下你的鱼缸';
+  document.getElementById('tankSetupLater').textContent = ready ? '取消' : '稍后设置';
+  document.getElementById('tankModal').classList.add('open');
+  document.body.classList.add('lock-scroll');
+  setTimeout(() => document.getElementById('tankSetupWater').focus(), 80);
+}
+
+function closeTankSetup() {
+  document.getElementById('estimatorModal').classList.remove('open');
+  document.getElementById('tankModal').classList.remove('open');
+  document.body.classList.remove('lock-scroll');
+}
+
+async function loadTankProfile() {
+  const [data, optionData] = await Promise.all([api('/api/tank'), api('/api/tank/options')]);
+  tankProfile = data.tank;
+  tankEffectiveTargets = data.effective_targets || {};
+  tankOptions = optionData.types || [];
+  renderTankIdentity();
+  if (tankProfile.setup_complete && tankProfile.water_liters) {
+    setWater(tankProfile.water_liters, false);
+  } else {
+    setTimeout(() => openTankSetup(false), 250);
+  }
+}
+
+async function saveTankSetup() {
+  const water = parseFloat(document.getElementById('tankSetupWater').value);
+  const selected = document.querySelector('input[name="tankType"]:checked');
+  if (!Number.isFinite(water) || water <= 0) { toast('请填写大于 0 的实际水量', 'err'); return; }
+  if (!selected) { toast('请选择鱼缸类型', 'err'); return; }
+  const payload = {
+    name: document.getElementById('tankSetupName').value.trim() || '我的鱼缸',
+    water_liters: water,
+    tank_type: selected.value,
+    stage: document.getElementById('tankSetupStage').value,
+    started_at: document.getElementById('tankSetupDate').value || '',
+    custom_targets: (tankProfile && tankProfile.custom_targets) || {},
+    salt_brand: (tankProfile && tankProfile.salt_brand) || ''
+  };
+  try {
+    const data = await api('/api/tank', { method: 'PUT', body: payload });
+    tankProfile = data.tank;
+    tankEffectiveTargets = data.effective_targets || {};
+    applyTankTargetsToGroups();
+    renderGroups();
+    renderTankIdentity();
+    setWater(tankProfile.water_liters, false);
+    closeTankSetup();
+    toast('保存好了，水质和计算已换成这口缸的数据 ✓', 'ok');
+    loadWater();
+  } catch (e) { /* api 已提示 */ }
+}
+
+function queueTankWaterSave(water) {
+  if (!tankProfile || !tankProfile.setup_complete || !Number.isFinite(Number(water)) || Number(water) <= 0) return;
+  clearTimeout(tankWaterSaveTimer);
+  tankWaterSaveTimer = setTimeout(async () => {
+    const payload = Object.assign({}, tankProfile, { water_liters: Number(water) });
+    delete payload.id; delete payload.is_active; delete payload.setup_complete;
+    delete payload.created_at; delete payload.updated_at;
+    try {
+      const data = await api('/api/tank', { method: 'PUT', body: payload });
+      tankProfile = data.tank;
+      tankEffectiveTargets = data.effective_targets || tankEffectiveTargets;
+      renderTankIdentity();
+    } catch (e) { /* api 已提示 */ }
+  }, 650);
+}
+
 
 
 /* ═══ 移动端输入优化 ═══ */
@@ -1319,10 +1595,7 @@ function closeGuide() {
   document.body.classList.remove('lock-scroll');
   localStorage.setItem(GUIDE_KEY, '1');
 }
-/* 首次打开自动弹出（已看过则不再打扰，可从「入门指南」找回） */
-(function initGuide() {
-  if (!localStorage.getItem(GUIDE_KEY)) setTimeout(openGuide, 600);
-})();
+/* 入门指南保留在工具栏按需打开；首次只出现更短的鱼缸设置，避免连续弹窗。 */
 
 
 /* ═══ 数据备份 ═══ */
@@ -1408,9 +1681,10 @@ async function saveEditModal() {
 
 
 async function loadData() {
-  const res = await fetch('/api/additives');
-  const data = await res.json();
+  const data = await api('/api/additives');
   groupData = data.groups;
+  await loadTankProfile();
+  applyTankTargetsToGroups();
   renderGroups();
   initDosing();
   restoreWater();
@@ -1418,46 +1692,32 @@ async function loadData() {
 }
 
 function restoreWater() {
-  const saved = localStorage.getItem('tank_water');
+  const saved = (tankProfile && tankProfile.water_liters) || localStorage.getItem('tank_water');
   if (saved) {
     document.getElementById('globalWater').value = saved;
     const dt = document.getElementById('d_tank');
     if (dt) { dt.value = saved; calcDosing(); }
     syncSaltWater(saved);
   }
-  document.getElementById('globalWater').addEventListener('input', () => {
+  const globalInput = document.getElementById('globalWater');
+  if (globalInput.dataset.tankBound) return;
+  globalInput.dataset.tankBound = '1';
+  globalInput.addEventListener('input', () => {
     const v = document.getElementById('globalWater').value;
     localStorage.setItem('tank_water', v);
     const dt = document.getElementById('d_tank');
     if (dt) { dt.value = v; calcDosing(); }
     syncSaltWater(v);
+    queueTankWaterSave(v);
   });
 }
 
-/* 配水量 = 缸水体 1/5（约一次换水量） */
-function syncSaltWater(water) {
-  const sw = document.getElementById('saltWater');
-  if (!sw) return;
-  const w = parseFloat(water);
-  if (w > 0) {
-    sw.value = Math.round(w / 5);
-    calcSalt();
-  }
+/* 海盐配水量由用户填写：鱼缸实际水量不等于本次配水/换水量。 */
+function syncSaltWater() {
+  calcSalt();
 }
-document.querySelectorAll('.preset').forEach(el => {
-  el.addEventListener('click', () => { setWater(el.dataset.w); });
-});
-
-/* 手机端：水体条 preset 折叠展开 */
-function toggleTankPresets() {
-  const bar = document.querySelector('.tank-bar');
-  if (!bar) return;
-  const opened = bar.classList.toggle('open');
-  const t = document.getElementById('tankBarToggle');
-  if (t) t.textContent = opened ? '收起 ▴' : '更多缸型 ▾';
-}
-
-function setWater(w) {
+function setWater(w, persistProfile) {
+  if (persistProfile === undefined) persistProfile = true;
   document.getElementById('globalWater').value = w;
   localStorage.setItem('tank_water', w);
   const dt = document.getElementById('d_tank');
@@ -1466,14 +1726,33 @@ function setWater(w) {
   syncSaltWater(w);
   recomputeAll();
   calcDosing();
+  if (persistProfile) queueTankWaterSave(w);
 }
 
 /* ═══ 水量估算器 ═══ */
-function toggleEstimator() {
-  const el = document.getElementById('estimator');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-  if (el.style.display === 'block') estCalc();
+function openTankEstimator() {
+  openTankSetup(true);
+  openEstimatorModal();
 }
+
+function openEstimatorModal() {
+  document.getElementById('estimatorModal').classList.add('open');
+  document.body.classList.add('lock-scroll');
+  estCalc();
+}
+
+function closeEstimatorModal() {
+  document.getElementById('estimatorModal').classList.remove('open');
+  if (!document.getElementById('tankModal').classList.contains('open')) {
+    document.body.classList.remove('lock-scroll');
+  }
+}
+
+function setSquareSide(side) {
+  document.getElementById('estSide').value = side;
+  estCalc();
+}
+
 function estCalc() {
   const shape = document.getElementById('estShape').value;
   document.getElementById('estCubeRow').style.display = shape === 'cube' ? 'flex' : 'none';
@@ -1503,8 +1782,9 @@ function estCalc() {
 function estApply() {
   const el = document.getElementById('estResult');
   if (!el.dataset.w || el.dataset.w <= 0) { toast('请先设置缸体尺寸', 'err'); return; }
-  setWater(el.dataset.w);
-  toggleEstimator();
+  document.getElementById('tankSetupWater').value = el.dataset.w;
+  closeEstimatorModal();
+  toast('已填入 ' + el.dataset.w + ' 升，确认后保存', 'info');
 }
 
 /* ═══ 分组渲染 ═══ */
@@ -1544,7 +1824,7 @@ function renderElement(gi, ei, elem) {
   let html = '<div class="elem">' +
     '<div class="elem-head">' +
       '<span class="elem-name"><span class="dot"></span>' + elem.name + '</span>' +
-      '<span class="elem-ideal">理想 <b>' + elem.ideal + '</b> ' + elem.unit + '</span>' +
+      '<span class="elem-ideal">本缸参考 <b>' + elem.ideal + '</b> ' + elem.unit + '</span>' +
     '</div>' +
     '<div class="elem-detail">' + elem.detail + ' <span class="tip">' + (elem.tip || '') + '</span></div>';
   // 浓度预设值 + datalist 支持自定义输入
@@ -1658,13 +1938,18 @@ function refreshAllMl() {
 async function autoJudge(gi, ei) {
   const val = parseFloat(document.querySelector('.auto-in[data-g="' + gi + '"][data-e="' + ei + '"]').value);
   const msgEl = document.getElementById('auto-msg-' + gi + '-' + ei);
-  if (!val) { msgEl.textContent = '输入当前实测值，自动判断是否需补充'; msgEl.className = 'auto-msg'; return; }
+  if (isNaN(val) || val < 0) { msgEl.textContent = '输入当前实测值，自动判断是否需补充'; msgEl.className = 'auto-msg'; return; }
   const elem = groupData[gi].elements[ei];
   const ideal = elem.ideal;
   let low, high;
   if (ideal.includes('-')) { const parts = ideal.split('-'); low = parseFloat(parts[0]); high = parseFloat(parts[1]); }
   else { high = parseFloat(ideal); low = parseFloat(ideal) * 0.9; }
-  const water = parseFloat(document.getElementById('globalWater').value) || 100;
+  const water = parseFloat(document.getElementById('globalWater').value);
+  if (!Number.isFinite(water) || water <= 0) {
+    msgEl.textContent = '请先填写实际水量，也可以到「我的鱼缸」里按尺寸估算';
+    msgEl.className = 'auto-msg invalid';
+    return;
+  }
   const add = elem.additives[0];
   const res = await fetch('/api/calc/auto', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -1702,16 +1987,6 @@ function showTab(name) {
       panel.classList.remove('slide-in-right', 'slide-in-left');
     }
   }, 400);
-  // 水体条只在「元素补充」和「滴定方案」页显示
-  const tankBar = document.querySelector('.tank-bar');
-  if (tankBar) {
-    tankBar.style.display = (name === 'calc' || name === 'dosing') ? 'flex' : 'none';
-  }
-  // 估算器跟随水体条隐藏（避免在其他页残留）
-  const estimator = document.getElementById('estimator');
-  if (estimator && (name === 'water' || name === 'salt')) {
-    estimator.style.display = 'none';
-  }
   // 切回水质页时，重新渲染图表（容器从隐藏恢复，需resize）
   if (name === 'water' && waterMode === 'pro' && wqChartInstance) {
     setTimeout(() => { wqChartInstance.resize(); renderWaterChart(); }, 80);
@@ -1728,7 +2003,15 @@ function initDosing() {
       if (el) el.addEventListener('input', () => { calcAdjust(pre); calcDosing(); });
     });
   });
-  const saved = localStorage.getItem('tank_water');
+  const tankInput = document.getElementById('d_tank');
+  tankInput.addEventListener('input', () => {
+    const value = tankInput.value;
+    document.getElementById('globalWater').value = value;
+    localStorage.setItem('tank_water', value);
+    document.querySelectorAll('.water-in').forEach(i => { i.value = value; });
+    queueTankWaterSave(value);
+  });
+  const saved = (tankProfile && tankProfile.water_liters) || localStorage.getItem('tank_water');
   if (saved) document.getElementById('d_tank').value = saved;
   // 恢复配比
   const mix = JSON.parse(localStorage.getItem('dosing_mix') || '{}');
@@ -1746,8 +2029,8 @@ function calcDosing() {
   for (const s of specs) {
     const pw = parseFloat(document.getElementById(s.pre + '_pw').value) || 0;
     const ro = parseFloat(document.getElementById(s.pre + '_ro').value) || 0;
-    const f = parseFloat(document.getElementById(s.pre + '_f').value) || 0;
-    const l = parseFloat(document.getElementById(s.pre + '_l').value) || 0;
+    const f = parseFloat(document.getElementById(s.pre + '_f').value);
+    const l = parseFloat(document.getElementById(s.pre + '_l').value);
     const dd = parseFloat(document.getElementById(s.pre + '_d').value) || 0;
     mix[s.pre] = { pw, ro };
     // 配液浓度 = 克/毫升
@@ -1756,23 +2039,23 @@ function calcDosing() {
     if (concRead) concRead.textContent = concPerMl > 0 ? concPerMl.toFixed(3) + ' 克/ml' : '—';
     // 原站对比浓度(稀释比) = RO水/分析纯
     const conc = ro && pw ? Math.floor(ro / pw) : 0;
-    const perMl = conc * s.coef;
+    const mlFactor = conc * s.coef; // 每升水提升1单位所需的配液毫升系数
     // 每天消耗（维持现状所需，ppm/天）
-    const consume = f && l && dd ? (f - l) / dd : 0;
+    const consume = Number.isFinite(f) && Number.isFinite(l) && dd > 0 ? (f - l) / dd : 0;
     const consumeRead = document.getElementById(s.pre + '_consume');
     if (consumeRead) consumeRead.textContent = consume > 0 ? consume.toFixed(2) : '—';
     // 消耗维持滴量
-    const maintainDose = tank && consume > 0 && perMl ? Math.round(tank * consume * perMl) : 0;
-    // 目标提升滴量（若已填目标值）：(目标-当前)/天数 × 水量 × 每ml提升
+    const maintainDose = tank && consume > 0 && mlFactor ? Math.round(tank * consume * mlFactor) : 0;
+    // 目标提升滴量（若已填目标值）：(目标-当前)/天数 × 水量 × 单位需求系数
     let raiseDose = 0;
     const tEl = document.getElementById(s.pre + '_t');
     const pEl = document.getElementById(s.pre + '_p');
     const tVal = tEl ? parseFloat(tEl.value) : NaN;
     const pVal = pEl ? parseFloat(pEl.value) : 0;
-    if (!isNaN(tVal) && pVal > 0 && l > 0 && perMl > 0) {
+    if (!isNaN(tVal) && pVal > 0 && l >= 0 && mlFactor > 0) {
       const need = tVal - l;                 // 目标 - 当前(本次值)
       if (need > 0) {
-        raiseDose = Math.round(tank * (need / pVal) * perMl);
+        raiseDose = Math.round(tank * (need / pVal) * mlFactor);
       }
     }
     // 最终每天滴定量 = 消耗维持 + 目标提升
@@ -1814,12 +2097,12 @@ async function calcAdjust(pre, syncDose) {
   const curVal = parseFloat(document.getElementById(pre + '_l').value); // 当前实测（消耗测算的本次值）
   const read = document.getElementById(pre + '_adjust');
   if (!read) return;
-  if (!target || !days || days <= 0 || !tank || isNaN(curVal)) { read.textContent = '—'; return; }
+  if (isNaN(target) || !days || days <= 0 || !tank || isNaN(curVal)) { read.textContent = '—'; return; }
 
   // 元素系数（与 calcDosing 一致）+ 配液浓度
   const coef = { k: 0.03, g: 0.004, m: 0.009 }[pre] || 0;
   const conc = ro && pw ? Math.floor(ro / pw) : 0; // 配液稀释比
-  const perMl = conc * coef;                        // 每毫升提升量(ppm/L)
+  const mlFactor = conc * coef;                     // 每升水提升1单位所需的配液毫升系数
   const concPerMl = ro > 0 ? pw / ro : 0;           // 配液浓度(克/ml)
 
   // 每日平均消耗(ppm/天)：来自消耗测算模块（_consume 已算出）
@@ -1833,9 +2116,9 @@ async function calcAdjust(pre, syncDose) {
   // 【目标调节】只算净提升滴量（不含消耗）
   const need = target - curVal;
   const dailyRaise = need / days;                          // 净提升 ppm/天
-  const raiseDose = (perMl > 0 && tank > 0) ? Math.round(tank * dailyRaise * perMl) : 0;
+  const raiseDose = (mlFactor > 0 && tank > 0) ? Math.round(tank * dailyRaise * mlFactor) : 0;
   // 【消耗维持】滴量 = 消耗测算部分
-  const maintainDose = (perMl > 0 && tank > 0) ? Math.round(tank * maintainPpm * perMl) : 0;
+  const maintainDose = (mlFactor > 0 && tank > 0) ? Math.round(tank * maintainPpm * mlFactor) : 0;
   // 【最终】每天滴定量 = 消耗维持 + 目标提升
   const finalDose = raiseDose + maintainDose;
 
@@ -2058,10 +2341,20 @@ async function loadAnalysisCards() {
     const effectData = await effectRes.json();
     renderDosingEffect(effectData.result || {});
 
-    // A2 收支平衡
-    const tank = parseFloat(document.getElementById('globalWater').value) || 156;
-    const balanceRes = await fetch('/api/analysis/balance?tank_liters=' + tank);
-    const balanceData = await balanceRes.json();
+    // A2 收支平衡：只使用真实水量与用户保存的各元素配液，不设静默默认值
+    const tank = parseFloat(document.getElementById('globalWater').value);
+    let balanceData = { result: {} };
+    if (Number.isFinite(tank) && tank > 0) {
+      const savedMix = JSON.parse(localStorage.getItem('dosing_mix') || '{}');
+      const mixRatio = {};
+      if (savedMix.k && savedMix.k.pw > 0 && savedMix.k.ro > 0) mixRatio.KH = savedMix.k;
+      if (savedMix.g && savedMix.g.pw > 0 && savedMix.g.ro > 0) mixRatio['钙'] = savedMix.g;
+      if (savedMix.m && savedMix.m.pw > 0 && savedMix.m.ro > 0) mixRatio['镁'] = savedMix.m;
+      const balanceRes = await api('/api/analysis/balance', {
+        method: 'POST', body: { tank_liters: tank, mix_ratio: mixRatio }
+      });
+      balanceData = balanceRes || { result: {} };
+    }
     renderBalance(balanceData.result || {});
 
     // B1 测试频率
@@ -2089,15 +2382,15 @@ function renderSystemAlerts(balance) {
 
   let alerts = '';
 
-  // A. 换水提醒：距上次换水 >7 天提醒
+  // A. 换水记录提醒：不使用固定周期/百分比替用户做决定
   const wcs = (waterChangeCache || []).slice().sort((a, b) => (b.recorded_at || '').localeCompare(a.recorded_at || ''));
   if (wcs.length > 0 && wcs[0].recorded_at) {
     const last = new Date(wcs[0].recorded_at.slice(0, 10));
     const days = Math.floor((new Date() - last) / 86400000);
-    if (days > 7) {
+    if (days > 14) {
       alerts += '<div class="advice-item" style="background:#fff8ec;border-radius:10px;margin-bottom:4px">' +
         '<span class="advice-strength mid">!</span>' +
-        '<span class="advice-text"><b>🔄 换水：</b>距上次换水已 ' + days + ' 天（' + wcs[0].water_liters + 'L）。建议每 1-2 周换水 10-15%，补充微量元素并稀释有机物。</span></div>';
+        '<span class="advice-text"><b>🔄 换水记录：</b>距上次记录已 ' + days + ' 天（' + wcs[0].water_liters + 'L）。请结合营养盐趋势、污染物、补充方案和你为本缸设定的维护周期判断是否换水。</span></div>';
     }
   }
 
@@ -2129,7 +2422,7 @@ function renderLinkage(findings) {
   const el = document.getElementById('wqLinkage');
   if (!el) return;
   if (!findings || findings.length === 0) {
-    el.innerHTML = '<span style="color:var(--ink-faint)">未发现明显的跨元素异常，各元素关系正常 🎉</span>';
+    el.innerHTML = '<span style="color:var(--ink-faint)">当前规则未发现明显的跨元素异常；这不等于排除测试误差或规则尚未覆盖的问题。</span>';
     return;
   }
   const prioMap = { 85: '#c0392b', 80: '#c0392b', 75: '#e67e22', 70: '#e67e22', 30: '#2e8b57' };
@@ -2171,7 +2464,7 @@ function renderDosingEffect(result) {
       const color = r.effective ? '#2e8b57' : '#c0560e';
       const preDir = r.pre_rate < 0 ? '下降' : '上升';
       const inDir = r.in_rate < 0 ? '下降' : '上升';
-      const effectText = r.effective ? '消耗变缓，滴定有效' : '消耗速率无明显改善';
+      const effectText = r.effective ? '滴定期间趋势变缓（存在时间关联）' : '滴定期间趋势未见明显变缓';
       const label = sorted.length > 1 ? '第' + (sorted.length - i) + '轮' : '';
       return '<div style="padding:3px 0"><b>' + k + (label ? '·' + label : '') + '</b>：' +
         '<span style="color:' + color + '">' + icon + ' ' + effectText + '（改善 ' + r.improvement_pct + '%）</span>' +
@@ -2206,10 +2499,13 @@ function renderBalance(result) {
   if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">数据不足</span>'; return; }
   el.innerHTML = keys.map(k => {
     const r = result[k];
-    const statusMap = { stable: ['⚖️ 水质稳定', '#2e8b57'], balanced: ['⚖️ 平衡', '#2e8b57'], over: ['⬆️ 补充偏多', '#c0560e'], under: ['⬇️ 补充不足', '#c0392b'] };
+    const statusMap = { stable: ['⚖️ 水质趋势稳定', '#2e8b57'], balanced: ['⚖️ 估算接近平衡', '#2e8b57'], over: ['⬆️ 估算补充偏多', '#c0560e'], under: ['⬇️ 估算补充不足', '#c0392b'], needs_mix: ['需填写真实配液', '#8a99a5'] };
     const [label, color] = statusMap[r.status] || ['—', '#888'];
+    const detail = r.status === 'needs_mix'
+      ? '已估算消耗 ' + r.consume_g_per_day + 'g/天；缺少该元素真实配液克数与RO水量，暂不判断补充是否平衡'
+      : '补 ' + r.supply_g_per_day + 'g/天 vs 耗 ' + r.consume_g_per_day + 'g/天（仅为趋势估算）';
     return '<div style="padding:4px 0"><b>' + k + '</b>：<span style="color:' + color + '">' + label +
-      '</span><span class="save-hint" style="display:block">补 ' + r.supply_g_per_day + 'g/天 vs 耗 ' + r.consume_g_per_day + 'g/天</span></div>';
+      '</span><span class="save-hint" style="display:block">' + detail + '</span></div>';
   }).join('');
 }
 
@@ -2367,7 +2663,11 @@ async function addWaterRecord() {
   const v = parseFloat(document.getElementById('wqValue').value);
   const date = document.getElementById('wqDate').value;
   const note = document.getElementById('wqNote').value.trim();
-  if (!el || isNaN(v) || v <= 0) { toast('请输入有效的测试值(大于0)', 'err'); return; }
+  const zeroAllowed = el === 'NO3' || el === 'PO4';
+  if (!el || isNaN(v) || v < 0 || (v === 0 && !zeroAllowed)) {
+    toast(zeroAllowed ? '请输入有效的测试值（可以为0，但不能为负数）' : '该参数必须大于0；请复核测试值', 'err');
+    return;
+  }
   await api('/api/water/record', {
     method: 'POST',
     body: { element: el, value: v, note: note, recorded_at: date }
@@ -2391,7 +2691,7 @@ function renderSimple() {
   const wrap = document.getElementById('wqSimpleCards');
   const adviceBody = document.getElementById('wqSimpleAdviceBody');
   if (!waterAnalysis || Object.keys(waterAnalysis).length === 0) {
-    wrap.innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1"><div style="font-size:40px;text-align:center">🐠</div><div class="wq-name" style="text-align:center;margin-top:8px">开始记录你的第一组水质数据</div><div style="font-size:13px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.7">在上方选择元素、输入测试值（建议每周1-2次），<br>这里会自动生成健康仪表盘和智能建议。</div></div>';
+    wrap.innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1"><div style="font-size:40px;text-align:center">🐠</div><div class="wq-name" style="text-align:center;margin-top:8px">开始记录你的第一组水质数据</div><div style="font-size:13px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.7">在上方选择元素并输入测试值；测试频率按开缸阶段、消耗速度和近期调整决定。<br>持续记录后，这里会生成趋势与维护建议。</div></div>';
     adviceBody.textContent = '暂无数据，先添加记录吧。';
     return;
   }
@@ -2410,7 +2710,7 @@ function renderSimple() {
       '<div class="wq-head"><span class="wq-name">' + (a.display || el) + '</span>' +
       '<span class="wq-status ' + status + '">' + ({ok:'正常',low:'偏低',high:'偏高',no_data:'无数据'}[status] || status) + '</span></div>' +
       '<div class="wq-value">' + (a.current !== undefined ? a.current : '—') + ' <small>' + (a.ideal ? a.ideal.unit : '') + '</small></div>' +
-      '<div class="wq-range">理想 ' + (a.ideal ? a.ideal.low + ' - ' + a.ideal.high + ' ' + a.ideal.unit : '') + '</div>' +
+      '<div class="wq-range">本缸参考 ' + (a.ideal ? a.ideal.low + ' - ' + a.ideal.high + ' ' + a.ideal.unit : '') + '</div>' +
       '<div class="wq-trend"><span class="arrow">' + arrow + '</span>趋势' + trendText +
       (s.rate ? ' · 每天' + s.rate + (a.ideal ? a.ideal.unit : '') : '') + '</div>' +
       (s.count ? '<div class="wq-mini">' + s.count + ' 条记录' + (s.anomaly_cn ? ' · <b style="color:#c0392b">' + s.anomaly_cn + '</b>' : '') + '</div>' : '') +
@@ -2774,10 +3074,7 @@ async function initWaterChange() {
   // 日期默认今天
   const wcDate = document.getElementById('wcDate');
   if (wcDate) wcDate.value = todayLocal();
-  // 换水量联动：默认水体1/5
-  const wcWater = document.getElementById('wcWater');
-  const globalW = parseFloat(document.getElementById('globalWater').value);
-  if (wcWater && globalW > 0) wcWater.value = Math.round(globalW / 5);
+  // 换水量不按鱼缸体积自动套固定百分比，由用户填写本次实际换水量。
   loadWaterChanges();
 }
 
@@ -2872,7 +3169,11 @@ function editWaterRecord(id) {
       const v = parseFloat(document.getElementById('me_value').value);
       const date = document.getElementById('me_date').value;
       const note = document.getElementById('me_note').value.trim();
-      if (!el || isNaN(v) || v <= 0) { toast('请输入有效的测试值(大于0)', 'err'); throw new Error('invalid'); }
+      const zeroAllowed = el === 'NO3' || el === 'PO4';
+      if (!el || isNaN(v) || v < 0 || (v === 0 && !zeroAllowed)) {
+        toast(zeroAllowed ? '请输入有效的测试值（可以为0，但不能为负数）' : '该参数必须大于0；请复核测试值', 'err');
+        throw new Error('invalid');
+      }
       await api('/api/water/record/' + id, { method: 'PUT', body: { element: el, value: v, note: note, recorded_at: date } });
       loadWater();
       buzz(15); toast('记录已更新 ✓', 'ok');
@@ -2987,7 +3288,7 @@ initWaterChange();
   let startX = 0, startY = 0, tracking = false;
   const TAB_ORDER = ['water', 'salt', 'calc', 'dosing'];
   const isOverlayOpen = () => {
-    return ['guideMask', 'editModal', 'backupModal'].some(id => {
+    return ['tankModal', 'estimatorModal', 'guideMask', 'editModal', 'backupModal'].some(id => {
       const el = document.getElementById(id);
       return el && el.classList.contains('open');
     });

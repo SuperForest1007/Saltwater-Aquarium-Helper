@@ -19,8 +19,9 @@
   每日滴定量 = 需增减值 + 当前滴定量
 """
 
-# 元素系数表: 每1倍稀释比(1克分析纯/1毫升RO水)对应每升水提升的ppm
-# 即"每毫升配好的补充液能提升多少ppm/L"的经验系数(原站公式)
+# 元素系数表（沿用原站经验公式）。
+# `稀释比 × 系数`表示每升水提升1单位所需的配液毫升系数，
+# 不是“每毫升配液能提升多少”。保留旧函数名仅为兼容现有API。
 ELEMENT_FACTORS = {
     "钙": 0.004,
     "镁": 0.009,
@@ -33,14 +34,20 @@ def mix_concentration(ro_water_ml: float, powder_g: float) -> int:
     """
     配液对比浓度: 稀释比 = 水量/分析纯量 (原站 parseInt 取整)
     """
-    if not ro_water_ml or not powder_g or ro_water_ml <= 0 or powder_g <= 0:
+    import math
+    if (not isinstance(ro_water_ml, (int, float)) or not isinstance(powder_g, (int, float)) or
+            not math.isfinite(ro_water_ml) or not math.isfinite(powder_g) or
+            ro_water_ml <= 0 or powder_g <= 0):
         return 0
     return int(ro_water_ml / powder_g)
 
 
 def per_ml_effect(ro_water_ml: float, powder_g: float, element: str) -> float:
     """
-    每毫升补充液可提升的浓度(ppm/L): 对比浓度 × 元素系数
+    兼容旧名称：返回每升水提升1单位所需的配液毫升系数。
+
+    该值越大，表示溶液越稀、达到同样提升所需的毫升数越多；
+    它并不是“每毫升配液的提升量”。
     """
     c = mix_concentration(ro_water_ml, powder_g)
     factor = ELEMENT_FACTORS.get(element, 0)
@@ -52,11 +59,13 @@ def daily_dose(ro_water_ml: float, powder_g: float, element: str,
                interval_days: float) -> float:
     """
     【滴定用量计算表】每天滴定量(毫升)
-    每天滴定量 = round(缸水量升 × (初次-末次)/间隔天数 × 每毫升提升量)
+    每天滴定量 = round(缸水量升 × (初次-末次)/间隔天数 × 单位需求系数)
     """
-    if not all([tank_liters, first_value, last_value, interval_days]):
+    import math
+    values = [tank_liters, first_value, last_value, interval_days, ro_water_ml, powder_g]
+    if any(v is None or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
         return 0.0
-    if tank_liters <= 0 or interval_days <= 0:
+    if tank_liters <= 0 or interval_days <= 0 or first_value < 0 or last_value < 0:
         return 0.0
     drop = first_value - last_value
     if drop <= 0:
@@ -73,9 +82,13 @@ def adjust_dose(ro_water_ml: float, powder_g: float, element: str,
     【滴定用量调节表】每日滴定量(毫升)调节计算
     返回: 需升跌值/日增减值/需增减值/每日滴定量
     """
-    if not all([tank_liters, target_value, current_value, plan_days]):
+    import math
+    values = [tank_liters, target_value, current_value, plan_days,
+              current_dose_ml, ro_water_ml, powder_g]
+    if any(v is None or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
         return {"need_delta": 0, "daily_delta": 0, "need_dose": 0, "final_dose": 0}
-    if tank_liters <= 0 or plan_days <= 0:
+    if (tank_liters <= 0 or plan_days <= 0 or target_value < 0 or current_value < 0 or
+            current_dose_ml < 0):
         return {"need_delta": 0, "daily_delta": 0, "need_dose": 0, "final_dose": 0}
     need_delta = target_value - current_value
     daily_delta = need_delta / plan_days
@@ -101,10 +114,10 @@ DEFAULT_MIX = {
 
 if __name__ == "__main__":
     # 自测 - 与原站默认输出对照
-    print("钙配液: 2000ml水/500g 对比浓度=", mix_concentration(2000, 500), "每ml提升=", per_ml_effect(2000, 500, "钙"))
-    print("镁配液: 4000ml水/1000g 对比浓度=", mix_concentration(4000, 1000), "每ml提升=", per_ml_effect(4000, 1000, "镁"))
-    print("KH配液: 1000ml水/50g 对比浓度=", mix_concentration(1000, 50), "每ml提升=", per_ml_effect(1000, 50, "KH"))
-    print("钾配液: 1000ml水/500g 对比浓度=", mix_concentration(1000, 500), "每ml提升=", per_ml_effect(1000, 500, "钾"))
+    print("钙配液: 2000ml水/500g 对比浓度=", mix_concentration(2000, 500), "单位需求系数=", per_ml_effect(2000, 500, "钙"))
+    print("镁配液: 4000ml水/1000g 对比浓度=", mix_concentration(4000, 1000), "单位需求系数=", per_ml_effect(4000, 1000, "镁"))
+    print("KH配液: 1000ml水/50g 对比浓度=", mix_concentration(1000, 50), "单位需求系数=", per_ml_effect(1000, 50, "KH"))
+    print("钾配液: 1000ml水/500g 对比浓度=", mix_concentration(1000, 500), "单位需求系数=", per_ml_effect(1000, 500, "钾"))
     # 调节表默认值验证
     r = adjust_dose(2000, 500, "钙", 550, 420, 350, 10)
     print("钙调节(期望: 62):", r)

@@ -3,10 +3,12 @@
 海水缸管理App - FastAPI 后端入口
 """
 import os
-from fastapi import FastAPI
+from datetime import date
+from typing import Literal
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, confloat
 
 from additive_calculator import (
     calc_additive, get_all_additives, calc_dose_auto,
@@ -18,17 +20,19 @@ from dosing_calculator import (
 from water_quality import (
     analyze_element, analyze_all, ELEMENT_IDEALS,
     evaluate_dosing_effect, balance_audit, test_frequency_health,
-    linkage_diagnosis,
+    linkage_diagnosis, get_ideals_for_tank, TANK_TYPE_DESCRIPTIONS,
+    TANK_TYPE_TARGETS, TANK_TYPE_FOCUS,
 )
 from water_store import (
     init_db, add_record, get_records, get_records_grouped, delete_record, get_elements,
     init_dosing_log, add_dosing_log, get_dosing_logs, get_last_dose, delete_dosing_log,
     init_water_change, add_water_change, get_water_changes, delete_water_change,
     update_record, update_dosing_log, update_water_change,
-    export_all, import_all,
+    export_all, import_all, get_active_tank, update_active_tank,
+    TANK_TYPES, TANK_STAGES,
 )
 
-app = FastAPI(title="海水缸管理App", version="0.4.0")
+app = FastAPI(title="海水缸管理App", version="0.5.0")
 
 # 初始化数据库
 init_db()
@@ -43,43 +47,124 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 
 # ---------- API ----------
 
+PositiveFiniteFloat = confloat(gt=0, allow_inf_nan=False)
+NonNegativeFiniteFloat = confloat(ge=0, allow_inf_nan=False)
+
+
+def _active_context():
+    tank = get_active_tank()
+    ideals = get_ideals_for_tank(tank["tank_type"], tank.get("custom_targets"))
+    return tank, ideals
+
+
+class TankProfileRequest(BaseModel):
+    name: str = Field(default="我的鱼缸", max_length=40)
+    water_liters: PositiveFiniteFloat
+    tank_type: Literal["FOT", "软体", "LPS", "SPS", "NPS", "混养"]
+    stage: Literal["筹备中", "开缸期", "稳定期", "调整期"]
+    started_at: str = ""
+    custom_targets: dict = Field(default_factory=dict)
+    salt_brand: str = Field(default="", max_length=80)
+
+
+def _validate_tank_request(req: TankProfileRequest):
+    if req.started_at:
+        try:
+            started = date.fromisoformat(req.started_at)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="开缸日期必须使用 YYYY-MM-DD") from exc
+        if started > date.today():
+            raise HTTPException(status_code=422, detail="开缸日期不能晚于今天")
+    for element, target in req.custom_targets.items():
+        if element not in ELEMENT_IDEALS or not isinstance(target, dict):
+            raise HTTPException(status_code=422, detail=f"无法识别的自定义目标：{element}")
+        try:
+            low, high = float(target["low"]), float(target["high"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail=f"{element} 自定义目标需要 low/high") from exc
+        if low < 0 or low >= high:
+            raise HTTPException(status_code=422, detail=f"{element} 自定义目标必须满足 0 ≤ low < high")
+
+
+@app.get("/api/tank")
+def api_tank_get():
+    tank, ideals = _active_context()
+    return {
+        "tank": tank,
+        "effective_targets": ideals,
+        "profile_note": "这些数值先拿来作参考，后面再跟着测试走势和缸里的状态慢慢调。",
+    }
+
+
+@app.get("/api/tank/options")
+def api_tank_options():
+    return {
+        "types": [
+            {
+                "value": item,
+                "description": TANK_TYPE_DESCRIPTIONS[item],
+                "focus": TANK_TYPE_FOCUS[item],
+                "targets": {
+                    element: {"low": low, "high": high, "unit": ELEMENT_IDEALS[element]["unit"]}
+                    for element, (low, high) in TANK_TYPE_TARGETS[item].items()
+                },
+            }
+            for item in TANK_TYPES
+        ],
+        "stages": list(TANK_STAGES),
+    }
+
+
+@app.put("/api/tank")
+def api_tank_update(req: TankProfileRequest):
+    _validate_tank_request(req)
+    tank = update_active_tank(
+        req.name, req.water_liters, req.tank_type, req.stage, req.started_at,
+        req.custom_targets, req.salt_brand,
+    )
+    return {
+        "ok": True,
+        "tank": tank,
+        "effective_targets": get_ideals_for_tank(tank["tank_type"], tank.get("custom_targets")),
+    }
+
 class AdditiveRequest(BaseModel):
-    water_liters: float       # 水量(升)
-    conc_delta: float         # 提升/降低浓度
-    v1: float                 # 元素当量
-    v2: float                 # 添加物分子量
+    water_liters: PositiveFiniteFloat       # 水量(升)
+    conc_delta: PositiveFiniteFloat         # 提升浓度
+    v1: PositiveFiniteFloat                 # 元素当量
+    v2: PositiveFiniteFloat                 # 添加物分子量
 
 class AutoDoseRequest(BaseModel):
-    water_liters: float       # 水量(升)
-    current_value: float      # 当前实测值
-    ideal_low: float          # 理想下限
-    ideal_high: float         # 理想上限
-    v1: float                 # 元素当量
-    v2: float                 # 添加物分子量
+    water_liters: PositiveFiniteFloat       # 水量(升)
+    current_value: NonNegativeFiniteFloat   # 当前实测值
+    ideal_low: NonNegativeFiniteFloat       # 参考下限
+    ideal_high: PositiveFiniteFloat          # 参考上限
+    v1: PositiveFiniteFloat                 # 元素当量
+    v2: PositiveFiniteFloat                 # 添加物分子量
     unit: str = "ppm"         # 单位(ppm/dKH)
 
 class MixRequest(BaseModel):
-    ro_water_ml: float        # RO水量(毫升)
-    powder_g: float           # 分析纯量(克)
+    ro_water_ml: PositiveFiniteFloat        # RO水量(毫升)
+    powder_g: PositiveFiniteFloat           # 分析纯量(克)
 
 class DoseRequest(BaseModel):
-    ro_water_ml: float
-    powder_g: float
+    ro_water_ml: PositiveFiniteFloat
+    powder_g: PositiveFiniteFloat
     element: str              # 钙/镁/KH/钾
-    tank_liters: float        # 缸总水量(升)
-    first_value: float        # 初次测试值
-    last_value: float         # 最后测试值
-    interval_days: float      # 测试间隔(天)
+    tank_liters: PositiveFiniteFloat        # 缸实际水量(升)
+    first_value: NonNegativeFiniteFloat     # 初次测试值
+    last_value: NonNegativeFiniteFloat      # 最后测试值
+    interval_days: PositiveFiniteFloat      # 测试间隔(天)
 
 class AdjustRequest(BaseModel):
-    ro_water_ml: float
-    powder_g: float
+    ro_water_ml: PositiveFiniteFloat
+    powder_g: PositiveFiniteFloat
     element: str
-    tank_liters: float
-    target_value: float       # 目标值
-    current_value: float      # 当前测试值
-    plan_days: float          # 计划提升天数
-    current_dose_ml: float = 0  # 当前滴定量(毫升)
+    tank_liters: PositiveFiniteFloat
+    target_value: NonNegativeFiniteFloat    # 目标值
+    current_value: NonNegativeFiniteFloat   # 当前测试值
+    plan_days: PositiveFiniteFloat           # 计划提升天数
+    current_dose_ml: NonNegativeFiniteFloat = 0  # 当前滴定量(毫升)
 
 @app.get("/api/additives")
 def api_additives():
@@ -129,7 +214,7 @@ def api_dosing_adjust(req: AdjustRequest):
 
 class DosingLogRequest(BaseModel):
     element: str
-    dose_ml: float
+    dose_ml: PositiveFiniteFloat = Field(description="滴定量必须为正数")
     note: str = ""
     action: str = "start"   # start=开始滴定 / end=结束滴定
     recorded_at: str = ""
@@ -152,7 +237,7 @@ def api_dosing_log_delete(rid: int):
 
 class DosingLogUpdateRequest(BaseModel):
     element: str
-    dose_ml: float = Field(gt=0)
+    dose_ml: PositiveFiniteFloat
     note: str = ""
     action: str = "start"
     recorded_at: str = ""
@@ -165,7 +250,7 @@ def api_dosing_log_update(rid: int, req: DosingLogUpdateRequest):
 # ---------- 换水记录 API ----------
 
 class WaterChangeRequest(BaseModel):
-    water_liters: float = Field(gt=0, description="换水量必须为正数")
+    water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
     salt_brand: str = ""
     note: str = ""
     recorded_at: str = ""
@@ -184,7 +269,7 @@ def api_water_change_delete(rid: int):
     return {"ok": delete_water_change(rid)}
 
 class WaterChangeUpdateRequest(BaseModel):
-    water_liters: float = Field(gt=0, description="换水量必须为正数")
+    water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
     salt_brand: str = ""
     note: str = ""
     recorded_at: str = ""
@@ -197,14 +282,26 @@ def api_water_change_update(rid: int, req: WaterChangeUpdateRequest):
 
 class RecordRequest(BaseModel):
     element: str
-    value: float = Field(gt=0, description="测试值必须为正数")
+    value: NonNegativeFiniteFloat = Field(description="测试值不能为负数；NO3、PO4等允许记录0")
     note: str = ""
     recorded_at: str = ""   # 可选，默认当前时间
 
+
+def _validate_zero_value(element: str, value: float):
+    """营养盐可记录检测结果0；KH/Ca/Mg等核心参数的0值视为误输入。"""
+    if value == 0 and element not in {"NO3", "PO4"}:
+        raise HTTPException(status_code=422, detail="只有NO3、PO4允许记录0；请复核该参数读数")
+
 @app.get("/api/water/ideals")
 def api_water_ideals():
-    """各元素理想范围。"""
-    return {"ideals": ELEMENT_IDEALS}
+    """当前鱼缸类型对应的起始参考范围。"""
+    tank, ideals = _active_context()
+    return {
+        "ideals": ideals,
+        "tank_type": tank["tank_type"],
+        "source": "tank_profile",
+        "note": "这是当前缸型的起步参考。看数据时，也一起看看连续走势和缸里的实际状态。",
+    }
 
 @app.get("/api/water/records")
 def api_water_records(element: str = None):
@@ -218,7 +315,9 @@ def api_water_elements():
 
 @app.post("/api/water/record")
 def api_water_add(req: RecordRequest):
-    rid = add_record(req.element, req.value, ELEMENT_IDEALS.get(req.element, {}).get("unit", "ppm"), req.note, req.recorded_at or None)
+    _validate_zero_value(req.element, req.value)
+    _, ideals = _active_context()
+    rid = add_record(req.element, req.value, ideals.get(req.element, {}).get("unit", "ppm"), req.note, req.recorded_at or None)
     return {"id": rid, "ok": True}
 
 @app.delete("/api/water/record/{rid}")
@@ -227,14 +326,16 @@ def api_water_delete(rid: int):
 
 class RecordUpdateRequest(BaseModel):
     element: str
-    value: float = Field(gt=0, description="测试值必须为正数")
+    value: NonNegativeFiniteFloat = Field(description="测试值不能为负数；NO3、PO4等允许记录0")
     note: str = ""
     recorded_at: str = ""
 
 @app.put("/api/water/record/{rid}")
 def api_water_update(rid: int, req: RecordUpdateRequest):
+    _validate_zero_value(req.element, req.value)
+    _, ideals = _active_context()
     rid_ok = update_record(rid, req.element, req.value,
-                           ELEMENT_IDEALS.get(req.element, {}).get("unit", "ppm"),
+                           ideals.get(req.element, {}).get("unit", "ppm"),
                            req.note, req.recorded_at or None)
     return {"ok": rid_ok}
 
@@ -242,14 +343,16 @@ def api_water_update(rid: int, req: RecordUpdateRequest):
 def api_water_analysis():
     """全元素智能分析（L1-L5）。"""
     grouped = get_records_grouped()
-    return {"analysis": analyze_all(grouped)}
+    _, ideals = _active_context()
+    return {"analysis": analyze_all(grouped, ideals)}
 
 @app.get("/api/water/element-analysis")
 def api_water_element_analysis(element: str):
     """单元素分析。"""
     recs = get_records(element)
     data = [(r["recorded_at"], r["value"]) for r in recs]
-    return {"analysis": analyze_element(data, element)}
+    _, ideals = _active_context()
+    return {"analysis": analyze_element(data, element, ideals.get(element))}
 
 @app.get("/api/analysis/dosing-effect")
 def api_dosing_effect():
@@ -263,16 +366,34 @@ def api_dosing_effect():
         data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
     return {"result": evaluate_dosing_effect(data, logs)}
 
-@app.get("/api/analysis/balance")
-def api_balance(tank_liters: float = 156):
-    """A2: 消耗/补充平衡审计。"""
+def _balance_result(tank_liters, mix_ratio=None):
+    """构建收支审计结果；水量与配液数据均不使用静默默认值。"""
     grouped = get_records_grouped()
     logs = get_dosing_logs()
     from datetime import datetime
     data = {}
     for el, recs in grouped.items():
         data[el] = [(datetime.fromisoformat(d), v) for d, v in recs]
-    return {"result": balance_audit(data, logs, tank_liters=tank_liters)}
+    return {"result": balance_audit(data, logs, mix_ratio=mix_ratio, tank_liters=tank_liters)}
+
+
+@app.get("/api/analysis/balance")
+def api_balance(tank_liters: float = None):
+    """未显式提供时使用鱼缸档案的实际水量；未设置档案则保持空结果。"""
+    if tank_liters is None:
+        tank_liters = get_active_tank().get("water_liters")
+    return _balance_result(tank_liters)
+
+
+class BalanceRequest(BaseModel):
+    tank_liters: PositiveFiniteFloat
+    mix_ratio: dict = Field(default_factory=dict)
+
+
+@app.post("/api/analysis/balance")
+def api_balance_with_mix(req: BalanceRequest):
+    """按用户实际水量与各元素真实配液比例做收支估算。"""
+    return _balance_result(req.tank_liters, req.mix_ratio)
 
 @app.get("/api/analysis/frequency")
 def api_frequency():
@@ -286,10 +407,11 @@ def api_frequency():
 
 @app.get("/api/analysis/linkage")
 def api_linkage():
-    """元素联动诊断：跨元素因果关系。"""
+    """元素联动诊断：提供跨元素关联线索与待复核的可能原因。"""
     grouped = get_records_grouped()
-    analysis = analyze_all(grouped)
-    return {"findings": linkage_diagnosis(analysis)}
+    _, ideals = _active_context()
+    analysis = analyze_all(grouped, ideals)
+    return {"findings": linkage_diagnosis(analysis, ideals)}
 
 # ---------- 前端页面 ----------
 
@@ -345,7 +467,7 @@ def api_export_csv(kind: str = "water"):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": app.version}
 
 
 if __name__ == "__main__":

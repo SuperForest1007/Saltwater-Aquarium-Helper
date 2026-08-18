@@ -12,27 +12,28 @@ class TestWaterQuality:
         assert r.status_code == 200
         ideals = r.json()["ideals"]
         assert set(ideals.keys()) == {"KH", "钙", "镁", "NO3", "PO4"}
-        # KH范围8-12（主流参考）
-        assert ideals["KH"]["low"] == 8
-        assert ideals["KH"]["high"] == 12
-        # 镁1300-1400
-        assert ideals["镁"]["low"] == 1300
+        # KH通用参考7-11；不同系统应允许后续自定义目标
+        assert ideals["KH"]["low"] == 7
+        assert ideals["KH"]["high"] == 11
+        # 镁1250-1400（需结合盐度）
+        assert ideals["镁"]["low"] == 1250
         assert ideals["镁"]["high"] == 1400
         # 钙400-450
         assert ideals["钙"]["low"] == 400
         assert ideals["钙"]["high"] == 450
 
 
-    def test_ideals_have_coral_type_hints(self, test_client):
-        """核心元素ideal包含珊瑚类型(SPS/LPS)建议。"""
+    def test_ideals_have_context_hints(self, test_client):
+        """核心元素参考值必须提醒用户结合上下文判断。"""
         r = test_client.get("/api/water/ideals")
         ideals = r.json()["ideals"]
-        # 钙/镁/KH应有SPS/LPS提示
+        # 钙/镁/KH都应有非空提示，且不把单一数字描述成普适理想值
         for el in ["钙", "镁", "KH"]:
             hint = ideals[el].get("hint", "")
             assert hint, f"{el} 缺少hint"
-        assert "SPS" in ideals["钙"]["hint"]
-        assert "SPS" in ideals["镁"]["hint"]
+        assert "盐度" in ideals["钙"]["hint"]
+        assert "盐度" in ideals["镁"]["hint"]
+        assert "稳定" in ideals["KH"]["hint"]
 
     def test_record_crud(self, test_client):
         """水质记录：添加→查询→删除。"""
@@ -57,6 +58,14 @@ class TestWaterQuality:
         # 删除
         rec_id = r = test_client.get("/api/water/records").json()["records"][0]["id"]
         r = test_client.delete(f"/api/water/record/{rec_id}")
+        assert r.json()["ok"] is True
+
+    def test_zero_nutrient_value_is_valid(self, test_client):
+        """NO3/PO4测得0是合法结果，不应按非法输入拒绝。"""
+        r = test_client.post("/api/water/record", json={
+            "element": "PO4", "value": 0, "recorded_at": "2025-02-02"
+        })
+        assert r.status_code == 200
         assert r.json()["ok"] is True
 
     def test_analysis_single_element(self, test_client):

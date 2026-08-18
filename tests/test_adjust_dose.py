@@ -33,23 +33,22 @@ class TestAdjustDose:
         assert d["final_dose"] <= 20
 
     def test_adjust_invalid(self, test_client):
-        """非法参数不崩溃。"""
+        """0水量和0计划天数应在API校验层被拒绝。"""
         r = test_client.post("/api/dosing/adjust", json={
             "ro_water_ml": 1000, "powder_g": 50, "element": "KH",
             "tank_liters": 0, "target_value": 9, "current_value": 8,
             "plan_days": 0, "current_dose_ml": 0
         })
-        assert r.status_code == 200
-        assert r.json()["need_dose"] == 0
+        assert r.status_code == 422
 
     def test_adjust_roundtrip_math(self, test_client):
-        """数值一致性：need_dose 应等于 水量×日增减×每ml提升量。"""
-        # 已知配液 1000ml/50g KH → 稀释比 20，系数0.03 → 每ml提升 0.6
+        """数值一致性：need_dose 应等于 水量×日增减×单位需求系数。"""
+        # 已知配液 1000ml/50g KH → 稀释比 20，系数0.03 → 单位需求系数 0.6
         r = test_client.post("/api/dosing/adjust", json={
             "ro_water_ml": 1000, "powder_g": 50, "element": "KH",
             "tank_liters": 100, "target_value": 9.0, "current_value": 8.0,
             "plan_days": 10, "current_dose_ml": 0
         })
         d = r.json()
-        # daily_delta = 0.1 dKH/天；每ml提升 20×0.03=0.6；need_dose = 100×0.1×0.6 = 6
+        # daily_delta = 0.1 dKH/天；单位需求系数 20×0.03=0.6；need_dose = 100×0.1×0.6 = 6
         assert abs(d["need_dose"] - 6) <= 1

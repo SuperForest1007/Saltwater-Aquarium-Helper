@@ -7,16 +7,16 @@
 class TestAdviceSupplement:
     def test_supplement_when_low(self, test_client):
         """元素偏低时，建议应带 supplement（需补数值/目标值）。"""
-        # KH 低于下限（8.0），3条下降记录
-        for d, v in [("2025-01-01", 7.6), ("2025-01-08", 7.3), ("2025-01-15", 7.0)]:
+        # KH 低于当前通用参考下限（7.0），3条下降记录
+        for d, v in [("2025-01-01", 7.2), ("2025-01-08", 6.9), ("2025-01-15", 6.6)]:
             test_client.post("/api/water/record", json={"element": "KH", "value": v, "recorded_at": d})
         r = test_client.get("/api/water/analysis")
         advice = r.json()["analysis"]["KH"]["advice"]
         assert advice["supplement"] is not None
         assert advice["supplement"]["delta"] > 0
         assert advice["supplement"]["unit"] == "dKH"
-        # 目标值应在理想范围内（补到中值 10）
-        assert 8 <= advice["supplement"]["target"] <= 12
+        # 目标值应在当前通用参考区间内
+        assert 7 <= advice["supplement"]["target"] <= 11
 
     def test_no_supplement_when_ok(self, test_client):
         """元素正常时无 supplement。"""

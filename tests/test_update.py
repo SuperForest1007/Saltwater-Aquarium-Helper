@@ -40,7 +40,7 @@ class TestWaterRecordUpdate:
         assert rec["unit"] == "dKH"
 
     def test_update_water_record_invalid_value(self, test_client):
-        """更新为非法值（0/负数）应返回422。"""
+        """KH更新为0或负数应返回422；营养盐0值另有专门测试。"""
         r = test_client.post("/api/water/record", json={
             "element": "KH", "value": 7.8, "recorded_at": "2025-02-01"
         })

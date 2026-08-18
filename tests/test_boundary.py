@@ -83,6 +83,16 @@ class TestBoundaryValues:
         r = analyze_element(recs, "KH")
         assert "status" in r
 
+    def test_prediction_date_starts_after_latest_record(self):
+        """预测日期应从最后一次测量向后推，而不是从首条记录向后推。"""
+        recs = [
+            (date(2025, 1, 1).isoformat(), 9.0),
+            (date(2025, 1, 11).isoformat(), 8.5),
+        ]
+        r = analyze_element(recs, "KH")
+        assert r["prediction"] is not None
+        assert r["prediction"]["date"] > "2025-01-11"
+
 
 class TestRiskScenarios:
     """潜在风险：异常数据、波动、精度。"""

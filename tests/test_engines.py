@@ -58,7 +58,7 @@ class TestAdditiveCalculator:
     def test_all_additives_complete(self):
         """全部添加剂数据完整（每个元素有添加物）。"""
         groups = get_all_additives()
-        assert len(groups) == 5
+        assert len(groups) == 4
         for g in groups:
             assert g["elements"], f"分组 {g['title']} 无元素"
             for e in g["elements"]:
@@ -72,7 +72,7 @@ class TestDosingCalculator:
         assert mix_concentration(2000, 500) == 4
 
     def test_per_ml_effect(self):
-        """每ml提升：钙 4*0.004 = 0.016。"""
+        """单位需求系数：钙 4*0.004 = 0.016。"""
         assert per_ml_effect(2000, 500, "钙") == 0.016
 
     def test_daily_dose(self):

@@ -13,11 +13,15 @@ class TestAdditives:
         data = r.json()
         assert "groups" in data
         groups = data["groups"]
-        assert len(groups) >= 5  # 核心/进阶/微量/营养/治疗
+        assert len(groups) >= 4  # 核心/进阶/微量/营养盐补充
         # 第一个分组是核心元素
         assert groups[0]["title"] == "核心元素"
         names = [e["name"] for e in groups[0]["elements"]]
         assert names == ["KH 碱度", "钙 Ca", "镁 Mg"]  # 顺序：KH→钙→镁
+        all_names = [e["name"] for g in groups for e in g["elements"]]
+        assert "硝酸盐 NO3（降低）" not in all_names
+        assert "铜 Cu" not in all_names
+        assert "福马林" not in all_names
 
     def test_calc_additive_ca(self, test_client):
         """钙添加量计算：400L提40ppm氯化钙二水(40,147)。"""
@@ -38,12 +42,11 @@ class TestAdditives:
         assert r.json()["grams"] == 6.0
 
     def test_calc_additive_zero_guard(self, test_client):
-        """非法输入（0水量）应返回0而不是报错。"""
+        """非法输入（0水量）应在API校验层被拒绝。"""
         r = test_client.post("/api/calc/additive", json={
             "water_liters": 0, "conc_delta": 10, "v1": 40, "v2": 147
         })
-        assert r.status_code == 200
-        assert r.json()["grams"] == 0
+        assert r.status_code == 422
 
     def test_calc_auto_judge(self, test_client):
         """自动判断：钙360低于下限，建议补充。"""

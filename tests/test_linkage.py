@@ -33,7 +33,7 @@ class TestLinkageDiagnosis:
         assert any("镁" in f["title"] for f in findings)
 
     def test_no3_low_po4_high(self):
-        """NO3低+PO4高 → 触发R4失衡。"""
+        """NO3低+PO4高 → 提示两项同时异常，不套固定比例。"""
         analysis = {
             "镁": _analyze("镁", [1280, 1280, 1280, 1280, 1280]),
             "钙": _analyze("钙", [420, 420, 420, 420, 420]),
@@ -42,10 +42,10 @@ class TestLinkageDiagnosis:
             "PO4": _analyze("PO4", [0.15, 0.15, 0.15, 0.15, 0.15]),
         }
         findings = linkage_diagnosis(analysis)
-        assert any("营养盐" in f["title"] for f in findings)
+        assert any("NO₃偏低且PO₄偏高" in f["title"] for f in findings)
 
     def test_ca_high_kh_low(self):
-        """钙高+KH低 → 触发R3沉淀。"""
+        """钙高+KH低 → 提示复核，而不是直接断言发生沉淀。"""
         analysis = {
             "镁": _analyze("镁", [1280, 1280, 1280, 1280, 1280]),
             "钙": _analyze("钙", [455, 455, 455, 455, 455]),
@@ -54,7 +54,7 @@ class TestLinkageDiagnosis:
             "PO4": _analyze("PO4", [0.05, 0.05, 0.05, 0.05, 0.05]),
         }
         findings = linkage_diagnosis(analysis)
-        assert any("沉淀" in f["title"] for f in findings)
+        assert any("钙偏高且碱度偏低" in f["title"] for f in findings)
 
     def test_normal_no_findings(self):
         """全部正常 → 无发现。"""

@@ -13,23 +13,97 @@ L3 异常检测: z-score 对比历史波动分布
 L4 组合诊断: 多信号匹配规则模式 → 动态建议
 L5 趋势预测: 线性外推预测"X天后跌破/突破范围"
 """
+import copy
 import math
 from datetime import datetime, timedelta
 
 
 # ============ 理想范围定义 ============
 ELEMENT_IDEALS = {
-    "KH":  {"low": 8.0, "high": 12.0, "unit": "dKH", "display": "KH 碱度",
-            "hint": "SPS建议8-9dKH，混合缸可到12dKH；波动宜控制在±0.5dKH以内"},
+    "KH":  {"low": 7.0, "high": 11.0, "unit": "dKH", "display": "KH 碱度",
+            "hint": "通用参考约7-11dKH；目标需结合营养盐和珊瑚类型，稳定性通常比追单一数字更重要"},
     "钙":  {"low": 400, "high": 450, "unit": "ppm", "display": "钙 Ca",
-            "hint": "SPS硬骨缸建议维持420-450ppm，LPS软体缸400-430即可"},
-    "镁":  {"low": 1300, "high": 1400, "unit": "ppm", "display": "镁 Mg",
-            "hint": "镁是钙的稳定剂；SPS缸建议1350-1400，LPS缸1300-1350即可"},
+            "hint": "通用参考约400-450ppm；请结合盐度、测试误差与碱度趋势判断"},
+    "镁":  {"low": 1250, "high": 1400, "unit": "ppm", "display": "镁 Mg",
+            "hint": "通用参考约1250-1400ppm并随盐度而变；先复测盐度和镁再调整"},
     "NO3": {"low": 2.0, "high": 10.0, "unit": "ppm", "display": "硝酸盐 NO₃",
-            "hint": "过低会让珊瑚生长停滞、颜色变淡；SPS建议5-10ppm，LPS 2-5ppm，与PO4保持约100:1"},
+            "hint": "过低或过高都可能带来问题；应结合PO4、投喂、生物负载和缸体类型分别判断，不以固定比例作为追数值目标"},
     "PO4": {"low": 0.03, "high": 0.08, "unit": "ppm", "display": "磷酸盐 PO₄",
-            "hint": "完全归零会让珊瑚失去颜色；SPS建议0.03-0.05ppm，LPS可到0.08ppm"},
+            "hint": "常见参考约0.03-0.08ppm；长期不可检出可能增加营养限制风险，需结合检测下限和系统类型判断"},
 }
+
+# 不同缸型的“起始参考范围”。它们用于个性化分析，不代替测试剂说明、
+# 盐度校准和对具体生物状态的观察；用户自定义目标会覆盖这里的上下限。
+TANK_TYPE_TARGETS = {
+    "FOT": {
+        "KH": (7.0, 11.0), "钙": (380, 450), "镁": (1200, 1400),
+        "NO3": (2.0, 30.0), "PO4": (0.03, 0.30),
+    },
+    "软体": {
+        "KH": (7.0, 11.0), "钙": (380, 450), "镁": (1250, 1400),
+        "NO3": (2.0, 20.0), "PO4": (0.03, 0.15),
+    },
+    "LPS": {
+        "KH": (7.5, 10.0), "钙": (400, 450), "镁": (1250, 1400),
+        "NO3": (2.0, 15.0), "PO4": (0.03, 0.12),
+    },
+    "SPS": {
+        "KH": (7.0, 9.0), "钙": (400, 450), "镁": (1250, 1400),
+        "NO3": (1.0, 10.0), "PO4": (0.02, 0.08),
+    },
+    "NPS": {
+        "KH": (7.0, 11.0), "钙": (380, 450), "镁": (1250, 1400),
+        "NO3": (2.0, 25.0), "PO4": (0.03, 0.20),
+    },
+    "混养": {
+        "KH": (7.0, 11.0), "钙": (400, 450), "镁": (1250, 1400),
+        "NO3": (2.0, 10.0), "PO4": (0.03, 0.08),
+    },
+}
+
+TANK_TYPE_DESCRIPTIONS = {
+    "FOT": "只养鱼，或以鱼为主；重点看过滤负担和营养盐",
+    "软体": "皮革、菇、纽扣这类软体，或以红奶嘴等海葵为主。海葵不是软体珊瑚，这里先共用一套基础水质参考",
+    "LPS": "脑、糖果脑、火柴头这类大水螅体硬骨珊瑚为主",
+    "SPS": "鹿角、鸟巢这类小水螅体硬骨珊瑚为主，更看重 KH 稳定",
+    "NPS": "太阳花、海树这类非光合珊瑚为主，主要靠投喂",
+    "混养": "鱼和几类珊瑚都有；暂时分不清也可以先选这个",
+}
+
+TANK_TYPE_FOCUS = {
+    "FOT": ["先看过滤负担和 NO₃ / PO₄", "钙、镁通常不用频繁追"],
+    "软体": ["先稳住温度、盐度和光照", "营养盐别长期测不到"],
+    "LPS": ["留意 KH、钙的长期消耗", "保持适度营养和稳定水流"],
+    "SPS": ["重点看 KH 的日常波动", "钙化消耗和营养盐都要连续记录"],
+    "NPS": ["投喂量和过滤输出是主线", "NO₃ / PO₄ 范围只能作粗参考"],
+    "混养": ["先照顾缸里最敏感的生物", "发现长期消耗后再收窄目标"],
+}
+
+
+def get_ideals_for_tank(tank_type="混养", custom_targets=None):
+    """返回缸型参考范围，并安全应用用户自定义的 low/high。"""
+    ideals = copy.deepcopy(ELEMENT_IDEALS)
+    profile = TANK_TYPE_TARGETS.get(tank_type, TANK_TYPE_TARGETS["混养"])
+    for element, (low, high) in profile.items():
+        ideals[element]["low"] = low
+        ideals[element]["high"] = high
+        salt_note = "钙、镁读数还会跟着盐度变化，先确认盐度和读数；" if element in {"钙", "镁"} else ""
+        ideals[element]["hint"] = (
+            f"{tank_type}缸先把 {low}-{high}{ideals[element]['unit']} 当作参考。"
+            f"{salt_note}如果缸里状态正常、走势也稳定，不用为了贴数字来回调整。"
+        )
+    for element, target in (custom_targets or {}).items():
+        if element not in ideals or not isinstance(target, dict):
+            continue
+        try:
+            low, high = float(target["low"]), float(target["high"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if math.isfinite(low) and math.isfinite(high) and 0 <= low < high:
+            ideals[element]["low"] = low
+            ideals[element]["high"] = high
+            ideals[element]["hint"] = "这里显示的是你自己设的目标，后面可以跟着缸里的变化再调。"
+    return ideals
 
 
 # ============ 基础统计 ============
@@ -153,13 +227,13 @@ def analyze_element(records, element, ideal=None):
         if slope < 0 and cur > low:
             days_to_low = (low - cur) / slope
             if days_to_low > 0:
-                eta = (t0 + timedelta(days=days_to_low)).date()
+                eta = (dates[-1] + timedelta(days=days_to_low)).date()
                 prediction = {"direction": "down", "days": days_to_low, "target": low, "date": str(eta),
                               "msg": f"按当前速率(每天{abs(slope):.2f}{unit})，预计约{max(1, round(days_to_low))}天后跌破{low}{unit}({eta})"}
         elif slope > 0 and cur < high:
             days_to_high = (high - cur) / slope
             if days_to_high > 0:
-                eta = (t0 + timedelta(days=days_to_high)).date()
+                eta = (dates[-1] + timedelta(days=days_to_high)).date()
                 prediction = {"direction": "up", "days": days_to_high, "target": high, "date": str(eta),
                               "msg": f"按当前速率(每天{abs(slope):.2f}{unit})，预计约{max(1, round(days_to_high))}天后升破{high}{unit}({eta})"}
 
@@ -224,12 +298,11 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
     if element in ("NO3", "PO4"):
         other = "PO4" if element == "NO3" else "NO3"
         if s["level"] == "low" and s["current"] <= low * 0.5:
-            supplement = _supplement_info()
             if element == "NO3":
-                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})，珊瑚可能因缺乏营养而褪色瘦弱。刚开缸时可接受归零，但养珊瑚建议维持 {low}-{high}{unit}，可用硝酸钾/珊瑚粮缓慢提升，保持与PO4约100:1")
+                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})。建议先复测，并结合PO4、投喂量、生物负载和蛋分运行情况判断；若确认长期缺氮，再选择增加投喂或经过验证的氮源方案，少量调整并复测")
                 prio = max(prio, 70)
             else:
-                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})，磷是珊瑚营养必需。完全归零会让珊瑚发白、生长停滞，建议维持 {low}-{high}{unit}")
+                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})。建议先确认测试分辨率与试剂状态，再结合NO3、投喂和珊瑚表现判断；不要只为追固定比例直接加药")
                 prio = max(prio, 70)
         elif s["level"] == "ok" and element == "NO3":
             parts.append(f"🪸 {low_cn}在 {low}-{high}{unit} 之间，是珊瑚生长所需营养区间(只有刚开缸阶段才追求归零)，保持即可")
@@ -237,7 +310,10 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
 
     # --- 趋势+水平组合 ---
     if s["level"] == "low":
-        supplement = _supplement_info()
+        # 仅核心钙化元素生成可直接进入计算器的补充动作。
+        # 营养盐需要结合投喂、菌群、蛋分和生物负载判断，不自动生成加药剂量。
+        if element in ("KH", "钙", "镁"):
+            supplement = _supplement_info()
         if s["direction"] == "falling":
             if s["accelerating"]:
                 parts.append(f"📉 {low_cn}持续下降且速率在加快(每天{s['rate']:.2f}{unit})，正在远离理想范围，建议尽快补充至{low}-{high}{unit}，并排查消耗增加原因(珊瑚生长加速/换水)")
@@ -285,18 +361,18 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
 
 
 # ============ 汇总分析 ============
-def analyze_all(records_by_element):
+def analyze_all(records_by_element, ideals=None):
     """records_by_element: {元素: [(date, value), ...]}"""
     result = {}
     for el, recs in records_by_element.items():
-        result[el] = analyze_element(recs, el)
+        result[el] = analyze_element(recs, el, (ideals or ELEMENT_IDEALS).get(el))
     return result
 
 
 # ============ 元素联动诊断 ============
-def linkage_diagnosis(analysis):
+def linkage_diagnosis(analysis, ideals=None):
     """
-    跨元素联动诊断：组合多个元素的信号，找出因果关系。
+    跨元素联动诊断：组合多个元素的信号，寻找关联线索与待复核的可能原因。
     analysis: analyze_all 的输出 {元素: 分析结果}
     返回: [{title, detail, priority, related}]
     """
@@ -312,22 +388,24 @@ def linkage_diagnosis(analysis):
         return a.get("current") if a else None
 
     findings = []
+    ideals = ideals or ELEMENT_IDEALS
 
-    # --- R1: 镁低 → 钙析出 ---
+    # --- R1: 镁偏低与钙下降同时出现 ---
     mg = cur("镁")
     ca = cur("钙")
     mg_trend = sig("镁", "direction")
     ca_trend = sig("钙", "direction")
     if mg is not None and ca is not None:
-        if mg < 1300 and ca_trend == "falling":
+        mg_low_limit = ideals["镁"]["low"]
+        if mg < mg_low_limit and ca_trend == "falling":
             findings.append({
-                "title": "镁偏低可能导致钙析出",
-                "detail": f"镁当前{mg:.0f}ppm（<1300），且钙在下降。镁是钙的稳定剂，镁不足时钙容易析出沉淀。建议先补镁至1300-1400，再观察钙是否回升。",
+                "title": "镁偏低与钙下降同时出现",
+                "detail": f"镁当前{mg:.0f}ppm（低于本缸参考下限{mg_low_limit:.0f}），且钙在下降。低镁可能增加碳酸钙非生物沉淀的倾向，但也可能是测试误差、盐度变化或生物消耗。建议先复测镁、钙和盐度，再分步调整并观察。",
                 "priority": 85,
                 "related": ["镁", "钙"],
             })
 
-    # --- R2: KH与钙同步下降（钙化活跃） ---
+    # --- R2: KH与钙同步下降 ---
     kh = cur("KH")
     kh_trend = sig("KH", "direction")
     ca_trend2 = sig("钙", "direction")
@@ -336,20 +414,20 @@ def linkage_diagnosis(analysis):
         ca_rate = abs(sig("钙", "rate") or 0)
         if kh_trend == "falling" and ca_trend2 == "falling" and kh_rate > 0.02 and ca_rate > 0.3:
             findings.append({
-                "title": "KH与钙同步消耗（珊瑚钙化活跃）",
-                "detail": f"KH每天降{kh_rate:.2f}dKH、钙每天降{ca_rate:.1f}ppm，两者同步。多为珊瑚骨骼生长消耗，建议按比例同步补充KH和钙（约每补10ppm钙配1dKH碱度）。",
+                "title": "KH与钙同步下降",
+                "detail": f"KH每天降{kh_rate:.2f}dKH、钙每天降{ca_rate:.1f}ppm，两者同步，可能与珊瑚钙化、非生物沉淀或测量条件有关。建议先确认趋势，再依据各自实测消耗分别校准补充量，不使用固定比例硬套。",
                 "priority": 70,
                 "related": ["KH", "钙"],
             })
 
     # --- R3: 钙高 + KH低 → 碳酸钙沉淀 ---
     if kh is not None and ca is not None:
-        ca_high_limit = ELEMENT_IDEALS["钙"]["high"]
-        kh_low_limit = ELEMENT_IDEALS["KH"]["low"]
+        ca_high_limit = ideals["钙"]["high"]
+        kh_low_limit = ideals["KH"]["low"]
         if ca > ca_high_limit and kh < kh_low_limit:
             findings.append({
-                "title": "钙偏高且碱度偏低（疑似碳酸钙沉淀）",
-                "detail": f"钙{ca:.0f}ppm偏高（>{ca_high_limit:.0f}）但KH仅{kh:.1f}dKH（<{kh_low_limit:.0f}）。可能发生碳酸钙沉淀消耗了碱度。建议检查钙反/补充剂，避免钙碱失衡。",
+                "title": "钙偏高且碱度偏低，需要复核",
+                "detail": f"钙{ca:.0f}ppm偏高（>{ca_high_limit:.0f}）但KH仅{kh:.1f}dKH（<{kh_low_limit:.0f}）。这可能与补充比例、盐度、测试误差或碳酸钙沉淀有关。建议先复测并检查钙反/补充剂设置，再决定是否调整。",
                 "priority": 80,
                 "related": ["钙", "KH"],
             })
@@ -360,17 +438,18 @@ def linkage_diagnosis(analysis):
     if no3 is not None and po4 is not None:
         if no3 < 1 and po4 > 0.1:
             findings.append({
-                "title": "营养盐比例失衡（氮低磷高）",
-                "detail": f"NO₃仅{no3:.2f}ppm但PO₄达{po4:.2f}ppm，偏离约100:1的Redfield比例。磷高氮低易助长藻类、珊瑚褪色。建议补充氮源（硝酸钾/珊瑚粮），或加强蛋分与吸附剂控制磷。",
+                "title": "NO₃偏低且PO₄偏高",
+                "detail": f"NO₃为{no3:.2f}ppm、PO₄为{po4:.2f}ppm。固定的NO₃:PO₄比值不能直接作为加药目标；建议先复测，并检查投喂、蛋分、吸附材料和生物负载，再逐项小幅调整。",
                 "priority": 75,
                 "related": ["NO3", "PO4"],
             })
 
     # --- R5: 镁过高提示 ---
-    if mg is not None and mg > 1400:
+    mg_high_limit = ideals["镁"]["high"]
+    if mg is not None and mg > mg_high_limit:
         findings.append({
             "title": "镁偏高",
-            "detail": f"镁{mg:.0f}ppm偏高（>1400）。一般无害但可能干扰钙吸收，建议暂停补镁观察。",
+            "detail": f"镁{mg:.0f}ppm高于本缸参考上限（{mg_high_limit:.0f}）。建议先核对盐度和测试结果，暂停主动补镁并观察趋势，通常不需要快速降低。",
             "priority": 30,
             "related": ["镁"],
         })
@@ -455,7 +534,7 @@ def evaluate_dosing_effect(records_by_element, dosing_logs):
 
 
 # ============ A2: 消耗/补充平衡 ============
-def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=156):
+def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=None):
     """
     估算"缸体消耗量" vs "滴定补充量"是否平衡。
     mix_ratio: {元素: {"pw": 分析纯克, "ro": RO水毫升}} 配液比例
@@ -463,6 +542,9 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=1
     消耗量 = 由水质下降速率推得(ppm/天 → 需要补的克)
     补充量 = 滴定量(ml/天) × 配液浓度(克/ml)
     """
+    if (not isinstance(tank_liters, (int, float)) or not math.isfinite(tank_liters) or
+            tank_liters <= 0):
+        return {}
     result = {}
     # (添加物分子量, 元素当量) — 用于 ppm→克 换算
     EL_COEF = {"KH": (84, 2.8), "钙": (147, 40), "镁": (204, 24)}
@@ -487,13 +569,27 @@ def balance_audit(records_by_element, dosing_logs, mix_ratio=None, tank_liters=1
         if el_logs:
             latest = sorted(el_logs, key=lambda l: l["recorded_at"])[-1]
             dose_ml = latest.get("dose_ml", 0)
-        # 配液浓度: 若给了配比则用之，否则用常见默认(0.05克/ml ≈ 50克/L)
-        if mix_ratio and el in mix_ratio:
-            pw = mix_ratio[el]["pw"]
-            ro = mix_ratio[el]["ro"]
-            conc_g_per_ml = pw / ro if ro > 0 else 0
-        else:
-            conc_g_per_ml = 0.05
+        # 配液浓度必须来自用户真实配比；不同元素/配方不能共用假定默认浓度。
+        mix = mix_ratio.get(el) if isinstance(mix_ratio, dict) else None
+        if not isinstance(mix, dict):
+            result[el] = {
+                "consume_g_per_day": round(consume_rate * tank_liters * (mol / eq) / 1000, 3),
+                "supply_g_per_day": None,
+                "balance_pct": None,
+                "status": "needs_mix",
+            }
+            continue
+        pw, ro = mix.get("pw"), mix.get("ro")
+        if (not isinstance(pw, (int, float)) or not isinstance(ro, (int, float)) or
+                not math.isfinite(pw) or not math.isfinite(ro) or pw <= 0 or ro <= 0):
+            result[el] = {
+                "consume_g_per_day": round(consume_rate * tank_liters * (mol / eq) / 1000, 3),
+                "supply_g_per_day": None,
+                "balance_pct": None,
+                "status": "needs_mix",
+            }
+            continue
+        conc_g_per_ml = pw / ro
 
         # 补充量换算: ml/天 × 克/ml = 克/天
         supply_g_per_day = dose_ml * conc_g_per_ml
