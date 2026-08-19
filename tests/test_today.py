@@ -37,7 +37,7 @@ class TestTodayDashboard:
         assert data["status"]["code"] == "stable"
         assert data["coverage"]["count"] == 5
         assert len(data["evidence"]) == 5
-        assert "只判断已记录的数据" in data["basis_note"]
+        assert "只看已经记下的数据" in data["basis_note"]
 
     def test_fresh_abnormal_trend_is_prioritized(self, test_client):
         test_client.put("/api/tank", json=_tank_payload())

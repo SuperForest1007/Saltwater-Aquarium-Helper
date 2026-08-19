@@ -119,7 +119,7 @@ class TestFrontend:
         assert 'class="est-row est-dim-row"' in html
         assert 'class="est-dim-inputs"' in html
         assert 'class="today-board tone-neutral"' in html
-        assert "最多只列三项" in html
+        assert "先列最要紧的" in html
         assert "查看判断依据与维护节奏" in html
 
     def test_public_beta_stability_guards(self):
@@ -146,6 +146,28 @@ class TestFrontend:
         assert 'id="saltReferenceBody"' in html
         assert "updateSaltReferenceVisibility" in html
         assert "参考表已收起" in html
+
+    def test_salt_calculator_defaults_and_target_adjustment(self):
+        """不选品牌也能按 35g/L 计算，配水量与目标比重均有轻量默认值。"""
+        html = _read_index()
+        assert "const DEFAULT_SALT_PER_LITER = 35" in html
+        assert "通用参考（35 克/升）" in html
+        assert 'id="saltTargetPicker" hidden' in html
+        assert "const SALT_MIN_SG = 1.022" in html
+        assert "const SALT_MAX_SG = 1.028" in html
+        assert "function saltPerLiterAtTarget" in html
+        assert "adjustSaltTarget(event.key === 'ArrowUp' ? 1 : -1)" in html
+        assert "tankWater / 5" in html
+        assert "setDefaultSaltWaterFromTank(false)" in html
+        assert "setDefaultSaltWaterFromTank(true)" in html
+        assert 'id="saltWater" value="100"' not in html
+
+        recorder = html[
+            html.index("async function recordCalculatedWaterChange"):
+            html.index("/* ═══ 换水记录 ═══ */")
+        ]
+        assert "salt_brand: context.brandName" in recorder
+        assert "if (!brand" not in recorder
 
     def test_product_flow_hierarchy_and_single_sources(self):
         html = _read_index()
@@ -176,8 +198,76 @@ class TestFrontend:
 
     def test_dosing_copy_describes_plan_state_not_device_control(self):
         html = _read_index()
-        assert "只记录方案状态，不会控制设备" in html
+        assert "下方按钮只记方案状态，设备仍在滴定泵端设置" in html
         assert "启用此方案" in html
         assert "停用此方案" in html
         assert "const actionMap = { start: '启用方案', end: '停用方案', adjust: '调整剂量' }" in html
         assert "days > 14" not in html
+
+    def test_copy_voice_is_human_and_precise(self):
+        """高频界面文案保持自然，也不把经验线说成绝对结论。"""
+        html = _read_index()
+        for stale_copy in [
+            "💡 智能建议",
+            "自动分析健康状态",
+            "系统会按你的缸型",
+            "今天没有必须处理",
+            "当前规则未发现",
+            "超过安全上限",
+            "每周1-2次",
+            "保存并联动",
+            "不会把你锁进",
+            "不给你增加任务",
+        ]:
+            assert stale_copy not in html
+
+        for expected_copy in [
+            "这缸怎么看",
+            "这次补多少，宁可分两回",
+            "滴定的本事不在滴得多",
+            "保守提醒线",
+            "这份数据怎么来的",
+            "保存鱼缸设置",
+        ]:
+            assert expected_copy in html
+
+    def test_guide_has_a_clear_starting_path_and_module_map(self):
+        """入门指南先讲怎么开始，再提供四个入口速查，并说明判断所依赖的数据。"""
+        html = _read_index()
+        guide = html[html.index('id="guideMask"'):html.index('<!-- 我的鱼缸')]
+        for copy in [
+            "先让 ReefPal 认识这口缸",
+            "不用补一大本历史账",
+            "鱼缸资料先设准",
+            "测到什么，就先记什么",
+            "要动手时，再找对应工具",
+            "四个入口，各管一件事",
+            "并不是设备在自动读缸",
+            "我先自己逛逛",
+            "去记一项水质",
+        ]:
+            assert copy in guide
+        for tab in ["water", "salt", "calc", "dosing"]:
+            assert f"guideJump('{tab}')" in guide
+        assert 'role="dialog"' in guide
+        assert 'aria-labelledby="guideTitle"' in guide
+        for stale_copy in ["这是什么？", "怎么开始？", "还能做什么？", "开始使用 →"]:
+            assert stale_copy not in guide
+
+    def test_light_theme_shell_and_compact_secondary_status(self):
+        """阳光潮池骨架存在，次级模块使用紧凑礁况条而非重复完整首页。"""
+        html = _read_index()
+        assert '--bg-canvas: #f4f8f7' in html
+        assert '--brand-primary: #0b7180' in html
+        assert '<header class="app-header">' in html
+        assert 'id="themeColorMeta"' in html
+        assert 'content="#F4F8F7"' in html
+        assert 'id="todayCompactSummary"' in html
+        assert '.today-board.is-compact .today-main' in html
+        assert "board.classList.toggle('is-compact', tabName !== 'water')" in html
+        assert 'function openTodayHome()' in html
+        # 主导航图标固定为项目内 SVG，避免不同系统 Emoji 形态漂移。
+        tabs = html[html.index('<!-- Tabs -->'):html.index('<!-- 计算仍使用')]
+        assert tabs.count('<svg viewBox="0 0 24 24"') == 4
+        for emoji in ['📈', '🔄', '🧪', '💧']:
+            assert emoji not in tabs

@@ -70,3 +70,17 @@ class TestAdditives:
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
         assert r.json()["grams"] == 0
+
+    def test_calc_auto_high_uses_reference_boundary_and_no_blanket_water_change(self, test_client):
+        """偏高提示应保留复测和记录核对，不默认把换水当成万能处理。"""
+        r = test_client.post("/api/calc/auto", json={
+            "water_liters": 400, "current_value": 470,
+            "ideal_low": 400, "ideal_high": 440,
+            "v1": 40, "v2": 147, "unit": "ppm"
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "high"
+        assert "本缸参考上限" in data["message"]
+        assert "复测" in data["message"]
+        assert "少量换水" not in data["message"]

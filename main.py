@@ -66,7 +66,7 @@ def _validate_recorded_at(value: str):
     try:
         recorded = date.fromisoformat(value)
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail="记录日期必须使用 YYYY-MM-DD") from exc
+        raise HTTPException(status_code=422, detail="记录日期格式应为 YYYY-MM-DD") from exc
     if recorded > date.today():
         raise HTTPException(status_code=422, detail="记录日期不能晚于今天")
 
@@ -98,7 +98,7 @@ def _validate_tank_request(req: TankProfileRequest):
         try:
             started = date.fromisoformat(req.started_at)
         except ValueError as exc:
-            raise HTTPException(status_code=422, detail="开缸日期必须使用 YYYY-MM-DD") from exc
+            raise HTTPException(status_code=422, detail="开缸日期格式应为 YYYY-MM-DD") from exc
         if started > date.today():
             raise HTTPException(status_code=422, detail="开缸日期不能晚于今天")
     for element, target in req.custom_targets.items():
@@ -195,7 +195,7 @@ def api_maintenance():
     return {
         "rules": rules,
         "events": get_maintenance_events(limit=100),
-        "note": f"这是按{tank['tank_type']} · {tank['stage']}生成的起始节奏，可以按自己的设备和习惯调整。",
+        "note": f"先按{tank['tank_type']} · {tank['stage']}排了一个起始节奏。设备不同、养法不同，周期也可以慢慢调顺手。",
     }
 
 
@@ -321,7 +321,7 @@ def api_dosing_adjust(req: AdjustRequest):
 
 class DosingLogRequest(BaseModel):
     element: DosingElement
-    dose_ml: PositiveFiniteFloat = Field(description="滴定量必须为正数")
+    dose_ml: PositiveFiniteFloat = Field(description="滴定量应大于 0")
     note: str = Field(default="", max_length=200)
     action: DosingAction = "start"   # start=开始滴定 / end=结束滴定
     recorded_at: str = Field(default="", max_length=10)
@@ -362,7 +362,7 @@ def api_dosing_log_update(rid: int, req: DosingLogUpdateRequest):
 # ---------- 换水记录 API ----------
 
 class WaterChangeRequest(BaseModel):
-    water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
+    water_liters: PositiveFiniteFloat = Field(description="换水量应大于 0")
     salt_grams: Optional[PositiveFiniteFloat] = Field(default=None, description="实际配盐克数可留空")
     salt_brand: str = Field(default="", max_length=80)
     note: str = Field(default="", max_length=200)
@@ -386,7 +386,7 @@ def api_water_change_delete(rid: int):
     return _not_found(delete_water_change(rid), "换水记录")
 
 class WaterChangeUpdateRequest(BaseModel):
-    water_liters: PositiveFiniteFloat = Field(description="换水量必须为正数")
+    water_liters: PositiveFiniteFloat = Field(description="换水量应大于 0")
     salt_grams: Optional[PositiveFiniteFloat] = Field(default=None, description="实际配盐克数可留空")
     salt_brand: str = Field(default="", max_length=80)
     note: str = Field(default="", max_length=200)
@@ -415,7 +415,7 @@ class RecordRequest(BaseModel):
 def _validate_zero_value(element: str, value: float):
     """营养盐可记录检测结果0；KH/Ca/Mg等核心参数的0值视为误输入。"""
     if value == 0 and element not in {"NO3", "PO4"}:
-        raise HTTPException(status_code=422, detail="只有NO3、PO4允许记录0；请复核该参数读数")
+        raise HTTPException(status_code=422, detail="KH、钙、镁的记录值应大于 0；看看项目或读数是不是选错了")
 
 @app.get("/api/water/ideals")
 def api_water_ideals():

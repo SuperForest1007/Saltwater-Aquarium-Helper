@@ -117,7 +117,7 @@ def build_maintenance_rhythm(rules, events, latest_elements, water_changes, now=
                 due_date = today
                 state = "due"
                 timing = "记录还不完整"
-                reason = "补齐一次记录后，系统才能根据实际间隔安排下一次"
+                reason = "再补一组记录，就能按这口缸的实际间隔往后排了"
             else:
                 due_date = None
                 state = "untracked"
@@ -148,11 +148,11 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
     now = now or datetime.now()
     if not tank.get("setup_complete"):
         return {
-            "status": {"code": "setup", "label": "先补全鱼缸档案", "tone": "neutral",
-                       "summary": "设置实际水量、主要类型和当前阶段后，才能生成本缸节奏。"},
+            "status": {"code": "setup", "label": "鱼缸档案还差几项", "tone": "neutral",
+                       "summary": "实际水量、主要类型和当前阶段填好后，这口缸的维护节奏就能排起来了。"},
             "coverage": {"count": 0, "total": len(ELEMENT_ORDER), "latest_date": None, "label": "尚未开始"},
             "evidence": [], "actions": [], "rhythm": [], "insights": [],
-            "basis_note": "当前没有足够资料进行判断。",
+            "basis_note": "现在的记录还不够，先不急着下结论。",
         }
 
     latest = _latest_by_element(records_by_element)
@@ -209,7 +209,7 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
 
     if severe:
         top = severe[0]
-        status = {"code": "priority", "label": "先处理一件事", "tone": "danger",
+        status = {"code": "priority", "label": "有一项先留意", "tone": "danger",
                   "summary": top["summary"]}
     elif warnings:
         top = warnings[0]
@@ -217,13 +217,13 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
                   "summary": top["summary"]}
     elif fresh_count >= 3:
         status = {"code": "stable", "label": "目前整体平稳", "tone": "ok",
-                  "summary": "现有记录里没有明显越界或异常趋势，先保持当前维护节奏。"}
+                  "summary": "这几组记录没看到明显越界或异常趋势，照现在的节奏养着就好。"}
     elif latest:
-        status = {"code": "insufficient", "label": "资料还不够完整", "tone": "neutral",
-                  "summary": "已有少量记录，但还不足以稳妥判断整缸趋势，先补齐关键水质。"}
+        status = {"code": "insufficient", "label": "再记几项会更清楚", "tone": "neutral",
+                  "summary": "手头已经有些数据了，不过还看不全整缸趋势。把关键水质补齐，再判断更踏实。"}
     else:
         status = {"code": "insufficient", "label": "从第一组数据开始", "tone": "neutral",
-                  "summary": "先记录一次关键水质，后面每次测试都会让判断更贴近这口缸。"}
+                  "summary": "记下第一组关键水质，后面的每次测试都会让这口缸更好读懂。"}
 
     rhythm = build_maintenance_rhythm(rules, events, latest, water_changes, now)
     due_tasks = [item for item in rhythm if item["state"] in ("overdue", "due")]
@@ -245,5 +245,5 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
         "status": status,
         "coverage": {"count": fresh_count, "total": len(ELEMENT_ORDER), "latest_date": latest_date, "label": coverage_label},
         "evidence": evidence, "actions": actions, "rhythm": rhythm, "insights": insights,
-        "basis_note": f"基于 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 的参考范围；只判断已记录的数据，不代替对生物状态和设备运行的观察。",
+        "basis_note": f"参考范围按 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 生成，只看已经记下的数据。生物状态和设备运行，还是得一起观察。",
     }

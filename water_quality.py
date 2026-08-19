@@ -21,15 +21,15 @@ from datetime import datetime, timedelta
 # ============ 理想范围定义 ============
 ELEMENT_IDEALS = {
     "KH":  {"low": 7.0, "high": 11.0, "unit": "dKH", "display": "KH 碱度",
-            "hint": "通用参考约7-11dKH；目标需结合营养盐和珊瑚类型，稳定性通常比追单一数字更重要"},
+            "hint": "通用参考约 7–11dKH；营养盐和珊瑚类型不同，合适的长期目标也会变，稳定比贴住某个数字更重要"},
     "钙":  {"low": 400, "high": 450, "unit": "ppm", "display": "钙 Ca",
-            "hint": "通用参考约400-450ppm；请结合盐度、测试误差与碱度趋势判断"},
+            "hint": "通用参考约 400–450ppm；把盐度、测试误差和碱度趋势放在一起看，单次读数不用急着追"},
     "镁":  {"low": 1250, "high": 1400, "unit": "ppm", "display": "镁 Mg",
-            "hint": "通用参考约1250-1400ppm并随盐度而变；先复测盐度和镁再调整"},
+            "hint": "通用参考约 1250–1400ppm，并会随盐度变化；盐度和镁一起复测，心里更有底"},
     "NO3": {"low": 2.0, "high": 10.0, "unit": "ppm", "display": "硝酸盐 NO₃",
             "hint": "过低或过高都可能带来问题；应结合PO4、投喂、生物负载和缸体类型分别判断，不以固定比例作为追数值目标"},
     "PO4": {"low": 0.03, "high": 0.08, "unit": "ppm", "display": "磷酸盐 PO₄",
-            "hint": "常见参考约0.03-0.08ppm；长期不可检出可能增加营养限制风险，需结合检测下限和系统类型判断"},
+            "hint": "常见参考约 0.03–0.08ppm；长期测不到可能出现营养限制，也要留意试剂检测下限和系统类型"},
 }
 
 # 不同缸型的“起始参考范围”。它们用于个性化分析，不代替测试剂说明、
@@ -87,9 +87,9 @@ def get_ideals_for_tank(tank_type="混养", custom_targets=None):
     for element, (low, high) in profile.items():
         ideals[element]["low"] = low
         ideals[element]["high"] = high
-        salt_note = "钙、镁读数还会跟着盐度变化，先确认盐度和读数；" if element in {"钙", "镁"} else ""
+        salt_note = "钙、镁读数还会跟着盐度变化，盐度和读数一起核对更稳妥；" if element in {"钙", "镁"} else ""
         ideals[element]["hint"] = (
-            f"{tank_type}缸先把 {low}-{high}{ideals[element]['unit']} 当作参考。"
+            f"{tank_type}缸可以先把 {low}–{high}{ideals[element]['unit']} 当作参考。"
             f"{salt_note}如果缸里状态正常、走势也稳定，不用为了贴数字来回调整。"
         )
     for element, target in (custom_targets or {}).items():
@@ -148,7 +148,7 @@ def analyze_element(records, element, ideal=None):
     low, high, unit = ideal["low"], ideal["high"], ideal["unit"]
 
     if not records:
-        return {"element": element, "status": "no_data", "signals": {}, "advice": "暂无该元素记录，请添加几次测试值后开始分析。"}
+        return {"element": element, "status": "no_data", "signals": {}, "advice": "这个项目还没记录。多记几次，趋势才会慢慢显出来。"}
 
     # 展示保留完整记录；判断使用近期窗口，避免几个月前的数据冲淡刚发生的变化。
     all_dates = [datetime.fromisoformat(d) if isinstance(d, str) else d for d, _ in records]
@@ -171,13 +171,13 @@ def analyze_element(records, element, ideal=None):
     # ---- L1: 单点状态 ----
     if cur < low:
         l1 = "low"
-        l1_msg = f"当前 {cur:.1f}{unit} 低于理想下限 {low}{unit}"
+        l1_msg = f"当前 {cur:.1f}{unit} 低于本缸参考下限 {low}{unit}"
     elif cur > high:
         l1 = "high"
-        l1_msg = f"当前 {cur:.1f}{unit} 高于理想上限 {high}{unit}"
+        l1_msg = f"当前 {cur:.1f}{unit} 高于本缸参考上限 {high}{unit}"
     else:
         l1 = "ok"
-        l1_msg = f"当前 {cur:.1f}{unit} 在理想范围 {low}-{high}{unit} 内"
+        l1_msg = f"当前 {cur:.1f}{unit} 在本缸参考范围 {low}-{high}{unit} 内"
 
     # ---- L2: 趋势 ----
     # 斜率单位: 每天变化量
@@ -285,22 +285,22 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
     low_cn = {"KH": "碱度", "钙": "钙", "镁": "镁", "NO3": "硝酸盐", "PO4": "磷酸盐"}.get(element, element)
 
     def _supplement_info():
-        """偏低 → 推荐补到理想中值(保守目标)。返回 {delta, target, unit}"""
+        """偏低 → 计算补到参考中值的用量。返回 {delta, target, unit}"""
         mid = (low + high) / 2
         delta = max(mid - s["current"], 0)
         return {"delta": round(delta, 2), "target": round(mid, 1), "unit": unit}
 
     # --- 异常检测(最高优先) ---
     if s["anomaly"] == "down":
-        parts.append(f"⚠️ {low_cn}出现异常骤降(单次变化超出历史波动{max(2, round(s['vol']*2))}{unit})，优先检查：蛋分/滴定泵是否故障、是否大换水、测试剂是否新鲜")
+        parts.append(f"⚠️ {low_cn}这次掉得不寻常，单次变化超过以往波动 {max(2, round(s['vol']*2))}{unit}。先别急着补：看看蛋分和滴定泵是否正常、最近有没有大换水，再用同一套方法复测一次")
         prio = max(prio, 90)
     elif s["anomaly"] == "up":
-        parts.append(f"⚠️ {low_cn}出现异常跳升，优先检查：是否刚添加了补充剂、钙反是否异常、测试操作是否一致")
+        parts.append(f"⚠️ {low_cn}这次突然跳高。回看一下最近的补充记录和钙反状态，再用同一套方法复测，先排除操作差异")
         prio = max(prio, 85)
 
     # --- 预测预警 ---
     if prediction and prediction["days"] <= 7:
-        parts.append(f"📅 {prediction['msg']}，建议提前补充或检查消耗源")
+        parts.append(f"📅 {prediction['msg']}。可以提前核对实际消耗和当前补充方案，别等越线后再追")
         prio = max(prio, 80)
 
     # --- 营养盐专属建议 (NO3/PO4) ---
@@ -308,13 +308,13 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
         other = "PO4" if element == "NO3" else "NO3"
         if s["level"] == "low" and s["current"] <= low * 0.5:
             if element == "NO3":
-                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})。建议先复测，并结合PO4、投喂量、生物负载和蛋分运行情况判断；若确认长期缺氮，再选择增加投喂或经过验证的氮源方案，少量调整并复测")
+                parts.append(f"🪸 {low_cn}读数很低（{s['current']:.2f}{unit}）。先用同一套方法复测，再把 PO₄、投喂量、生物负载和蛋分状态放在一起看。确认持续缺氮后，再考虑增加投喂或采用经过验证的氮源方案，每次只动一点")
                 prio = max(prio, 70)
             else:
-                parts.append(f"🪸 {low_cn}过低({s['current']:.2f}{unit})。建议先确认测试分辨率与试剂状态，再结合NO3、投喂和珊瑚表现判断；不要只为追固定比例直接加药")
+                parts.append(f"🪸 {low_cn}读数很低（{s['current']:.2f}{unit}）。先确认试剂状态和检测下限，再结合 NO₃、投喂和珊瑚表现判断；固定比例不值得拿来直接套加药")
                 prio = max(prio, 70)
         elif s["level"] == "ok" and element == "NO3":
-            parts.append(f"🪸 {low_cn}在 {low}-{high}{unit} 之间，是珊瑚生长所需营养区间(只有刚开缸阶段才追求归零)，保持即可")
+            parts.append(f"🪸 {low_cn}落在本缸参考范围 {low}–{high}{unit}，不需要为了更低继续往下压")
             prio = max(prio, 20)
 
     # --- 趋势+水平组合 ---
@@ -325,46 +325,46 @@ def _compose_advice(element, s, low, high, unit, prediction=None):
             supplement = _supplement_info()
         if s["direction"] == "falling":
             if s["accelerating"]:
-                parts.append(f"📉 {low_cn}持续下降且速率在加快(每天{s['rate']:.2f}{unit})，正在远离理想范围，建议尽快补充至{low}-{high}{unit}，并排查消耗增加原因(珊瑚生长加速/换水)")
+                parts.append(f"📉 {low_cn}还在下降，而且速度变快了（每天 {s['rate']:.2f}{unit}）。先复测确认趋势；读数没问题的话，分次补回 {low}–{high}{unit}，也回看近期珊瑚生长、换水和补充记录")
                 prio = max(prio, 75)
             else:
-                parts.append(f"📉 {low_cn}缓慢下降(每天{s['rate']:.2f}{unit})，已低于下限，建议补充并观察是否稳定")
+                parts.append(f"📉 {low_cn}缓慢下降（每天 {s['rate']:.2f}{unit}），已经低于参考下限。确认读数后，可以分次补回参考范围，再看下一次测试")
                 prio = max(prio, 65)
         elif s["direction"] == "rising":
-            parts.append(f"↗️ {low_cn}虽低于下限但正在回升(每天{s['rate']:.2f}{unit})，若在恢复中可少量补充加速到位")
+            parts.append(f"↗️ {low_cn}虽然还低，但正在回升（每天 {s['rate']:.2f}{unit}）。先看下一次读数；还需要补时，少量分次就好")
             prio = max(prio, 55)
         else:
-            parts.append(f"➡️ {low_cn}低于下限且近期平稳，建议补充至{low}-{high}{unit}")
+            parts.append(f"➡️ {low_cn}低于参考下限，近期变化不大。确认读数后，可以分次补回 {low}–{high}{unit}")
             prio = max(prio, 60)
     elif s["level"] == "high":
         if s["direction"] == "rising":
-            parts.append(f"📈 {low_cn}高于上限且仍在上升(每天{s['rate']:.2f}{unit})，注意过量风险，建议暂停补充并观察")
+            parts.append(f"📈 {low_cn}高于参考上限，还在继续上升（每天 {s['rate']:.2f}{unit}）。先停下这一项补充，复测并回看最近的添加记录")
             prio = max(prio, 70)
         elif s["direction"] == "falling":
-            parts.append(f"↘️ {low_cn}虽高于上限但正回落，可暂不处理，回到{high}{unit}以下即可")
+            parts.append(f"↘️ {low_cn}虽然偏高，但正在回落。先观察趋势，不用为了追数字急着动")
             prio = max(prio, 50)
         else:
-            parts.append(f"➡️ {low_cn}高于上限且平稳，建议少量换水或暂停添加让其自然回落")
+            parts.append(f"➡️ {low_cn}高于参考上限，近期变化不大。先暂停这一项补充，复测并回看最近的换水和添加记录")
             prio = max(prio, 55)
     else:  # ok
         if s["direction"] == "falling" and prediction and prediction["days"] <= 14:
-            parts.append(f"✅ {low_cn}当前正常，但按每天{s['rate']:.2f}{unit}的速度消耗，{prediction['days']:.0f}天后可能低于{low}{unit}，可提前规划补充")
+            parts.append(f"✅ {low_cn}目前还在参考范围内；照每天 {s['rate']:.2f}{unit} 的消耗速度，约 {prediction['days']:.0f} 天后可能低于 {low}{unit}。下一轮补充可以提前准备起来")
             prio = max(prio, 40)
         elif s["volatility"] == "high":
-            parts.append(f"📊 {low_cn}均值正常但波动偏大(±{s['vol']}{unit})，建议固定每天同一时间测试，排查波动源")
+            parts.append(f"📊 {low_cn}平均值在参考范围内，不过波动有点大（±{s['vol']}{unit}）。接下来几次尽量在接近的时间测试，也看看设备和补充设置最近有没有变化")
             prio = max(prio, 35)
         else:
-            parts.append(f"✅ {low_cn}在理想范围内且趋势平稳，状态良好，按当前节奏维护即可")
+            parts.append(f"✅ {low_cn}落在本缸参考范围，趋势也稳。照现在的节奏养着就好")
             prio = max(prio, 10)
 
     # --- 波动补充 ---
     if s["volatility"] == "high" and "波动" not in "".join(parts):
-        parts.append(f"📊 整体波动偏大，建议增加测试频率(每周1-2次)以掌握真实变化")
+        parts.append("📊 这段时间波动有点大。接下来几次可以稍微缩短复测间隔，更容易看清变化从哪里来")
 
     return {
         "priority": prio,
         "parts": parts,
-        "summary": parts[0] if parts else "暂无建议",
+        "summary": parts[0] if parts else "记录还不够，暂时不下结论",
         "supplement": supplement,
     }
 
@@ -409,7 +409,7 @@ def linkage_diagnosis(analysis, ideals=None):
         if mg < mg_low_limit and ca_trend == "falling":
             findings.append({
                 "title": "镁偏低与钙下降同时出现",
-                "detail": f"镁当前{mg:.0f}ppm（低于本缸参考下限{mg_low_limit:.0f}），且钙在下降。低镁可能增加碳酸钙非生物沉淀的倾向，但也可能是测试误差、盐度变化或生物消耗。建议先复测镁、钙和盐度，再分步调整并观察。",
+                "detail": f"镁当前 {mg:.0f}ppm，低于本缸参考下限 {mg_low_limit:.0f}，钙也在下降。低镁可能增加碳酸钙非生物沉淀，也可能只是测试误差、盐度变化或生物消耗。把镁、钙和盐度一起复测，再决定从哪一项动手。",
                 "priority": 85,
                 "related": ["镁", "钙"],
             })
@@ -424,7 +424,7 @@ def linkage_diagnosis(analysis, ideals=None):
         if kh_trend == "falling" and ca_trend2 == "falling" and kh_rate > 0.02 and ca_rate > 0.3:
             findings.append({
                 "title": "KH与钙同步下降",
-                "detail": f"KH每天降{kh_rate:.2f}dKH、钙每天降{ca_rate:.1f}ppm，两者同步，可能与珊瑚钙化、非生物沉淀或测量条件有关。建议先确认趋势，再依据各自实测消耗分别校准补充量，不使用固定比例硬套。",
+                "detail": f"KH 每天降 {kh_rate:.2f}dKH，钙每天降 {ca_rate:.1f}ppm，两条趋势走得比较同步。珊瑚钙化、非生物沉淀和测量条件都可能带来这种变化；确认趋势后，按各自实测消耗校准，别拿固定比例硬套。",
                 "priority": 70,
                 "related": ["KH", "钙"],
             })
@@ -436,7 +436,7 @@ def linkage_diagnosis(analysis, ideals=None):
         if ca > ca_high_limit and kh < kh_low_limit:
             findings.append({
                 "title": "钙偏高且碱度偏低，需要复核",
-                "detail": f"钙{ca:.0f}ppm偏高（>{ca_high_limit:.0f}）但KH仅{kh:.1f}dKH（<{kh_low_limit:.0f}）。这可能与补充比例、盐度、测试误差或碳酸钙沉淀有关。建议先复测并检查钙反/补充剂设置，再决定是否调整。",
+                "detail": f"钙 {ca:.0f}ppm 偏高（>{ca_high_limit:.0f}），KH 却只有 {kh:.1f}dKH（<{kh_low_limit:.0f}）。补充比例、盐度、测试误差或碳酸钙沉淀都可能有关。复测后再看钙反和补充设置，别只凭这一组数就调整。",
                 "priority": 80,
                 "related": ["钙", "KH"],
             })
@@ -448,7 +448,7 @@ def linkage_diagnosis(analysis, ideals=None):
         if no3 < 1 and po4 > 0.1:
             findings.append({
                 "title": "NO₃偏低且PO₄偏高",
-                "detail": f"NO₃为{no3:.2f}ppm、PO₄为{po4:.2f}ppm。固定的NO₃:PO₄比值不能直接作为加药目标；建议先复测，并检查投喂、蛋分、吸附材料和生物负载，再逐项小幅调整。",
+                "detail": f"NO₃ 为 {no3:.2f}ppm，PO₄ 为 {po4:.2f}ppm。固定的 NO₃:PO₄ 比值不适合直接拿来算加药；复测后，把投喂、蛋分、吸附材料和生物负载逐项过一遍，再小幅调整。",
                 "priority": 75,
                 "related": ["NO3", "PO4"],
             })
@@ -458,7 +458,7 @@ def linkage_diagnosis(analysis, ideals=None):
     if mg is not None and mg > mg_high_limit:
         findings.append({
             "title": "镁偏高",
-            "detail": f"镁{mg:.0f}ppm高于本缸参考上限（{mg_high_limit:.0f}）。建议先核对盐度和测试结果，暂停主动补镁并观察趋势，通常不需要快速降低。",
+            "detail": f"镁 {mg:.0f}ppm，高于本缸参考上限 {mg_high_limit:.0f}。先把盐度和测试结果核对清楚，主动补镁可以停一停；多数情况下不用急着往下压。",
             "priority": 30,
             "related": ["镁"],
         })
@@ -680,8 +680,8 @@ def test_frequency_health(records_by_element, weeks=4, intervals=None):
         stale = days_since_last > interval
         if stale:
             status = "stale"
-            msg = (f"最后记录是{last_date.strftime('%Y-%m-%d')}（距今{days_since_last:.0f}天），"
-                   f"已超过当前 {interval} 天周期，建议复测")
+            msg = (f"最后一次是 {last_date.strftime('%Y-%m-%d')}（距今 {days_since_last:.0f} 天），"
+                   f"已经超过当前 {interval} 天周期，可以找时间复测了")
         elif completion >= 1:
             status = "good"
             msg = f"近{weeks}周测试 {count} 次，符合当前 {interval} 天周期"

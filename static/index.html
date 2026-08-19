@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>海水缸助手 · ReefPal</title>
-<meta name="theme-color" content="var(--ocean)">
+<meta name="theme-color" content="#F4F8F7" id="themeColorMeta">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,41 +16,54 @@
 <script src="/static/echarts.min.js"></script>
 <style>
   :root {
-    /* ── 品牌主色（深海墨蓝，沉稳高级） ── */
-    --ocean: #0f5f86;        /* 主品牌色 */
-    --ocean-deep: #0a3d5c;   /* 深海军蓝 */
-    --ocean-soft: #e8f1f6;   /* 浅蓝调（选中背景，低饱和） */
-    --accent: #e07a5f;       /* 珊瑚橙强调色（记忆点） */
+    /* ── 阳光潮池：先建立语义层，旧组件逐步映射到这里 ── */
+    --bg-canvas: #f4f8f7;
+    --bg-elevated: #fcfefd;
+    --surface-primary: #fcfefd;
+    --surface-secondary: #eef6f3;
+    --surface-muted: #e7f1ee;
+    --text-primary: #123b47;
+    --text-secondary: #4d6c72;
+    --text-tertiary: #789197;
+    --brand-primary: #0b7180;
+    --brand-secondary: #125160;
+    --signal-ok: #2b8a68;
+    --signal-watch: #d99a35;
+    --signal-risk: #d95f50;
+    --signal-info: #4784a7;
+    --border-subtle: #dce9e5;
+    --border-strong-token: #a9ccc5;
+    --focus-ring: rgba(11,113,128,.2);
+    --chart-grid: rgba(18,59,71,.11);
+    --chart-reference: rgba(43,138,104,.1);
 
-    /* ── 文字层级（高对比深蓝黑） ── */
-    --ink: #123044;          /* 主文字 */
-    --ink-soft: #4a6b80;     /* 次要文字 */
-    --ink-faint: #7c96a8;    /* 辅助/占位文字 */
-
-    /* ── 表面与背景（中性暖灰，高级感） ── */
-    --card: #ffffff;
-    --bg-a: #f6f8f9;
-    --bg-b: #ecf1f4;
-    --surface-2: #f4f7f9;    /* 次级表面 */
-
-    /* ── 边框 ── */
-    --border: #dde5ea;       /* 默认输入/卡片边框 */
-    --border-strong: #b7cddd;/* 强调边框（选中/胶囊） */
-    --border-light: #edf2f5; /* 极浅分隔线 */
-
-    /* ── 状态色 ── */
-    --ok: #2e8b57;
+    /* ── 兼容现有组件命名；完成拆分前保持单一颜色来源 ── */
+    --ocean: var(--brand-primary);
+    --ocean-deep: var(--brand-secondary);
+    --ocean-soft: #d9ece7;
+    --accent: #e36f5c;
+    --ink: var(--text-primary);
+    --ink-soft: var(--text-secondary);
+    --ink-faint: var(--text-tertiary);
+    --card: var(--surface-primary);
+    --bg-a: var(--bg-canvas);
+    --bg-b: #eaf3f0;
+    --surface-2: var(--surface-secondary);
+    --border: var(--border-subtle);
+    --border-strong: var(--border-strong-token);
+    --border-light: #edf4f1;
+    --ok: var(--signal-ok);
     --ok-bg: #d7f0e0;
-    --warn: #d9822b;
+    --warn: var(--signal-watch);
     --warn-bg: #fdf0dd;
-    --danger: #c0392b;
+    --danger: var(--signal-risk);
     --danger-bg: #fde8e5;
-    --info: #7b1fa2;
+    --info: var(--signal-info);
 
     /* ── 阴影（更深更有层次） ── */
     --shadow: 0 4px 20px rgba(10,44,66,.06);
     --shadow-lg: 0 12px 36px rgba(10,44,66,.13);
-    --ring: rgba(15,95,134,.16);
+    --ring: var(--focus-ring);
 
     /* ── 圆角 ── */
     --radius: 20px;
@@ -88,40 +101,40 @@
   /* 弹窗打开时锁定背景滚动（JS 控制 body.lock-scroll） */
   body.lock-scroll { overflow: hidden; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-    background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%);
+    position: relative;
+    font-family: "MiSans", "HarmonyOS Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums;
+    background:
+      radial-gradient(ellipse 48% 22% at 8% 2%, rgba(91,190,181,.12), transparent 72%),
+      radial-gradient(ellipse 42% 24% at 94% 28%, rgba(242,198,109,.09), transparent 74%),
+      linear-gradient(180deg, var(--bg-canvas) 0%, #edf5f2 54%, #e8f1ef 100%);
+    background-attachment: fixed;
     color: var(--ink); min-height: 100vh; padding-bottom: 40px;
   }
+  body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .42;
+    background-image: repeating-linear-gradient(112deg, transparent 0 42px, rgba(11,113,128,.025) 43px 44px, transparent 45px 82px);
+    mask-image: linear-gradient(to bottom, #000, transparent 72%); }
   ::selection { background: var(--ring); }
 
-  /* ─── 波浪顶部装饰 ─── */
-  .wave-top { position: relative; height: 90px; overflow: hidden; pointer-events: none; }
-  .wave-top svg { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; animation: waveSlide 18s linear infinite; }
-  @keyframes waveSlide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  /* 旧版漂浮水滴与大波浪已退出主视觉，背景改由低对比焦散承担。 */
+  .deco-drops, .wave-top { display: none; }
 
-  /* ─── 品牌头部 ─── */
-  .brand { text-align: center; margin: -22px 0 10px; position: relative; z-index: 2; }
-  .brand .logo {
-    display: inline-flex; align-items: center; gap: 12px; color: var(--ocean-deep); letter-spacing: .5px;
-  }
-  /* 品牌活力：徽章呼吸光晕 + 漂浮光点 */
-  .brand .logo .mark { position: relative; }
-  .brand .logo .mark::after { content: ''; position: absolute; inset: -4px; border-radius: 18px;
-    background: radial-gradient(circle at 30% 30%, rgba(15,95,134,.25), transparent 70%);
-    animation: markGlow 3.2s ease-in-out infinite; z-index: -1; }
-  @keyframes markGlow { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
-  .brand .logo .mark { animation: markFloat 4.5s ease-in-out infinite; }
-  @keyframes markFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-
-  .brand .logo .mark {
-    width: 46px; height: 46px; border-radius: 15px;
-    background: linear-gradient(150deg, var(--ocean) 0%, var(--ocean-deep) 100%);
-    display: inline-flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 18px rgba(10,61,92,.35), inset 0 1px 0 rgba(255,255,255,.18);
-  }
-  .brand .logo .brand-name { font-size: 25px; font-weight: 800; color: var(--ocean-deep); letter-spacing: 1px; }
-  .brand .logo .brand-sub { font-size: 12px; color: var(--ink-faint); font-weight: 600; letter-spacing: 2px; padding-top: 10px; }
-  .brand .tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: 2px; margin-top: 4px; }
+  /* ─── 紧凑应用栏：品牌和低频工具共用一行 ─── */
+  .app-header { position: relative; z-index: 3; max-width: 780px; min-height: 62px; margin: 14px auto 12px;
+    padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    border: 1px solid rgba(11,113,128,.1); border-radius: 18px; background: rgba(252,254,253,.76);
+    box-shadow: 0 8px 26px rgba(18,59,71,.05); backdrop-filter: blur(16px); }
+  .brand { min-width: 0; text-align: left; margin: 0; position: relative; z-index: 2; }
+  .brand .logo { display: flex; align-items: center; gap: 10px; color: var(--ocean-deep); letter-spacing: .3px; }
+  .brand .logo .mark { position: relative; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px;
+    background: linear-gradient(145deg, var(--ocean) 0%, var(--ocean-deep) 100%); display: inline-flex;
+    align-items: center; justify-content: center; box-shadow: 0 5px 14px rgba(18,81,96,.2), inset 0 1px 0 rgba(255,255,255,.18); }
+  .brand .logo .mark::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px;
+    border: 2px solid var(--surface-primary); border-radius: 50%; background: #53bcb1; }
+  .brand-copy { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .brand .logo .brand-name { font-size: 22px; line-height: 1; font-weight: 850; color: var(--ocean-deep); letter-spacing: .4px; }
+  .brand .logo .brand-sub { font-size: 11px; color: var(--ink-faint); font-weight: 650; letter-spacing: .8px; padding: 0; white-space: nowrap; }
+  .brand .tagline { margin: 4px 0 0 48px; font-size: 8.5px; color: var(--ink-faint); letter-spacing: 1.6px; }
 
   /* ─── 容器 ─── */
   .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px; }
@@ -173,10 +186,10 @@
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
   /* ─── 分组卡片 ─── */
-  .group-card { background: var(--card); border-radius: var(--radius); overflow: hidden;
-    box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid rgba(10,110,168,.06); }
+  .group-card { background: var(--surface-primary); border-radius: 18px; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(18,59,71,.04); margin-bottom: 16px; border: 1px solid var(--border); }
   .group-head { display: flex; align-items: center; padding: 15px 18px; cursor: pointer; user-select: none;
-    background: linear-gradient(135deg, #f7fcfb, #eef8f7); border-bottom: 1px solid var(--border-light); }
+    background: linear-gradient(135deg, var(--surface-primary), var(--surface-secondary)); border-bottom: 1px solid var(--border-light); }
   .group-head .g-title { font-size: 15px; font-weight: 700; color: var(--ink); }
   .group-head .g-badge { margin-left: 10px; padding: 3px 11px; border-radius: var(--radius-pill); font-size: 10.5px; font-weight: 600; }
   .badge-core { background: #fef0e0; color: #c0560e; }
@@ -230,10 +243,10 @@
   .auto-strip .auto-msg.low { color: var(--danger); }
 
   /* ─── 滴定卡片 ─── */
-  .dose-card { background: linear-gradient(160deg, #ffffff 0%, #fbfdfe 100%); border-radius: var(--radius);
-    padding: 18px 20px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.9); border: 1px solid rgba(15,95,134,.07);
+  .dose-card { background: var(--surface-primary); border-radius: 18px;
+    padding: 18px 20px; box-shadow: 0 4px 16px rgba(18,59,71,.04); border: 1px solid var(--border);
     margin-bottom: 16px; }
-  .dose-card.focus-card { border: 1.5px solid var(--border-strong); background: linear-gradient(135deg, #ffffff 0%, #f5fbfe 100%); }
+  .dose-card.focus-card { border: 1.5px solid var(--border-strong); background: linear-gradient(135deg,var(--surface-primary),var(--surface-secondary)); }
   .dose-card .dc-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
     letter-spacing: .3px; position: relative; padding-bottom: 8px; border-bottom: 1px solid var(--border-light); }
   .dose-card .dc-sub { font-size: 11px; color: var(--ink-faint); margin-bottom: 14px; line-height: 1.7; }
@@ -245,7 +258,7 @@
   .dose-card .dc-tank input:focus { outline: none; border-color: var(--ocean); }
   .dose-card .dc-tank .unit { font-size: 12px; color: var(--ink-faint); }
   .module-role { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 11px 14px;
-    border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: linear-gradient(135deg, #f6fbfe, #edf7fb); }
+    border: 1px solid var(--border-strong); border-radius: 14px; background: linear-gradient(135deg,var(--surface-primary),var(--surface-secondary)); }
   .module-role strong { flex: 0 0 auto; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--ocean-deep); color: #fff; font-size: 11px; }
   .module-role span { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
   #panel-salt.active { display: flex; flex-direction: column; }
@@ -255,6 +268,9 @@
   .manual-record-details { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #f8fbfc; }
   .manual-record-details summary { cursor: pointer; padding: 10px 13px; color: var(--ocean-deep); font-size: 12px; font-weight: 700; }
   .manual-record-details .record-form { padding: 2px 13px 13px; }
+  .evidence-details { margin-top: 10px; border-top: 1px solid var(--border-light); padding-top: 8px; }
+  .evidence-details summary { cursor: pointer; color: var(--ocean-deep); font-size: 11px; font-weight: 700; }
+  .evidence-details .evidence-copy { margin-top: 8px; font-size: 11px; color: var(--ink-faint); line-height: 1.75; }
 
   /* 滴定行式布局 */
   .dose-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-light); flex-wrap: wrap; }
@@ -329,8 +345,8 @@
 
   /* 水质仪表盘 */
   .wq-card.empty-state { padding: 32px 20px; border: 1.5px dashed var(--border-strong); }
-.wq-card { background: linear-gradient(160deg, #ffffff 0%, #fbfdfe 100%); border-radius: var(--radius);
-    padding: 16px 18px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.9); border: 1px solid rgba(15,95,134,.07); }
+.wq-card { background: var(--surface-primary); border-radius: 16px;
+    padding: 16px 18px; box-shadow: 0 4px 16px rgba(18,59,71,.04); border: 1px solid var(--border); }
   .wq-card .wq-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .wq-card .wq-name { font-size: 14px; font-weight: 700; color: var(--ink); }
   .wq-card .wq-status { padding: 3px 12px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; }
@@ -361,6 +377,32 @@
   .salt-complete-btn { min-width: 142px; }
   .salt-complete-btn:disabled { opacity: .48; cursor: not-allowed; transform: none; box-shadow: none; }
   .salt-record-meta { font-size: 11px; color: var(--ink-faint); }
+  .salt-target-line { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; flex-wrap: wrap; }
+  .salt-target-label { color: var(--ink-soft); font-size: 12px; font-weight: 650; }
+  .salt-target-trigger { min-height: 38px; padding: 7px 10px; display: inline-flex; align-items: baseline; gap: 6px;
+    border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-primary); color: var(--ocean-deep);
+    font: inherit; cursor: pointer; }
+  .salt-target-trigger b { font-size: 16px; letter-spacing: .4px; }
+  .salt-target-trigger span { color: var(--ocean); font-size: 10px; font-weight: 750; }
+  .salt-target-effect { color: var(--ink-faint); font-size: 10.5px; }
+  .salt-calculator-card .dc-tank label { flex: 0 0 auto; white-space: nowrap; }
+  .salt-calculator-card #saltBrand { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+  .salt-target-picker[hidden] { display: none; }
+  .salt-target-picker { width: min(260px,100%); margin: -2px 0 13px; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 14px; background: var(--surface-secondary); box-shadow: 0 8px 22px rgba(18,59,71,.08); }
+  .salt-wheel { display: grid; grid-template-rows: 27px 38px 27px; position: relative; overflow: hidden;
+    border-radius: 12px; background: var(--surface-primary); }
+  .salt-wheel::before, .salt-wheel::after { content: ''; position: absolute; z-index: 2; left: 10px; right: 10px; height: 1px; background: var(--border-strong); pointer-events: none; }
+  .salt-wheel::before { top: 27px; }
+  .salt-wheel::after { bottom: 27px; }
+  .salt-wheel-option { border: 0; background: transparent; color: var(--ink-faint); font: inherit; font-size: 11px;
+    cursor: pointer; transition: color .15s, transform .15s; }
+  .salt-wheel-option:hover { color: var(--ocean); }
+  .salt-wheel-option:disabled { opacity: .28; cursor: default; }
+  .salt-wheel-current { display: grid; place-items: center; color: var(--ocean-deep); font-size: 21px; font-weight: 850;
+    letter-spacing: .6px; background: linear-gradient(90deg,transparent,var(--ocean-soft),transparent); outline: none; }
+  .salt-wheel-current:focus-visible { box-shadow: inset 0 0 0 3px var(--ring); }
+  .salt-wheel-note { margin-top: 8px; color: var(--ink-faint); font-size: 9.5px; line-height: 1.55; text-align: center; }
   .salt-ref-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
   .salt-ref-head-copy { min-width: 0; }
   .salt-ref-toggle { flex: 0 0 auto; border: 1px solid var(--border-strong); border-radius: 999px; padding: 7px 11px;
@@ -383,31 +425,43 @@
 
   /* ─── 移动端适配 ─── */
   @media (max-width: 560px) {
-    .brand .logo { font-size: 22px; }
+    .app-header { min-height: 56px; margin: 0 0 8px; padding: calc(7px + env(safe-area-inset-top)) 12px 7px;
+      border-width: 0 0 1px; border-radius: 0; background: rgba(244,248,247,.91); box-shadow: 0 5px 18px rgba(18,59,71,.04); }
+    .brand .logo .mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
+    .brand .logo .mark svg { width: 23px; height: 23px; }
+    .brand .logo .brand-name { font-size: 20px; }
+    .brand .logo .brand-sub { display: none; }
+    .brand .tagline { margin-left: 44px; font-size: 7.5px; letter-spacing: 1px; white-space: nowrap; }
+    .toolbar { gap: 5px; }
+    .mini-btn { width: 38px; min-height: 38px; padding: 0; justify-content: center; border-radius: 12px; }
+    .mini-btn .mini-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .calc-row .add-in { width: 100%; }
-    .wave-top { height: 60px; }
-    .brand { margin-top: -20px; }
     /* 手机 App 化：底部导航遮挡补偿 */
     body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
     /* 手机 App 化：tab 固定底部导航 */
     .tabs { position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; margin: 0;
       border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-      background: rgba(255,255,255,.96); backdrop-filter: blur(12px);
+      background: rgba(252,254,253,.96); backdrop-filter: blur(14px);
       border-top: 1px solid var(--border-light); z-index: 100; gap: 2px;
-      box-shadow: 0 -4px 16px rgba(30,58,77,.08); }
+      box-shadow: 0 -5px 18px rgba(18,59,71,.07); }
     .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
       font-size: 11px; padding: 6px 2px; line-height: 1.2; }
     .tab-btn .tb-ico { font-size: 18px; display: inline-flex; align-items: center; justify-content: center;
       width: 34px; height: 34px; border-radius: var(--radius-pill); background: var(--ocean-soft);
       transition: background .2s; margin-bottom: 2px; }
+    .tab-btn .tb-ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .tab-btn.active .tb-ico { background: rgba(255,255,255,.2); }
     .toolbar { flex-wrap: wrap; }
-    .tank-identity { margin-left: 0; margin-right: 0; padding: 11px 12px; }
-    .tank-edit-hint { padding: 6px 8px; }
+    .tank-identity { min-height: 44px; margin-left: 0; margin-right: 0; margin-bottom: 8px; padding: 6px 9px; border-radius: 13px; }
+    .tank-avatar { width: 30px; height: 30px; flex-basis: 30px; border-radius: 9px; font-size: 14px; }
+    .tank-identity-name { font-size: 12px; }
+    .tank-identity-meta { font-size: 9px; }
+    .tank-edit-hint { padding: 5px 7px; }
     .tank-setup-box { padding: 20px 17px; }
     .wrap { padding: 0 12px; }
     .d-field .ctl { min-width: 0 !important; }
     input[type=number], input[type=date], input[type=text], select.ctl { max-width: 100%; }
+    .salt-target-picker { width: 100%; }
     /* 手机端关键数字大字（瞄一眼就懂） */
     .dose-result .dr-value { font-size: 34px; }
     .dose-result .dr-label { font-size: 13px; }
@@ -510,7 +564,7 @@
     #wqChart { height: 300px; margin: 0 -4px; width: calc(100% + 8px); }
   }
   @media (max-width: 400px) {
-    .brand .tagline { font-size: 10px; letter-spacing: 1px; }
+    .brand .tagline { display: none; }
     .seg-btn { padding: 7px 12px; font-size: 12px; }
     .tab-btn { font-size: 11px; }
     .d-field .fl { font-size: 11px; }
@@ -586,30 +640,31 @@
     transition: background .15s; }
   .icon-btn:hover { background: var(--ocean-soft); }
 
-  /* ─── 顶部工具条 ─── */
-  .toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 auto 14px;
-    max-width: 420px; }
-  .mini-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: rgba(255,255,255,.85);
-    color: var(--ocean-deep); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600;
-    transition: all .18s; backdrop-filter: blur(4px); }
-  .mini-btn:hover { background: var(--ocean); color: #fff; border-color: var(--ocean); transform: translateY(-1px); }
+  /* ─── 应用栏工具：低频入口保持可达，不再另占一行 ─── */
+  .toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 7px; margin: 0; flex: 0 0 auto; }
+  .mini-btn { min-height: 38px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: rgba(252,254,253,.86); color: var(--ocean-deep);
+    border-radius: 11px; cursor: pointer; font-size: 11px; font-weight: 700; transition: all .18s; }
+  .mini-btn svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .mini-btn:hover { background: var(--ocean-soft); color: var(--ocean-deep); border-color: var(--border-strong); transform: translateY(-1px); }
 
   /* ─── 我的鱼缸：一条持续存在的缸体上下文 ─── */
-  .tank-identity { position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px;
-    max-width: 780px; margin: 0 auto 14px; padding: 13px 15px; border-radius: 18px;
-    border: 1px solid rgba(15,95,134,.16); background: linear-gradient(115deg,#fff 0%,#f2fafc 72%,#fff8ec 100%);
-    box-shadow: 0 6px 22px rgba(10,61,92,.07); cursor: pointer; text-align: left; }
+  .tank-identity { position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px;
+    max-width: 780px; min-height: 50px; margin: 0 auto 12px; padding: 8px 12px; border-radius: 15px;
+    border: 1px solid rgba(11,113,128,.14); background: rgba(252,254,253,.86);
+    box-shadow: 0 4px 16px rgba(18,59,71,.04); cursor: pointer; text-align: left; }
   .tank-identity::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-    background: linear-gradient(90deg,var(--ocean-deep),var(--ocean),#0a8f6e,var(--accent)); opacity: .9; }
+    background: linear-gradient(90deg,var(--ocean-deep),var(--ocean),#53bcb1,var(--accent)); opacity: .78; }
   .tank-identity:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
-  .tank-avatar { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 14px;
-    display: grid; place-items: center; color: #fff; font-size: 20px;
-    background: linear-gradient(150deg,var(--ocean),var(--ocean-deep)); box-shadow: 0 5px 14px rgba(10,61,92,.24); }
+  .tank-avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px;
+    display: grid; place-items: center; color: #fff; font-size: 16px;
+    background: linear-gradient(150deg,var(--ocean),var(--ocean-deep)); box-shadow: 0 4px 10px rgba(18,81,96,.18); }
   .tank-identity-main { min-width: 0; flex: 1; }
-  .tank-identity-name { font-size: 14px; font-weight: 800; color: var(--ocean-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tank-identity-meta { margin-top: 3px; font-size: 11px; color: var(--ink-soft); line-height: 1.5; }
-  .tank-edit-hint { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.8);
-    border: 1px solid var(--border); color: var(--ocean); font-size: 11px; font-weight: 700; }
+  .tank-identity-name { font-size: 13px; font-weight: 800; color: var(--ocean-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tank-identity-meta { margin-top: 2px; font-size: 10px; color: var(--ink-soft); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tank-edit-hint { flex: 0 0 auto; padding: 5px 8px; border-radius: 9px; background: var(--surface-secondary);
+    border: 1px solid var(--border); color: var(--ocean); font-size: 10px; font-weight: 750; }
   .tank-setup-box { max-width: 540px; padding: 24px; }
   .tank-setup-kicker { color: var(--ocean); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 5px; }
   .tank-setup-title { font-size: 21px; color: var(--ocean-deep); font-weight: 800; margin-bottom: 5px; }
@@ -670,8 +725,8 @@
     color: #795a2e; font-size: 11px; line-height: 1.6; }
 
   @media (max-width: 560px) {
-    .tank-identity { margin-left: 0; margin-right: 0; padding: 11px 12px; }
-    .tank-edit-hint { padding: 6px 8px; }
+    .tank-identity { margin-left: 0; margin-right: 0; padding: 6px 9px; }
+    .tank-edit-hint { padding: 5px 7px; }
     .tank-setup-box { padding: 20px 17px; }
     .tank-estimator .est-row label { width: 82px; min-width: 82px; }
     .estimator-modal-box .est-dim-row { align-items: flex-start; }
@@ -692,8 +747,8 @@
 
   /* ─── 本缸今日状态：结论在前，依据与节奏按需展开 ─── */
   .today-board { position: relative; overflow: hidden; margin: 0 0 14px; border: 1px solid rgba(15,95,134,.18);
-    border-radius: 22px; background: linear-gradient(145deg,#fff 0%,#f4f9fb 68%,#edf6f7 100%);
-    box-shadow: 0 8px 28px rgba(10,61,92,.08); }
+    border-radius: 20px; background: linear-gradient(145deg,var(--surface-primary) 0%,#f4faf8 68%,var(--surface-secondary) 100%);
+    box-shadow: 0 8px 28px rgba(18,59,71,.07); }
   .today-board::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--ocean); }
   .today-board.tone-ok::before { background: var(--ok); }
   .today-board.tone-warn::before { background: var(--warn); }
@@ -708,7 +763,11 @@
   .tone-warn .today-status { color: #9a5719; border-color: rgba(217,130,43,.3); background: rgba(253,240,221,.76); }
   .tone-danger .today-status { color: #9f3025; border-color: rgba(192,57,43,.28); background: rgba(253,232,229,.76); }
   .today-tide { position: relative; height: 5px; margin: 14px 0 12px; border-radius: 99px;
-    background: linear-gradient(90deg,#cddce4 0 20%,#9fcbbb 20% 62%,#edc694 62% 82%,#e5a39b 82%); }
+    overflow: visible; background: linear-gradient(90deg,#cddce4 0 20%,#9fcbbb 20% 62%,#edc694 62% 82%,#e5a39b 82%); }
+  .today-tide::after { content: ''; position: absolute; inset: -2px 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(105deg,transparent 20%,rgba(255,255,255,.62) 46%,transparent 68%); opacity: .38;
+    transform: translateX(-70%); animation: reefPulseSweep 8s ease-in-out infinite; }
+  @keyframes reefPulseSweep { 0%,58% { transform: translateX(-70%); } 82%,100% { transform: translateX(70%); } }
   .today-tide-marker { position: absolute; top: 50%; left: 12%; width: 13px; height: 13px; border: 3px solid #fff;
     border-radius: 50%; background: var(--ink-faint); box-shadow: 0 2px 7px rgba(18,48,68,.22); transform: translate(-50%,-50%); transition: left .35s ease; }
   .tone-ok .today-tide-marker { left: 42%; background: var(--ok); }
@@ -766,6 +825,25 @@
   .rhythm-timing { color: var(--ink-soft); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
   .rhythm-row.overdue .rhythm-timing, .rhythm-row.due .rhythm-timing { color: var(--warn); }
   .today-basis { margin-top: 10px; color: var(--ink-faint); font-size: 9px; line-height: 1.55; }
+  .today-compact { display: none; width: 100%; min-height: 54px; padding: 9px 12px 9px 15px; border: 0; background: transparent;
+    color: var(--ink); text-align: left; cursor: pointer; align-items: center; gap: 10px; }
+  .today-compact-signal { position: relative; width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center;
+    border-radius: 11px; color: var(--ocean-deep); background: var(--ocean-soft); }
+  .today-compact-signal::before { content: ''; width: 12px; height: 4px; border-radius: 99px; background: currentColor;
+    box-shadow: -5px 5px 0 -1px currentColor, 5px -5px 0 -1px currentColor; transform: rotate(-8deg); }
+  .tone-ok .today-compact-signal { color: var(--ok); background: var(--ok-bg); }
+  .tone-warn .today-compact-signal { color: #a8671e; background: var(--warn-bg); }
+  .tone-danger .today-compact-signal { color: var(--danger); background: var(--danger-bg); }
+  .today-compact-copy { min-width: 0; flex: 1; }
+  .today-compact-title { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+  .today-compact-title strong { font-size: 11.5px; color: var(--ocean-deep); white-space: nowrap; }
+  .today-compact-title span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-faint); font-size: 9.5px; }
+  .today-compact-summary { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); font-size: 10.5px; }
+  .today-compact-open { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; color: var(--ocean); font-size: 10px; font-weight: 800; }
+  .today-compact-open svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .today-board.is-compact { margin-bottom: 10px; border-radius: 15px; box-shadow: 0 3px 14px rgba(18,59,71,.04); }
+  .today-board.is-compact .today-compact { display: flex; }
+  .today-board.is-compact .today-main, .today-board.is-compact .today-detail { display: none !important; }
   .maintenance-settings { display: grid; gap: 8px; }
   .maintenance-rule-row { display: grid; grid-template-columns: minmax(0,1fr) 76px 54px; align-items: center; gap: 8px;
     padding: 9px 0; border-bottom: 1px solid var(--border-light); }
@@ -839,27 +917,46 @@
     border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
   .dose-link-btn:hover { background: var(--accent); color: #fff; }
 
-  /* ─── 新手引导卡片 ─── */
+  /* ─── 入门指南：像一页简短的养缸手记，不做功能说明书 ─── */
   .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
     display: none; align-items: center; justify-content: center; z-index: 9500; padding: 18px; }
   .guide-mask.open { display: flex; }
-  .guide-box { background: linear-gradient(165deg, #ffffff 0%, #f2f9fd 100%); border-radius: 22px;
-    max-width: 420px; width: 100%; padding: 26px 24px 20px; box-shadow: var(--shadow-lg);
+  .guide-box { background: linear-gradient(165deg,var(--surface-primary) 0%,var(--surface-secondary) 100%); border-radius: 22px;
+    max-width: 460px; width: 100%; padding: 25px 24px 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-strong);
     animation: fadeUp .28s ease; position: relative; max-height: calc(100vh - 60px); overflow-y: auto;
     -webkit-overflow-scrolling: touch; }
   .guide-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 16px;
     color: var(--ink-faint); cursor: pointer; padding: 6px; border-radius: 50%; line-height: 1; }
   .guide-close:hover { background: var(--ocean-soft); color: var(--ocean-deep); }
-  .guide-title { font-size: 18px; font-weight: 800; color: var(--ocean-deep); margin-bottom: 4px;
-    display: flex; align-items: center; gap: 8px; }
-  .guide-sub { font-size: 12px; color: var(--ink-faint); margin-bottom: 16px; }
-  .guide-step { display: flex; gap: 12px; margin-bottom: 14px; }
-  .guide-num { flex: 0 0 34px; height: 34px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--ocean), #0d8dc4);
-    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
-    box-shadow: 0 4px 10px rgba(10,110,168,.3); }
+  .guide-kicker { display: flex; align-items: center; gap: 7px; margin: 0 34px 7px 0; color: var(--ocean); font-size: 10px;
+    font-weight: 800; letter-spacing: 1.2px; }
+  .guide-kicker-mark { width: 25px; height: 8px; border-radius: 99px; background: linear-gradient(90deg,var(--ocean),var(--accent));
+    box-shadow: inset 8px 0 rgba(255,255,255,.28); transform: skewX(-22deg); }
+  .guide-title { margin: 0 34px 6px 0; color: var(--ocean-deep); font-size: 20px; font-weight: 850; line-height: 1.35; }
+  .guide-sub { margin: 0 0 17px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.65; }
+  .guide-path { position: relative; margin: 0 0 16px; }
+  .guide-path::before { content: ''; position: absolute; left: 16px; top: 23px; bottom: 23px; width: 2px;
+    background: linear-gradient(var(--ocean),var(--border-strong),var(--accent)); opacity: .52; }
+  .guide-step { position: relative; display: flex; gap: 12px; margin-bottom: 13px; }
+  .guide-step:last-child { margin-bottom: 0; }
+  .guide-num { z-index: 1; flex: 0 0 34px; height: 34px; border: 3px solid var(--surface-primary); border-radius: 50%;
+    background: var(--ocean-deep); color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 850; box-shadow: 0 4px 10px rgba(18,59,71,.18); }
   .guide-step-body { flex: 1; }
-  .guide-step-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
-  .guide-step-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  .guide-step-title { color: var(--ink); font-size: 13.5px; font-weight: 800; margin-bottom: 2px; }
+  .guide-step-desc { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
+  .guide-truth { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 13px;
+    background: rgba(255,255,255,.62); color: var(--ink-soft); font-size: 11.5px; line-height: 1.6; }
+  .guide-truth strong { color: var(--ocean-deep); }
+  .guide-map-title { margin-bottom: 8px; color: var(--ink); font-size: 12px; font-weight: 800; }
+  .guide-map { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
+  .guide-map button { min-width: 0; padding: 9px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--surface-primary); color: var(--ink); text-align: left;
+    font: inherit; cursor: pointer; transition: border-color .15s,background .15s,transform .15s; }
+  .guide-map button:hover { border-color: var(--ocean); background: var(--ocean-soft); transform: translateY(-1px); }
+  .guide-map strong { display: block; color: var(--ocean-deep); font-size: 12px; }
+  .guide-map small { display: block; margin-top: 1px; color: var(--ink-faint); font-size: 9.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .guide-map-arrow { flex: 0 0 auto; color: var(--ocean); font-size: 14px; }
   .guide-actions { display: flex; gap: 10px; margin-top: 18px; }
   .guide-actions button { flex: 1; padding: 11px 0; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
@@ -887,33 +984,38 @@
 </svg>
 </div>
 
-<!-- 品牌 -->
-<div class="brand">
-  <div class="logo">
-    <span class="mark">
-      <svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
-        <defs>
-          <linearGradient id="lgMark" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
-            <stop offset="1" stop-color="#d8ecf7" stop-opacity=".8"/>
-          </linearGradient>
-        </defs>
-        <path d="M8 30 C 14 22, 20 36, 26 28 S 38 20, 42 26" fill="none" stroke="url(#lgMark)" stroke-width="2.6" stroke-linecap="round"/>
-        <circle cx="14" cy="18" r="2.4" fill="url(#lgMark)"/>
-        <circle cx="34" cy="34" r="1.6" fill="url(#lgMark)" opacity=".7"/>
-      </svg>
-    </span>
-    <span class="brand-name">ReefPal</span>
-    <span class="brand-sub">海水缸助手</span>
+<!-- 紧凑应用栏 -->
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">
+      <span class="mark">
+        <svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgMark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
+              <stop offset="1" stop-color="#d8ecf7" stop-opacity=".8"/>
+            </linearGradient>
+          </defs>
+          <path d="M8 30 C 14 22, 20 36, 26 28 S 38 20, 42 26" fill="none" stroke="url(#lgMark)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="14" cy="18" r="2.4" fill="url(#lgMark)"/>
+          <circle cx="34" cy="34" r="1.6" fill="url(#lgMark)" opacity=".7"/>
+        </svg>
+      </span>
+      <span class="brand-copy"><span class="brand-name">ReefPal</span><span class="brand-sub">海水缸助手</span></span>
+    </div>
+    <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
   </div>
-  <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
-</div>
-
-<!-- 顶部工具条：入门指南 / 数据备份 -->
-<div class="toolbar">
-  <button class="mini-btn" onclick="openGuide()">📖 入门指南</button>
-  <button class="mini-btn" onclick="openBackup()">💾 数据备份</button>
-</div>
+  <div class="toolbar" aria-label="帮助与数据工具">
+    <button class="mini-btn" onclick="openGuide()" aria-label="打开入门指南">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5zM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>
+      <span class="mini-label">入门指南</span>
+    </button>
+    <button class="mini-btn" onclick="openBackup()" aria-label="打开数据备份">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 16h8"/></svg>
+      <span class="mini-label">数据备份</span>
+    </button>
+  </div>
+</header>
 
 <div class="wrap">
   <button class="tank-identity" id="tankIdentity" type="button" onclick="openTankSetup(true)" aria-label="查看或编辑我的鱼缸">
@@ -926,6 +1028,14 @@
   </button>
 
   <section class="today-board tone-neutral" id="todayBoard" aria-live="polite">
+    <button class="today-compact" type="button" onclick="openTodayHome()" aria-label="回到水质首页查看完整今日海况">
+      <span class="today-compact-signal" aria-hidden="true"></span>
+      <span class="today-compact-copy">
+        <span class="today-compact-title"><strong id="todayCompactStatus">今日海况</strong><span id="todayCompactMeta">正在读取</span></span>
+        <span class="today-compact-summary" id="todayCompactSummary">正在整理这口缸的记录。</span>
+      </span>
+      <span class="today-compact-open">查看<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></span>
+    </button>
     <div class="today-main">
       <div class="today-head">
         <div><div class="today-eyebrow">本缸今日海况</div><div class="today-date" id="todayDate">正在读取这口缸的记录…</div></div>
@@ -958,10 +1068,10 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico">📈</span><span>水质</span></button>
-    <button class="tab-btn" onclick="showTab('salt')"><span class="tb-ico">🔄</span><span>换水</span></button>
-    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico">🧪</span><span>补充</span></button>
-    <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico">💧</span><span>滴定</span></button>
+    <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9M10 18V5M15 18v-7M20 18V7M3 18h19"/></svg></span><span>水质</span></button>
+    <button class="tab-btn" onclick="showTab('salt')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l2 4-7 9-7-9zM9 7l3-3 3 3M5 11h14"/></svg></span><span>换水</span></button>
+    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 8a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-8V3M8 14h8"/></svg></span><span>补充</span></button>
+    <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.1 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 2.9-7 6-11zM9 15.5c.4 1.3 1.4 2 3 2"/></svg></span><span>滴定</span></button>
   </div>
 
   <!-- 计算仍使用“我的鱼缸”水量；不再在补充/滴定页重复显示设置条。 -->
@@ -972,8 +1082,8 @@
     <div class="module-role"><strong>一次纠偏</strong><span>实测确认偏低时，用这里计算这一轮补多少。少量分次添加，之后复测。</span></div>
     <div id="groupContainer"></div>
     <div class="note" style="margin-top:4px">「使用量」= 需要添加的粉末克数；「需滴配液(ml)」= 若用滴定方案里配好的补充液，需要滴入多少毫升。</div>
-    <div class="note">添加前请确认实测浓度，少量多次更安全。市售补充液请按瓶身说明换算。</div>
-    <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：数值小幅波动远比"大升大降"安全，单次补充后隔 1-2 天再测，观察趋势再决定下一步。</div>
+    <div class="note">先对一下实测浓度。市售补充液还要按瓶身浓度换算，别把粉剂结果直接照搬过去。</div>
+    <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 这次补多少，宁可分两回。加完留点时间，隔 1–2 天复测，再看下一步。</div>
   </div>
 
   <!-- 滴定方案 -->
@@ -1042,8 +1152,8 @@
           <button class="mr-btn" onclick="applyMixRef('m', 250, 1000)">浓 250克</button>
           <span class="mr-tip" style="margin-left:6px">氯化镁饱和约 542克/L</span>
         </div>
-        <div class="mr-tip"><b>💡 稀溶液 vs 浓溶液：</b>稀溶液（如 KH 25克/L）滴定量更大，滴定泵每次滴的体积误差占比更小，<b>更容易精确控制</b>；
-          浓溶液（如 KH 50克/L）配一次能用更久，但滴定量小，泵的精度误差会被放大。新手建议先用稀溶液。</div>
+        <div class="mr-tip"><b>💡 稀一点还是浓一点？</b>稀配液每次滴得多些，泵的单次误差占比更小，通常更好调；
+          浓配液省容器、也更耐用，但每天只滴一点点时，反而更考验泵的精度。刚开始用滴定，可以先从稀配液试起。</div>
       </div>
     </div>
 
@@ -1095,7 +1205,7 @@
       </div>
       </div>
       <div id="calcPaneAdjust" style="display:none">
-      <div class="dc-sub">想提升/降低到目标值？填<b>目标值</b>（计划天数默认 7 天），自动按<b>每日消耗 + 提升需求</b>算出<b>每天该滴多少</b>，结果已同步到下方「每天滴定量」。</div>
+      <div class="dc-sub">填好<b>目标值</b>和计划天数（默认 7 天），这里会把<b>日常消耗 + 目标调整</b>合在一起，算出每天的总量。</div>
       <div class="dose-head adjust-head" style="display:flex;gap:8px;align-items:center;padding-bottom:8px">
         <span class="dh-spacer" style="width:74px"></span>
         <span class="d-field" style="flex:1;max-width:100px"><span class="fl">目标值</span></span>
@@ -1129,7 +1239,7 @@
 
     <div class="dose-card">
       <div class="dc-title">💧 每天滴定量</div>
-      <div class="dc-sub">= <b>消耗维持</b>（维持现状的滴量） + <b>目标提升</b>（如需提升时「调整目标」加的量）。结果可用于设置滴定泵；下方按钮只记录方案状态，不会控制设备。</div>
+      <div class="dc-sub">= <b>消耗维持</b>（维持现状的滴量） + <b>目标提升</b>（如需提升时「调整目标」加的量）。结果可用于设置滴定泵；下方按钮只记方案状态，设备仍在滴定泵端设置。</div>
       <div class="dose-result">
         <span class="dr-label">KH</span><span class="dr-value" id="k_dose">—</span><span class="dr-unit">毫升/天</span>
         <button class="dose-toggle" id="k_doseBtn" onclick="toggleDose('k', 'KH')">启用此方案</button>
@@ -1142,8 +1252,8 @@
         <span class="dr-label">镁</span><span class="dr-value" id="m_dose">—</span><span class="dr-unit">毫升/天</span>
         <button class="dose-toggle" id="m_doseBtn" onclick="toggleDose('m', '镁')">启用此方案</button>
       </div>
-      <div class="note" style="margin-top:10px">每天滴定量 = 缸水量 × 每天消耗 × 配液单位需求系数。必须先确认实际水量、配液原料与浓度；建议少量多次，分2~4次滴入。</div>
-      <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 海缸养的是稳定：滴定讲究"稳"，宁可每天少滴一点，也不要在某天猛加；固定时间滴入、每周测一次校准，水质才能长期稳定。</div>
+      <div class="note" style="margin-top:10px">水量、原料和配液浓度对得上，这个结果才有参考价值。第一次设置可以分 2–4 次滴入，留点余量给后续复测。</div>
+      <div class="note" style="color:var(--ocean-deep);font-weight:700;background:var(--ocean-soft);border:1px solid var(--border-strong);border-radius:14px;padding:10px 18px;max-width:746px">⚓ 滴定的本事不在滴得多，而在每天都差不多。隔一阵按实测消耗校准一次，比追着单次读数调更稳。</div>
     </div>
 
     <!-- 滴定记录二级菜单（深度自定义） -->
@@ -1185,7 +1295,7 @@
     <!-- 换水记录 -->
     <div class="dose-card water-change-history-card">
       <div class="dc-title">📒 换水记录</div>
-      <div class="dc-sub">记录每次换水，方便追踪换水对水质的影响（趋势图上会标记换水日）。换水频率和比例应结合营养盐、生物负载、补充体系与实际状态决定，不必机械追求固定百分比。</div>
+      <div class="dc-sub">每次换多少、什么时候换，跟营养盐、生物负载和补充体系都有关系。把记录留在这里，回头看水质变化更有底。</div>
       <details class="manual-record-details"><summary>补记一次换水</summary>
       <div class="record-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
         <div class="d-field"><span class="fl">换水量(升)</span><input type="number" id="wcWater" class="ctl" placeholder="如 30" style="width:110px"></div>
@@ -1211,15 +1321,30 @@
 
     <div class="dose-card salt-calculator-card">
       <div class="dc-title">🧂 配盐计算</div>
-      <div class="dc-sub">原实测样品比重 <b>1.025</b>：品牌克数仅作为首次配水估算起点，溶解后必须用已校准仪器复测并微调。</div>
+      <div class="dc-sub">不选品牌时先按通用参考 <b>35 克/升</b> 估算；选了品牌，就换成表里的实测起点。盐化开后，还是以校准过的仪器读数为准。</div>
       <div class="dose-card" style="box-shadow:none;border:1.5px dashed var(--border-strong);margin-bottom:0">
+        <div class="salt-target-line">
+          <span class="salt-target-label">目标比重</span>
+          <button id="saltTargetTrigger" class="salt-target-trigger" type="button" onclick="toggleSaltTargetPicker()" aria-expanded="false" aria-controls="saltTargetPicker">
+            <b id="saltTargetLabel">1.025</b><span>细调</span>
+          </button>
+          <span class="salt-target-effect" id="saltTargetEffect">按 1.025 的参考克数估算</span>
+        </div>
+        <div class="salt-target-picker" id="saltTargetPicker" hidden>
+          <div class="salt-wheel" id="saltTargetWheel" aria-label="目标比重微调轮盘">
+            <button class="salt-wheel-option" id="saltWheelPrev" type="button" onclick="adjustSaltTarget(-1)" aria-label="降低目标比重">1.024</button>
+            <div class="salt-wheel-current" id="saltWheelCurrent" role="spinbutton" tabindex="0" aria-valuemin="1.022" aria-valuemax="1.028" aria-valuenow="1.025" aria-label="当前目标比重">1.025</div>
+            <button class="salt-wheel-option" id="saltWheelNext" type="button" onclick="adjustSaltTarget(1)" aria-label="提高目标比重">1.026</button>
+          </div>
+          <div class="salt-wheel-note">范围 1.022–1.028，每格 0.001。这里按比例估算，具体盐袋说明和溶解后的实测读数更重要。</div>
+        </div>
         <div class="dc-tank">
-          <label>品牌</label>
+          <label>海盐品牌</label>
           <select id="saltBrand" style="padding:9px 12px;border:1.5px solid var(--border-strong);border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:#fff"></select>
         </div>
         <div class="dc-tank">
           <label>要配水量</label>
-          <input type="number" id="saltWater" value="100" min="1">
+          <input type="number" id="saltWater" min="0.1" step="0.1" placeholder="按实际水量的 20%">
           <span class="unit">升</span>
           <span class="save-hint" style="margin-left:auto">盐重 <b id="saltPerLiter">—</b> 克/升</span>
         </div>
@@ -1231,9 +1356,9 @@
         </div>
         <div class="salt-record-actions">
           <button id="saltRecordBtn" type="button" class="ctl-btn salt-complete-btn" onclick="recordCalculatedWaterChange()" disabled>✓ 已换水</button>
-          <span class="salt-record-meta" id="saltRecordMeta">选好品牌并填写水量后可直接记入换水记录</span>
+          <span class="salt-record-meta" id="saltRecordMeta">水量准备好后就能直接记入换水记录</span>
         </div>
-        <div class="dc-sub" style="margin-top:10px">💡 实际用量以盐袋说明为准；化盐建议 <b>25°C</b>、充分搅拌溶解后再测盐度微调。</div>
+        <div class="dc-sub" style="margin-top:10px">💡 盐袋说明优先。水温接近 <b>25°C</b>、充分搅拌溶解后再测，读数会更有参考价值。</div>
       </div>
     </div>
 
@@ -1246,7 +1371,7 @@
         <button id="saltReferenceToggle" type="button" class="salt-ref-toggle" onclick="toggleSaltReference()" aria-expanded="true" hidden>查看其他海盐参考</button>
       </div>
       <div class="salt-reference-body" id="saltReferenceBody">
-      <div class="dc-sub">原样品比重 1.025，本站暂定证据等级 C。数据用于了解不同样品的实测差异，不能代替品牌说明或当前批次复测，也不直接参与自动补充建议。点击品牌行可带入配盐计算。</div>
+      <div class="dc-sub">这份表来自单一玩家实测，选盐时可以横向看看，不拿来直接算加药。点击品牌行可带入配盐计算。</div>
       <div style="overflow-x:auto">
       <table style="width:100%;max-width:100%;border-collapse:collapse;margin-top:4px">
         <thead><tr><th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">品牌/类型</th>
@@ -1261,7 +1386,7 @@
         <tbody id="saltTableBody"></tbody>
       </table>
       </div>
-      <div class="dc-sub" style="margin-top:10px">来源说明：数据整理自小红书用户实测分享；据原分享使用了 Hanna 数字比色计，但当前资料未记录每一列对应的具体型号、试剂和方法，也未独立复现。“无色/略有颜色”为原记录中的定性描述，PO₄括号内为溶解后的后续读数。仪器虽能减少肉眼判色差异，但试剂批次、干扰物、样品温度/盐度、操作和海盐批次仍会影响结果。请将本表视为社区实测参考，不作为加药依据。</div>
+      <details class="evidence-details"><summary>这份数据怎么来的</summary><div class="evidence-copy">数据整理自小红书用户实测分享，原样品比重 1.025，当前证据等级记为 C。据分享使用了 Hanna 数字比色计，但没有留下每一列对应的具体型号、试剂和方法，本站也没有独立复现。“无色 / 略有颜色”是原记录的定性描述，PO₄ 括号内是溶解后的后续读数。试剂批次、样品温度与盐度、操作方式和海盐批次都会影响结果，所以这张表只作社区实测参考，不作为加药依据。</div></details>
       </div>
     </div>
   </div>
@@ -1286,7 +1411,7 @@
         <div class="d-field"><span class="fl">备注(可选)</span><input type="text" id="wqNote" class="ctl" placeholder="如 换水后" style="width:130px"></div>
         <button onclick="addWaterRecord()" class="ctl-btn">✓ 保存</button>
       </div>
-      <div class="dc-sub" style="margin-top:8px">💡 测试频率应按开缸阶段、消耗速度和近期操作调整。不同试剂与仪器的误差并不统一，异常读数应先复测；长期趋势通常比一次读数更有价值。很多礁岩缸运行在约 24-26°C、约 35ppt，但稳定性、校准和适合本缸的长期目标更重要。</div>
+      <div class="dc-sub" style="margin-top:8px">💡 异常值先复测。同一套工具、接近的测试时间，趋势会更好看懂。很多礁岩缸运行在约 24–26°C、约 35ppt，但适合本缸的稳定目标，比追通用数字更重要。</div>
     </div>
 
     <!-- 模式切换（轻量条，居中 + 滑块动效） -->
@@ -1302,8 +1427,8 @@
     <div id="wqSimple">
       <div id="wqSimpleCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px"></div>
       <div class="dose-card" id="wqSimpleAdvice">
-        <div class="dc-title">💡 智能建议</div>
-        <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">暂无数据，先添加几条记录吧。</div>
+        <div class="dc-title">💡 这缸怎么看</div>
+        <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">这里还空着。记下第一组数据，后面就能慢慢看到趋势了。</div>
       </div>
 
     </div>
@@ -1375,38 +1500,49 @@
 
 <!-- Toast 提示 -->
 <div id="toastBox"></div>
-<button id="connectionState" type="button" aria-live="polite" onclick="checkConnection()">正在连接服务</button>
+<button id="connectionState" type="button" aria-live="polite" onclick="checkConnection()">正在连接本地服务</button>
 
-<!-- 新手引导卡片（首次自动弹出，可随时从「入门指南」找回） -->
+<!-- 入门指南：首次不自动打断，可随时从应用栏找回 -->
 <div class="guide-mask" id="guideMask" onclick="if(event.target===this)closeGuide()">
-  <div class="guide-box">
-    <button class="guide-close" onclick="closeGuide()" title="关闭">✕</button>
-    <div class="guide-title">🐠 欢迎使用 ReefPal</div>
-    <div class="guide-sub">你的海水缸管理助手 · 三步上手</div>
-    <div class="guide-step">
-      <div class="guide-num">1</div>
-      <div class="guide-step-body">
-        <div class="guide-step-title">这是什么？</div>
-        <div class="guide-step-desc">记录水质测试数据（KH / 钙 / 镁 / NO₃ / PO₄），自动分析健康状态与趋势，帮你养出稳定的缸。</div>
+  <div class="guide-box" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <button class="guide-close" onclick="closeGuide()" title="关闭入门指南" aria-label="关闭入门指南">✕</button>
+    <div class="guide-kicker"><span class="guide-kicker-mark" aria-hidden="true"></span>REEFPAL · 快速上手</div>
+    <h2 class="guide-title" id="guideTitle">先让 ReefPal 认识这口缸</h2>
+    <p class="guide-sub">不用补一大本历史账。把鱼缸设好，从今天手头的数据开始，后面边养边记就行。</p>
+    <div class="guide-path" aria-label="三步开始使用 ReefPal">
+      <div class="guide-step">
+        <div class="guide-num">1</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">鱼缸资料先设准</div>
+          <div class="guide-step-desc">实际水量会影响配盐、补充和滴定计算；缸型则用来给出更合适的参考范围。</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">2</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">测到什么，就先记什么</div>
+          <div class="guide-step-desc">刚测了 KH 就先记 KH，不必等五项凑齐。连续留下几次读数，趋势才会慢慢有意思。</div>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-num">3</div>
+        <div class="guide-step-body">
+          <div class="guide-step-title">要动手时，再找对应工具</div>
+          <div class="guide-step-desc">准备换水就去配盐，临时纠偏看补充，长期维持再算滴定。先把数算清楚，调整可以慢一点。</div>
+        </div>
       </div>
     </div>
-    <div class="guide-step">
-      <div class="guide-num">2</div>
-      <div class="guide-step-body">
-        <div class="guide-step-title">怎么开始？</div>
-        <div class="guide-step-desc">在「📈 水质」页添加测试记录；系统会按你的缸型和维护周期提示下一次，记录越多，趋势越有参考价值。</div>
-      </div>
-    </div>
-    <div class="guide-step">
-      <div class="guide-num">3</div>
-      <div class="guide-step-body">
-        <div class="guide-step-title">还能做什么？</div>
-        <div class="guide-step-desc">「🔄 换水」登记换水记录 · 「🧪 元素补充」计算补充剂用量 · 「💧 滴定」测算每日滴定量。</div>
-      </div>
-    </div>
+    <div class="guide-truth"><strong>“今日海况”从哪来？</strong> 它根据你留下的水质、换水和维护记录整理提醒，并不是设备在自动读缸。记录越连续，回头看越有参考价值。</div>
+    <div class="guide-map-title">四个入口，各管一件事</div>
+    <nav class="guide-map" aria-label="ReefPal 四个主要入口">
+      <button type="button" onclick="guideJump('water')"><span><strong>水质</strong><small>记读数，看趋势</small></span><span class="guide-map-arrow">›</span></button>
+      <button type="button" onclick="guideJump('salt')"><span><strong>换水</strong><small>算配盐，留记录</small></span><span class="guide-map-arrow">›</span></button>
+      <button type="button" onclick="guideJump('calc')"><span><strong>补充</strong><small>算这次补多少</small></span><span class="guide-map-arrow">›</span></button>
+      <button type="button" onclick="guideJump('dosing')"><span><strong>滴定</strong><small>算每日维持量</small></span><span class="guide-map-arrow">›</span></button>
+    </nav>
     <div class="guide-actions">
-      <button class="guide-later" onclick="closeGuide()">稍后再说</button>
-      <button class="guide-start" onclick="closeGuide();showTab('water')">开始使用 →</button>
+      <button class="guide-later" onclick="closeGuide()">我先自己逛逛</button>
+      <button class="guide-start" onclick="guideJump('water')">去记一项水质</button>
     </div>
   </div>
 </div>
@@ -1416,7 +1552,7 @@
   <div class="modal-box tank-setup-box">
     <div class="tank-setup-kicker">MY REEF · 我的鱼缸</div>
     <div class="tank-setup-title" id="tankSetupTitle">先认识一下你的鱼缸</div>
-    <div class="tank-setup-sub">填好这三项，水质、补充和滴定就能自动带上这口缸的数据。</div>
+    <div class="tank-setup-sub">填好这三项，水质、补充和滴定都会跟着这口缸走。</div>
     <div class="tank-setup-flow">
       <div class="tank-step">
         <div class="tank-step-label">1 · 实际水量 <small>不清楚的话，可以按缸体尺寸估一下</small></div>
@@ -1463,7 +1599,7 @@
     <div class="tank-setup-note">这些范围先拿来作参考。缸里状态好、走势也稳，就不用为了贴数字来回折腾。</div>
     <div class="modal-actions">
       <button class="m-cancel" id="tankSetupLater" type="button" onclick="closeTankSetup()">稍后设置</button>
-      <button class="m-save" type="button" onclick="saveTankSetup()">保存并联动</button>
+      <button class="m-save" type="button" onclick="saveTankSetup()">保存鱼缸设置</button>
     </div>
   </div>
 </div>
@@ -1520,7 +1656,7 @@
 <div class="modal-mask" id="maintenanceModal" onclick="if(event.target===this)closeMaintenanceSettings()">
   <div class="modal-box">
     <div class="modal-title">调整维护节奏</div>
-    <div class="modal-sub" id="maintenanceNote">这里是起始建议，按自己的设备、负载和维护习惯修改即可。</div>
+    <div class="modal-sub" id="maintenanceNote">这是一套起步节奏。设备、负载和习惯不一样，周期也可以跟着调。</div>
     <div class="maintenance-settings" id="maintenanceSettings"></div>
     <div class="modal-actions">
       <button class="m-cancel" type="button" onclick="closeMaintenanceSettings()">取消</button>
@@ -1533,7 +1669,7 @@
 <div class="modal-mask" id="backupModal" onclick="if(event.target===this)closeBackup()">
   <div class="modal-box">
     <div class="modal-title">💾 数据备份</div>
-    <div class="modal-sub">数据保存在本机。建议定期备份，换设备或重装后可导入恢复。</div>
+    <div class="modal-sub">数据都在这台设备上。隔一阵备份一次更踏实，换设备或重装后也能恢复。</div>
     <div class="modal-field"><label>完整备份（推荐）</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--ocean);color:#fff;font-weight:700;cursor:pointer" onclick="exportJson()">📤 导出 JSON 备份</button>
@@ -1762,10 +1898,10 @@ function renderTodayActions(actions) {
   const wrap = document.getElementById('todayActions');
   if (!actions || actions.length === 0) {
     wrap.innerHTML = '<div class="today-actions-title">今天的动作 <small>根据已有记录安排</small></div>' +
-      '<div class="today-empty-action">今天没有必须处理的项目。照常观察生物状态和设备运行即可。</div>';
+      '<div class="today-empty-action">今天没有到期项目，照常看看生物状态和设备就好。</div>';
     return;
   }
-  wrap.innerHTML = '<div class="today-actions-title">今天优先看这 ' + actions.length + ' 项 <small>最多只列三项</small></div><div class="today-action-list">' +
+  wrap.innerHTML = '<div class="today-actions-title">今天优先看这 ' + actions.length + ' 项 <small>先列最要紧的</small></div><div class="today-action-list">' +
     actions.map(task => '<div class="today-action"><div class="today-action-icon">' + escapeToday(task.icon || '·') + '</div>' +
       '<div><div class="today-action-title">' + escapeToday(task.title) + ' · ' + escapeToday(task.timing) + '</div>' +
       '<div class="today-action-reason">' + escapeToday(task.reason || task.category) + '</div></div>' +
@@ -1779,7 +1915,7 @@ function renderTodayRhythm(items) {
       : '<button class="today-small-btn" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\')">去记录</button>';
     return '<div class="rhythm-row ' + escapeToday(task.state) + '"><div><div class="rhythm-title">' + escapeToday(task.icon) + ' ' + escapeToday(task.title) + '</div>' +
       '<div class="rhythm-reason">' + escapeToday(task.reason) + '</div></div><div class="rhythm-timing">' + escapeToday(task.timing) + '</div>' + action + '</div>';
-  }).join('') || '<div class="today-empty-action">当前没有启用的维护项目，可以在“调整节奏”里重新开启。</div>';
+  }).join('') || '<div class="today-empty-action">维护清单现在是空的；想重新安排，可以去“调整节奏”里打开。</div>';
 }
 
 function renderTodayDashboard(data) {
@@ -1790,11 +1926,19 @@ function renderTodayDashboard(data) {
   document.getElementById('todayDate').textContent = todayDisplayDate() + (tankProfile && tankProfile.name ? ' · ' + tankProfile.name : '');
   document.getElementById('todayStatus').textContent = data.status.label;
   document.getElementById('todaySummary').textContent = data.status.summary;
+  const compactAction = (data.actions || [])[0];
+  document.getElementById('todayCompactStatus').textContent = data.status.label;
+  document.getElementById('todayCompactMeta').textContent = compactAction
+    ? '今天 ' + (data.actions || []).length + ' 项'
+    : (data.coverage.label || '记录已读取');
+  document.getElementById('todayCompactSummary').textContent = compactAction
+    ? compactAction.title + ' · ' + compactAction.timing
+    : data.status.summary;
   const rhythm = data.rhythm || [];
   const next = rhythm.find(item => item.state !== 'untracked');
   document.getElementById('todayMetrics').innerHTML =
     '<div class="today-metric"><span class="today-metric-label">数据覆盖</span><span class="today-metric-value">' + escapeToday(data.coverage.label) + '</span></div>' +
-    '<div class="today-metric"><span class="today-metric-label">最近水质</span><span class="today-metric-value">' + escapeToday(data.coverage.latest_date || '暂无记录') + '</span></div>' +
+    '<div class="today-metric"><span class="today-metric-label">最近水质</span><span class="today-metric-value">' + escapeToday(data.coverage.latest_date || '还没记录') + '</span></div>' +
     '<div class="today-metric"><span class="today-metric-label">下一节奏</span><span class="today-metric-value">' + escapeToday(next ? next.title + ' · ' + next.timing : '待建立') + '</span></div>';
   renderTodayActions(data.actions || []);
   renderTodayEvidence(data.evidence || []);
@@ -1811,7 +1955,16 @@ async function loadTodayDashboard() {
   } catch (e) {
     document.getElementById('todayStatus').textContent = '暂时没连上';
     document.getElementById('todaySummary').textContent = '其他功能仍可使用，稍后刷新页面会重新读取今日状态。';
+    document.getElementById('todayCompactStatus').textContent = '今日海况没读到';
+    document.getElementById('todayCompactMeta').textContent = '稍后再试';
+    document.getElementById('todayCompactSummary').textContent = '其他功能仍可使用。';
   }
+}
+
+function openTodayHome() {
+  showTab('water');
+  const board = document.getElementById('todayBoard');
+  if (board) board.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function goToTodayTask(tab) {
@@ -1972,8 +2125,8 @@ async function loadTankProfile() {
 async function saveTankSetup() {
   const water = parseFloat(document.getElementById('tankSetupWater').value);
   const selected = document.querySelector('input[name="tankType"]:checked');
-  if (!Number.isFinite(water) || water <= 0) { toast('请填写大于 0 的实际水量', 'err'); return; }
-  if (!selected) { toast('请选择鱼缸类型', 'err'); return; }
+  if (!Number.isFinite(water) || water <= 0) { toast('实际水量得大于 0，看看是不是漏填了', 'err'); return; }
+  if (!selected) { toast('鱼缸类型还没选', 'err'); return; }
   const payload = {
     name: document.getElementById('tankSetupName').value.trim() || '我的鱼缸',
     water_liters: water,
@@ -1991,6 +2144,7 @@ async function saveTankSetup() {
     renderGroups();
     renderTankIdentity();
     setWater(tankProfile.water_liters, false);
+    setDefaultSaltWaterFromTank(true);
     localStorage.removeItem('tank_water');
     closeTankSetup();
     toast('保存好了，水质和计算已换成这口缸的数据 ✓', 'ok');
@@ -2043,6 +2197,10 @@ function closeGuide() {
   document.body.classList.remove('lock-scroll');
   localStorage.setItem(GUIDE_KEY, '1');
 }
+function guideJump(tabName) {
+  closeGuide();
+  showTab(tabName);
+}
 /* 入门指南保留在工具栏按需打开；首次只出现更短的鱼缸设置，避免连续弹窗。 */
 
 
@@ -2080,7 +2238,7 @@ async function exportCsv(kind) {
     _download(text, 'reefpal_' + kind + '_' + todayLocal().replace(/-/g, '') + '.csv', 'text/csv;charset=utf-8');
     toast(names[kind] + ' CSV 已导出 ✓', 'ok');
   } catch (e) {
-    toast('CSV 导出失败', 'err');
+    toast('CSV 没导出来，再试一次', 'err');
   }
 }
 async function importJson(event) {
@@ -2099,7 +2257,7 @@ async function importJson(event) {
     loadWater(); loadWaterChanges();
     if (waterMode === 'pro') { renderPro(); }
   } catch (e) {
-    toast('导入失败：' + (e.message || '文件无法解析'), 'err');
+    toast('这份备份没能导入：' + (e.message || '文件无法解析'), 'err');
   } finally {
     event.target.value = '';
   }
@@ -2159,8 +2317,9 @@ function restoreWater() {
   });
 }
 
-/* 海盐配水量由用户填写：鱼缸实际水量不等于本次配水/换水量。 */
+/* 配盐默认取实际水量的 20%；用户仍可按本次换水计划自行修改。 */
 function syncSaltWater() {
+  setDefaultSaltWaterFromTank(false);
   calcSalt();
 }
 function setWater(w, persistProfile) {
@@ -2227,7 +2386,7 @@ function estCalc() {
 }
 function estApply() {
   const el = document.getElementById('estResult');
-  if (!el.dataset.w || el.dataset.w <= 0) { toast('请先设置缸体尺寸', 'err'); return; }
+  if (!el.dataset.w || el.dataset.w <= 0) { toast('尺寸还没填完整', 'err'); return; }
   document.getElementById('tankSetupWater').value = el.dataset.w;
   closeEstimatorModal();
   toast('已填入 ' + el.dataset.w + ' 升，确认后保存', 'info');
@@ -2299,7 +2458,7 @@ function renderElement(gi, ei, elem) {
     '<span>实测值</span>' +
     '<input type="number" class="auto-in" data-g="' + gi + '" data-e="' + ei + '" placeholder="如 ' + elem.ideal.split('-')[0] + '">' +
     (mixKey ? '<button type="button" class="dose-link-btn" data-mix="' + mixKey + '" data-el="' + elem.name + '" onclick="jumpToDosing(this)" title="把实测值带入滴定方案，计算每天滴定量">💧 去滴定</button>' : '') +
-    '<span class="auto-msg" id="auto-msg-' + gi + '-' + ei + '">输入当前实测值，自动判断是否需补充</span>' +
+    '<span class="auto-msg" id="auto-msg-' + gi + '-' + ei + '">填入当前实测值，看看这一轮要不要补</span>' +
   '</div>';
   html += '</div>';
   return html;
@@ -2363,7 +2522,7 @@ function refreshMl(gi, ei) {
     mlEl.title = '达到该补充量需滴入约 ' + ml + ' 毫升（按配液 ' + m.pw + '克分析纯 : ' + m.ro + '毫升RO水 换算）';
   } else {
     mlEl.value = '';
-    mlEl.title = '请先在「滴定方案」中设置该元素配比';
+    mlEl.title = '这个元素的滴定配液还没设置';
   }
 }
 
@@ -2382,7 +2541,7 @@ function refreshAllMl() {
 async function autoJudge(gi, ei) {
   const val = parseFloat(document.querySelector('.auto-in[data-g="' + gi + '"][data-e="' + ei + '"]').value);
   const msgEl = document.getElementById('auto-msg-' + gi + '-' + ei);
-  if (isNaN(val) || val < 0) { msgEl.textContent = '输入当前实测值，自动判断是否需补充'; msgEl.className = 'auto-msg'; return; }
+  if (isNaN(val) || val < 0) { msgEl.textContent = '填入当前实测值，看看这一轮要不要补'; msgEl.className = 'auto-msg'; return; }
   const elem = groupData[gi].elements[ei];
   const ideal = elem.ideal;
   let low, high;
@@ -2390,7 +2549,7 @@ async function autoJudge(gi, ei) {
   else { high = parseFloat(ideal); low = parseFloat(ideal) * 0.9; }
   const water = parseFloat(document.getElementById('globalWater').value);
   if (!Number.isFinite(water) || water <= 0) {
-    msgEl.textContent = '请先填写实际水量，也可以到「我的鱼缸」里按尺寸估算';
+    msgEl.textContent = '实际水量还没填。可以直接填，也能回「我的鱼缸」按尺寸估算';
     msgEl.className = 'auto-msg invalid';
     return;
   }
@@ -2410,6 +2569,13 @@ async function recomputeAll() {
 }
 
 let _lastTab = 'water';
+function syncTodayBoardMode(tabName) {
+  const board = document.getElementById('todayBoard');
+  if (!board) return;
+  board.classList.toggle('is-compact', tabName !== 'water');
+  board.setAttribute('data-tab-context', tabName);
+}
+
 function showTab(name) {
   localStorage.setItem('last_tab', name);
   // 触感反馈（手机轻震）
@@ -2423,6 +2589,7 @@ function showTab(name) {
   document.querySelectorAll('.tab-btn')[TAB_IDX[name]].classList.add('active');
   const panel = document.getElementById('panel-' + name);
   panel.classList.add('active', dir);
+  syncTodayBoardMode(name);
   setTimeout(() => {
     // 仅当该面板仍是激活面板时才移除动画类（防止快速切换误删）
     if (panel.classList.contains('active')) {
@@ -2607,13 +2774,12 @@ async function calcAdjust(pre, syncDose) {
   const raiseDose = adjusted.need_dose;
   const finalDose = Math.max(0, adjusted.final_dose);
 
-  // ⚠️ 每日提升速率安全上限检测（海缸稳定原则）
-  // KH ≤0.5 dKH/天，钙 ≤25 ppm/天，镁 ≤50 ppm/天
+  // 每日提升幅度保守提醒线；用于提示放慢计划，不表示所有鱼缸共用同一绝对安全阈值。
   const RATE_LIMIT = { k: 0.5, g: 25, m: 50 };
   const unitName = pre === 'k' ? 'dKH' : 'ppm';
   const limit = RATE_LIMIT[pre];
   const rateOver = need > 0 && Math.abs(dailyRaise) > limit; // 仅提升方向检测
-  // 若超限，建议的安全天数 = 所需提升量 / 上限
+  // 超过提醒线时，给出更缓和的计划天数。
   const safeDays = rateOver ? Math.ceil(need / limit) : days;
 
   const sign = need >= 0 ? '▲' : '▼';
@@ -2634,11 +2800,11 @@ async function calcAdjust(pre, syncDose) {
     (maintainDose > 0 ? '，另需消耗维持 ' + maintainDose + 'ml/天' : '') +
     '。\n最终每天滴 ' + finalDose + 'ml（提升+消耗）已同步到下方';
 
-  // ⚠️ 超限提示行：明确告诉用户"建议延长天数"
+  // 幅度提醒：说明原因并给出可恢复的下一步。
   const warnEl = document.getElementById(pre + '_rateWarn');
   if (warnEl) {
     if (rateOver) {
-      warnEl.textContent = '⚠️ 每日提升 ' + Math.abs(dailyRaise).toFixed(2) + ' ' + unitName + ' 超过安全上限 ' + limit + ' ' + unitName + '/天！建议延长至 ' + safeDays + ' 天（' + unitName + '）或降低目标，避免珊瑚应激。';
+      warnEl.textContent = '按当前计划，每天约提升 ' + Math.abs(dailyRaise).toFixed(2) + ' ' + unitName + '，超过这里采用的保守提醒线（' + limit + ' ' + unitName + '/天）。把计划拉长到至少 ' + safeDays + ' 天，或者把目标放低一些，会更稳妥。';
       warnEl.classList.add('show');
     } else {
       warnEl.textContent = '';
@@ -2688,7 +2854,7 @@ async function importDoseFromRecords() {
     }
     calcDosing();
     if (filled > 0) toast('已从记录导入 ' + filled + ' 组数据 ✓' + (missing.length ? '（' + missing.join('/') + ' 记录不足2条）' : ''), 'ok');
-    else toast('水质记录不足：KH/钙/镁各需至少2条记录才能导入', 'info');
+    else toast('KH、钙、镁各有两条记录后，才能算出每天消耗', 'info');
   } catch (e) { /* api已提示错误 */ }
 }
 
@@ -2698,7 +2864,7 @@ async function toggleDose(pre, elName) {
   const btn = document.getElementById(pre + '_doseBtn');
   const doseEl = document.getElementById(pre + '_dose');
   const dose = parseFloat(doseEl.textContent);
-  if (!dose || dose <= 0) { toast('请先设置配比和测试数据，计算出每天滴定量', 'err'); return; }
+  if (!dose || dose <= 0) { toast('配比或测试数据还没齐，暂时算不出每天滴定量', 'err'); return; }
   const isRunning = doseRunning[pre];
   const action = isRunning ? 'end' : 'start';
   const today = todayLocal();
@@ -2755,7 +2921,7 @@ async function renderDoseLogList() {
       '<button class="icon-btn" title="编辑" onclick="editDoseLog(' + l.id + ')">✏️</button>' +
       '<button class="icon-btn" title="删除" onclick="delDoseLog(' + l.id + ')">🗑</button></td>' +
     '</tr>').join('');
-  tbody.innerHTML = rows || '<tr><td colspan="5" style="padding:8px;color:var(--ink-faint)">暂无记录</td></tr>';
+  tbody.innerHTML = rows || '<tr><td colspan="5" style="padding:8px;color:var(--ink-faint)">这里还没有方案记录</td></tr>';
   // 同步刷新趋势图标记
   if (waterMode === 'pro') renderWaterChart();
 }
@@ -2765,7 +2931,7 @@ async function addDoseLogManual() {
   const dose = parseFloat(document.getElementById('dlmDose').value);
   const action = document.getElementById('dlmAction').value;
   const date = document.getElementById('dlmDate').value;
-  if (isNaN(dose) || dose <= 0) { toast('请输入有效的滴定量(大于0的毫升数)', 'err'); return; }
+  if (isNaN(dose) || dose <= 0) { toast('滴定量得大于 0，看看是不是漏填了', 'err'); return; }
   const noteMap = { start: '启用方案', end: '停用方案', adjust: '调整剂量' };
   const res = await api('/api/dosing/log', {
     method: 'POST',
@@ -2853,7 +3019,7 @@ async function loadAnalysisCards() {
     renderSystemAlerts(balanceData.result || {});
   } catch (e) {
     const body = document.getElementById('wqSimpleAdviceBody');
-    if (body) body.insertAdjacentHTML('afterbegin', '<div class="sys-alert warn">部分联动分析暂时没读到，水质记录本身不受影响。</div>');
+    if (body) body.insertAdjacentHTML('afterbegin', '<div class="sys-alert warn">有几项分析刚才没读到，水质记录还在，不影响保存。</div>');
   }
 }
 
@@ -2874,7 +3040,7 @@ function renderSystemAlerts(balance) {
     for (const [el, b] of Object.entries(balance)) {
       const name = { KH: '碱度', 钙: '钙', 镁: '镁' }[el] || el;
       if (b.status === 'under' && b.consume_g_per_day > 0) {
-        balanceAlerts.push('⚠️ <b>' + name + '：</b>收支不平衡——每天消耗约 ' + b.consume_g_per_day + ' 克，但滴定补充仅 ' + (b.supply_g_per_day || 0) + ' 克，长期会持续下降，建议去「💧 滴定方案」调整滴定量');
+        balanceAlerts.push('⚠️ <b>' + name + '：</b>每天消耗约 ' + b.consume_g_per_day + ' 克，滴定只补了 ' + (b.supply_g_per_day || 0) + ' 克。照这个节奏走，数值还会往下掉；可以到「💧 滴定」看看当前剂量');
       } else if (b.status === 'over') {
         balanceAlerts.push('💹 <b>' + name + '：</b>补充略多于消耗（' + b.balance_pct + '%），若持续上升可适当减少滴定量');
       }
@@ -2896,7 +3062,7 @@ function renderLinkage(findings) {
   const el = document.getElementById('wqLinkage');
   if (!el) return;
   if (!findings || findings.length === 0) {
-    el.innerHTML = '<span style="color:var(--ink-faint)">当前规则未发现明显的跨元素异常；这不等于排除测试误差或规则尚未覆盖的问题。</span>';
+    el.innerHTML = '<span style="color:var(--ink-faint)">暂时没看到明显的跨元素异常。测试误差和没覆盖到的情况，还得结合缸里表现一起看。</span>';
     return;
   }
   const prioMap = { 85: '#c0392b', 80: '#c0392b', 75: '#e67e22', 70: '#e67e22', 30: '#2e8b57' };
@@ -2915,7 +3081,7 @@ function renderDosingEffect(result) {
   const el = document.getElementById('wqDosingEffect');
   if (!el) return;
   const keys = Object.keys(result);
-  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">暂无完整方案区间，先记录一次启用和停用</span>'; return; }
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">还没有完整的方案区间。记过一次启用和停用后，这里才能比较前后变化。</span>'; return; }
   el.innerHTML = keys.map(k => {
     const raw = result[k];
     const items = Array.isArray(raw) ? raw : [raw];
@@ -2970,7 +3136,7 @@ function renderBalance(result) {
   const el = document.getElementById('wqBalance');
   if (!el) return;
   const keys = Object.keys(result);
-  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">数据不足</span>'; return; }
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">记录还不够，暂时算不了</span>'; return; }
   el.innerHTML = keys.map(k => {
     const r = result[k];
     const statusMap = { stable: ['⚖️ 水质趋势稳定', '#2e8b57'], balanced: ['⚖️ 估算接近平衡', '#2e8b57'], over: ['⬆️ 估算补充偏多', '#c0560e'], under: ['⬇️ 估算补充不足', '#c0392b'], needs_mix: ['需填写真实配液', '#8a99a5'] };
@@ -2987,7 +3153,7 @@ function renderFrequency(result) {
   const el = document.getElementById('wqFrequency');
   if (!el) return;
   const keys = Object.keys(result);
-  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">暂无记录</span>'; return; }
+  if (keys.length === 0) { el.innerHTML = '<span style="color:var(--ink-faint)">还没有测试记录</span>'; return; }
   const statusMap = { good: ['✅', '#2e8b57'], fair: ['🟡', '#c0560e'], low: ['🔴', '#c0392b'], stale: ['📭', '#8a99a5'] };
   el.innerHTML = keys.map(k => {
     const r = result[k];
@@ -3081,7 +3247,7 @@ async function jumpToDosing(btn) {
   calcDosing();
   await calcAdjust(mixKey, true); // 第二参 true = 同步到每天滴定量
   const tVal = document.getElementById(mixKey + '_t').value || '';
-  toast('已带入 ' + element + ' 数据，目标=理想下限 ' + tVal + '，计划' + (days > 0 ? days : 7) + '天，结果已同步到「每天滴定量」', 'ok');
+  toast('已带入 ' + element + ' 最近记录，目标先放在参考下限 ' + tVal + '，按 ' + (days > 0 ? days : 7) + ' 天计算。每天滴定量已经更新', 'ok');
   setTimeout(() => {
     const dose = document.getElementById(mixKey + '_dose');
     if (dose) dose.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3139,7 +3305,7 @@ async function addWaterRecord() {
   const note = document.getElementById('wqNote').value.trim();
   const zeroAllowed = el === 'NO3' || el === 'PO4';
   if (!el || isNaN(v) || v < 0 || (v === 0 && !zeroAllowed)) {
-    toast(zeroAllowed ? '请输入有效的测试值（可以为0，但不能为负数）' : '该参数必须大于0；请复核测试值', 'err');
+    toast(zeroAllowed ? '测试值不能是负数；读到 0 可以照常记录' : '这个项目的测试值得大于 0，看看是不是输错了', 'err');
     return;
   }
   await api('/api/water/record', {
@@ -3165,8 +3331,8 @@ function renderSimple() {
   const wrap = document.getElementById('wqSimpleCards');
   const adviceBody = document.getElementById('wqSimpleAdviceBody');
   if (!waterAnalysis || Object.keys(waterAnalysis).length === 0) {
-    wrap.innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1"><div style="font-size:40px;text-align:center">🐠</div><div class="wq-name" style="text-align:center;margin-top:8px">开始记录你的第一组水质数据</div><div style="font-size:13px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.7">在上方选择元素并输入测试值；测试频率按开缸阶段、消耗速度和近期调整决定。<br>持续记录后，这里会生成趋势与维护建议。</div></div>';
-    adviceBody.textContent = '暂无数据，先添加记录吧。';
+    wrap.innerHTML = '<div class="wq-card empty-state" style="grid-column:1/-1"><div style="font-size:40px;text-align:center">🐠</div><div class="wq-name" style="text-align:center;margin-top:8px">从第一组水质开始</div><div style="font-size:13px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.7">在上方选好项目，记下这次读数。<br>多几次记录后，这口缸的趋势就会慢慢显出来。</div></div>';
+    adviceBody.textContent = '这里还空着。第一组数据记下来，就算正式开张了。';
     return;
   }
   let html = '';
@@ -3194,9 +3360,9 @@ function renderSimple() {
   wrap.innerHTML = html;
   // 建议按固定元素顺序展示（KH→钙→镁→NO3→PO4），强度用视觉标记体现
   function strengthOf(prio) {
-    if (prio >= 70) return { cls: 'high', label: '高', cn: '需要处理' };
-    if (prio >= 30) return { cls: 'mid', label: '中', cn: '建议关注' };
-    return { cls: 'low', label: '低', cn: '状态良好' };
+    if (prio >= 70) return { cls: 'high', label: '高', cn: '优先留意' };
+    if (prio >= 30) return { cls: 'mid', label: '中', cn: '值得留意' };
+    return { cls: 'low', label: '低', cn: '走势平稳' };
   }
   adviceBody.innerHTML = allAdvice.map(x => {
     const st = strengthOf(x.prio);
@@ -3209,11 +3375,11 @@ function renderSimple() {
         '</div>';
     }
     return '<div class="advice-item">' +
-      '<span class="advice-strength ' + st.cls + '" title="建议强度：' + st.cn + '">' + st.label + '</span>' +
+      '<span class="advice-strength ' + st.cls + '" title="关注程度：' + st.cn + '">' + st.label + '</span>' +
       '<span class="advice-text"><b>' + x.el + '：</b>' + x.summary + actionHtml + '</span>' +
       '<span class="advice-tag">' + st.cn + '</span>' +
       '</div>';
-  }).join('') || '<div style="padding:8px 0">所有元素状态良好 🎉</div>';
+  }).join('') || '<div style="padding:8px 0">现有记录都在参考范围内，走势也挺稳。</div>';
 }
 
 // 历史记录分页状态
@@ -3252,7 +3418,7 @@ function renderHistoryTable() {
     '<td style="text-align:center;white-space:nowrap">' +
       '<button class="icon-btn" title="编辑" onclick="editWaterRecord(' + r.id + ')">✏️</button>' +
       '<button onclick="delWaterRecord(' + r.id + ')" class="icon-btn" title="删除">🗑</button></td>' +
-    '</tr>').join('') || '<tr><td colspan="5" style="padding:10px;color:var(--ink-faint)">暂无记录</td></tr>';
+    '</tr>').join('') || '<tr><td colspan="5" style="padding:10px;color:var(--ink-faint)">这里还没有水质记录</td></tr>';
   // 分页信息
   document.getElementById('wqPageInfo').textContent = total === 0 ? '0 条记录' : (pages === 1 ? '共 ' + total + ' 条' : '第 ' + wqPage + ' / ' + pages + ' 页 · 共 ' + total + ' 条');
   document.getElementById('wqPagePrev').disabled = wqPage <= 1;
@@ -3322,7 +3488,7 @@ function renderWaterChart() {
       ci++;
     }
     if (series.length === 0) {
-      chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+      chart.setOption({ title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
       return;
     }
     chart.setOption({
@@ -3348,7 +3514,7 @@ function renderWaterChart() {
 
   const a = waterAnalysis && waterAnalysis[el];
   if (!a || !a.records || a.records.length === 0) {
-    chart.setOption({ title: { text: '暂无数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+    chart.setOption({ title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
     return;
   }
   // time轴: [时间戳, 数值]，真实反映测量间隔
@@ -3496,10 +3662,91 @@ const SALT_BRANDS = [
   ["美红", 38, "10.8", 500, 1260, 347, 8, "0", "0"],
 ];
 
+const DEFAULT_SALT_PER_LITER = 35;
+const SALT_BASE_SG = 1.025;
+const SALT_MIN_SG = 1.022;
+const SALT_MAX_SG = 1.028;
+const SALT_SG_STEP = 0.001;
+let saltTargetSg = SALT_BASE_SG;
+let saltWaterTouched = false;
+let saltWheelLastAdjustedAt = 0;
+
+function selectedSaltBrand() {
+  const sel = document.getElementById('saltBrand');
+  const idx = sel && sel.value !== '' ? parseInt(sel.value, 10) : -1;
+  return Number.isInteger(idx) && idx >= 0 ? SALT_BRANDS[idx] : null;
+}
+
+function saltPerLiterAtTarget(basePerLiter) {
+  // 表内克数以 1.025 为起点；细调仅做近似比例换算，最终仍以溶解后的实测读数为准。
+  return basePerLiter * ((saltTargetSg - 1) / (SALT_BASE_SG - 1));
+}
+
+function saltCalcContext() {
+  const brand = selectedSaltBrand();
+  const basePerLiter = brand ? Number(brand[1]) : DEFAULT_SALT_PER_LITER;
+  return {
+    brand: brand,
+    brandName: brand ? brand[0] : '',
+    displayName: brand ? brand[0] : '通用参考',
+    basePerLiter: basePerLiter,
+    perLiter: saltPerLiterAtTarget(basePerLiter),
+  };
+}
+
+function formatSaltPerLiter(value) {
+  return String(Number(Number(value).toFixed(1)));
+}
+
+function renderSaltTargetWheel() {
+  const prev = Math.max(SALT_MIN_SG, saltTargetSg - SALT_SG_STEP);
+  const next = Math.min(SALT_MAX_SG, saltTargetSg + SALT_SG_STEP);
+  document.getElementById('saltTargetLabel').textContent = saltTargetSg.toFixed(3);
+  const current = document.getElementById('saltWheelCurrent');
+  current.textContent = saltTargetSg.toFixed(3);
+  current.setAttribute('aria-valuenow', saltTargetSg.toFixed(3));
+  const prevButton = document.getElementById('saltWheelPrev');
+  const nextButton = document.getElementById('saltWheelNext');
+  prevButton.textContent = prev.toFixed(3);
+  nextButton.textContent = next.toFixed(3);
+  prevButton.disabled = saltTargetSg <= SALT_MIN_SG;
+  nextButton.disabled = saltTargetSg >= SALT_MAX_SG;
+  const deltaPercent = ((saltTargetSg - SALT_BASE_SG) / (SALT_BASE_SG - 1)) * 100;
+  document.getElementById('saltTargetEffect').textContent = Math.abs(deltaPercent) < 0.01
+    ? '按 1.025 的参考克数估算'
+    : '相对 1.025，参考克数约 ' + (deltaPercent > 0 ? '+' : '') + deltaPercent.toFixed(1) + '%';
+}
+
+function toggleSaltTargetPicker() {
+  const picker = document.getElementById('saltTargetPicker');
+  const trigger = document.getElementById('saltTargetTrigger');
+  const opening = picker.hidden;
+  picker.hidden = !opening;
+  trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
+  if (opening) document.getElementById('saltWheelCurrent').focus({ preventScroll: true });
+}
+
+function adjustSaltTarget(direction) {
+  const next = Math.round((saltTargetSg + Number(direction) * SALT_SG_STEP) * 1000) / 1000;
+  saltTargetSg = Math.min(SALT_MAX_SG, Math.max(SALT_MIN_SG, next));
+  renderSaltTargetWheel();
+  calcSalt();
+  buzz(6);
+}
+
+function setDefaultSaltWaterFromTank(force) {
+  const input = document.getElementById('saltWater');
+  const tankWater = tankProfile && Number(tankProfile.water_liters);
+  if (!input || !Number.isFinite(tankWater) || tankWater <= 0 || (saltWaterTouched && !force)) return;
+  input.value = String(Number((tankWater / 5).toFixed(1)));
+  saltWaterTouched = false;
+  calcSalt();
+}
+
 function renderSaltBrands() {
   // 品牌下拉
   const sel = document.getElementById('saltBrand');
-  sel.innerHTML = '<option value="">选择品牌</option>' + SALT_BRANDS.map((b, i) =>
+  sel.innerHTML = '<option value="">通用参考（35 克/升）</option>' + SALT_BRANDS.map((b, i) =>
     '<option value="' + i + '">' + b[0] + '（' + b[1] + '克/升）</option>').join('');
   sel.addEventListener('change', () => {
     saltReferenceManuallyOpen = false;
@@ -3570,40 +3817,35 @@ function toggleSaltReference() {
 
 function calcSalt() {
   const water = parseFloat(document.getElementById('saltWater').value) || 0;
-  const sel = document.getElementById('saltBrand');
-  const idx = sel.value !== '' ? parseInt(sel.value) : -1;
-  const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
+  const context = saltCalcContext();
   const perLiter = document.getElementById('saltPerLiter');
   const total = document.getElementById('saltTotal');
   const kg = document.getElementById('saltKg');
   const recordBtn = document.getElementById('saltRecordBtn');
   const recordMeta = document.getElementById('saltRecordMeta');
   const manualBrand = document.getElementById('wcBrand');
-  if (brand && manualBrand) manualBrand.value = brand[0];
-  if (!brand || water <= 0) {
-    perLiter.textContent = brand ? brand[1] : '—';
-    total.textContent = brand && water > 0 ? Math.round(water * brand[1]) : '—';
-    kg.textContent = brand && water > 0 ? '≈ ' + (water * brand[1] / 1000).toFixed(2) + ' kg' : '';
+  if (manualBrand) manualBrand.value = context.brandName;
+  perLiter.textContent = formatSaltPerLiter(context.perLiter);
+  if (water <= 0) {
+    total.textContent = '—';
+    kg.textContent = '';
     recordBtn.disabled = true;
-    recordMeta.textContent = !brand ? '先选海盐品牌' : '填写本次实际换水量';
+    recordMeta.textContent = '本次换水量还没填';
     return;
   }
-  perLiter.textContent = brand[1];
-  const grams = Math.round(water * brand[1]);
+  const grams = Math.round(water * context.perLiter);
   total.textContent = grams;
   kg.textContent = '≈ ' + (grams / 1000).toFixed(2) + ' kg';
   recordBtn.disabled = false;
-  recordMeta.textContent = brand[0] + ' · ' + water + ' L · ' + grams + ' 克';
+  recordMeta.textContent = context.displayName + ' · ' + water + ' L · ' + grams + ' 克';
 }
 
 async function recordCalculatedWaterChange() {
-  const sel = document.getElementById('saltBrand');
-  const idx = sel.value !== '' ? parseInt(sel.value) : -1;
-  const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
+  const context = saltCalcContext();
   const water = parseFloat(document.getElementById('saltWater').value);
-  const grams = brand && water > 0 ? Math.round(water * brand[1]) : 0;
-  if (!brand || !Number.isFinite(water) || water <= 0 || grams <= 0) {
-    toast('先选好海盐品牌并填写本次换水量', 'err');
+  const grams = Number.isFinite(water) && water > 0 ? Math.round(water * context.perLiter) : 0;
+  if (!Number.isFinite(water) || water <= 0 || grams <= 0) {
+    toast('本次换水量还没填好', 'err');
     return;
   }
   const button = document.getElementById('saltRecordBtn');
@@ -3612,16 +3854,22 @@ async function recordCalculatedWaterChange() {
   try {
     await api('/api/water-change', {
       method: 'POST',
-      body: { water_liters: water, salt_grams: grams, salt_brand: brand[0], note: '', recorded_at: todayLocal() }
+      body: {
+        water_liters: water,
+        salt_grams: grams,
+        salt_brand: context.brandName,
+        note: Math.abs(saltTargetSg - SALT_BASE_SG) > 0.0001 ? '目标比重 ' + saltTargetSg.toFixed(3) : '',
+        recorded_at: todayLocal()
+      }
     });
     document.getElementById('wcWater').value = water;
     document.getElementById('wcSaltGrams').value = grams;
-    document.getElementById('wcBrand').value = brand[0];
+    document.getElementById('wcBrand').value = context.brandName;
     document.getElementById('wcDate').value = todayLocal();
     await loadWaterChanges();
     await refreshWaterChangeCache();
     buzz(15);
-    toast('已记录 ' + brand[0] + ' · ' + water + 'L · ' + grams + '克 ✓', 'ok');
+    toast('已记录 ' + context.displayName + ' · ' + water + 'L · ' + grams + '克 ✓', 'ok');
     button.textContent = '✓ 已记录';
     setTimeout(() => { button.textContent = '✓ 已换水'; button.disabled = false; }, 1400);
   } catch (e) {
@@ -3629,8 +3877,24 @@ async function recordCalculatedWaterChange() {
     button.disabled = false;
   }
 }
-document.getElementById('saltWater').addEventListener('input', calcSalt);
+document.getElementById('saltWater').addEventListener('input', () => {
+  saltWaterTouched = true;
+  calcSalt();
+});
+document.getElementById('saltTargetWheel').addEventListener('wheel', event => {
+  event.preventDefault();
+  const now = Date.now();
+  if (now - saltWheelLastAdjustedAt < 120) return;
+  saltWheelLastAdjustedAt = now;
+  adjustSaltTarget(event.deltaY > 0 ? 1 : -1);
+}, { passive: false });
+document.getElementById('saltWheelCurrent').addEventListener('keydown', event => {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+  event.preventDefault();
+  adjustSaltTarget(event.key === 'ArrowUp' ? 1 : -1);
+});
 renderSaltBrands();
+renderSaltTargetWheel();
 calcSalt();
 updateSaltReferenceVisibility();
 
@@ -3647,7 +3911,8 @@ async function initWaterChange() {
   // 日期默认今天
   const wcDate = document.getElementById('wcDate');
   if (wcDate) wcDate.value = todayLocal();
-  // 换水量不按鱼缸体积自动套固定百分比，由用户填写本次实际换水量。
+  // 配盐计算默认使用实际水量的 20%；用户开始输入后不再自动覆盖。
+  setDefaultSaltWaterFromTank(false);
   loadWaterChanges();
 }
 
@@ -3682,7 +3947,7 @@ function renderWcTable() {
     '<td style="text-align:center;white-space:nowrap">' +
       '<button class="icon-btn" title="编辑" onclick="editWaterChange(' + c.id + ')">✏️</button>' +
       '<button class="icon-btn" title="删除" onclick="delWaterChange(' + c.id + ')">🗑</button></td>' +
-    '</tr>').join('') || '<tr><td colspan="6" style="padding:8px;color:var(--ink-faint)">暂无换水记录</td></tr>';
+    '</tr>').join('') || '<tr><td colspan="6" style="padding:8px;color:var(--ink-faint)">这里还没有换水记录</td></tr>';
   // 分页信息
   document.getElementById('wcPageInfo').textContent = total === 0 ? '0 条记录' : (pages === 1 ? '共 ' + total + ' 条' : '第 ' + wcPage + ' / ' + pages + ' 页 · 共 ' + total + ' 条');
   document.getElementById('wcPagePrev').disabled = wcPage <= 1;
@@ -3701,8 +3966,8 @@ async function addWaterChange() {
   const brand = document.getElementById('wcBrand').value;
   const date = document.getElementById('wcDate').value;
   const note = document.getElementById('wcNote').value.trim();
-  if (!water || water <= 0) { toast('请输入有效的换水量(升)', 'err'); return; }
-  if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数需要大于0，也可以留空', 'err'); return; }
+  if (!water || water <= 0) { toast('换水量得大于 0，看看是不是漏填了', 'err'); return; }
+  if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数可以留空；填写时要大于 0', 'err'); return; }
   const res = await api('/api/water-change', {
     method: 'POST',
     body: { water_liters: water, salt_grams: grams, salt_brand: brand, note: note, recorded_at: date }
@@ -3748,7 +4013,7 @@ function editWaterRecord(id) {
       const note = document.getElementById('me_note').value.trim();
       const zeroAllowed = el === 'NO3' || el === 'PO4';
       if (!el || isNaN(v) || v < 0 || (v === 0 && !zeroAllowed)) {
-        toast(zeroAllowed ? '请输入有效的测试值（可以为0，但不能为负数）' : '该参数必须大于0；请复核测试值', 'err');
+        toast(zeroAllowed ? '测试值不能是负数；读到 0 可以照常记录' : '这个项目的测试值得大于 0，看看是不是输错了', 'err');
         throw new Error('invalid');
       }
       await api('/api/water/record/' + id, { method: 'PUT', body: { element: el, value: v, note: note, recorded_at: date } });
@@ -3782,7 +4047,7 @@ function editDoseLog(id) {
       const dose = parseFloat(document.getElementById('me_value').value);
       const action = document.getElementById('me_action').value;
       const date = document.getElementById('me_date').value;
-      if (isNaN(dose) || dose <= 0) { toast('请输入有效的滴定量(大于0)', 'err'); throw new Error('invalid'); }
+      if (isNaN(dose) || dose <= 0) { toast('滴定量得大于 0，看看是不是漏填了', 'err'); throw new Error('invalid'); }
       const noteMap = { start: '启用方案', end: '停用方案', adjust: '调整剂量' };
       await api('/api/dosing/log/' + id, { method: 'PUT', body: { element: el, dose_ml: dose, note: noteMap[action], action: action, recorded_at: date } });
       await renderDoseLogList();
@@ -3817,8 +4082,8 @@ function editWaterChange(id) {
       const brand = document.getElementById('me_brand').value;
       const date = document.getElementById('me_date').value;
       const note = document.getElementById('me_note').value.trim();
-      if (isNaN(water) || water <= 0) { toast('请输入有效的换水量(升)', 'err'); throw new Error('invalid'); }
-      if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数需要大于0，也可以留空', 'err'); throw new Error('invalid'); }
+      if (isNaN(water) || water <= 0) { toast('换水量得大于 0，看看是不是漏填了', 'err'); throw new Error('invalid'); }
+      if (grams !== null && (!Number.isFinite(grams) || grams <= 0)) { toast('配盐克数可以留空；填写时要大于 0', 'err'); throw new Error('invalid'); }
       await api('/api/water-change/' + id, { method: 'PUT', body: { water_liters: water, salt_grams: grams, salt_brand: brand, note: note, recorded_at: date } });
       await loadWaterChanges();
       await refreshWaterChangeCache();

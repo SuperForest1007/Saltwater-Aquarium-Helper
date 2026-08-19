@@ -39,14 +39,14 @@ ADDITIVE_GROUPS = [
         "title": "核心元素",
         "badge": "优先关注",
         "collapsed": False,
-        "note": "礁岩缸常关注的三项；测试频率应按缸体阶段、消耗速度和近期调整决定，测试后也不等于必须补充。",
+        "note": "礁岩缸最常看的三项。测到一个数不等于马上要补，连续消耗更值得参考。",
         "elements": [
             {
                 "name": "KH 碱度",
                 "ideal": "7-11",
                 "unit": "dKH",
                 "detail": "参与海水缓冲体系并影响钙化；短期大幅变化通常比处于参考区间内的细小差异更值得警惕。",
-                "tip": "通用参考约 7-11dKH；具体目标需结合营养盐、珊瑚类型和长期稳定值，不必追求单一数字。",
+                "tip": "通用参考约 7–11dKH；营养盐和珊瑚类型不同，合适的长期目标也会变，不用追着某个数字跑。",
                 "direction": "up",
                 "conc_presets": ["0.1", "0.5", "1", "2", "3", "4", "5"],
                 "additives": [
@@ -58,7 +58,7 @@ ADDITIVE_GROUPS = [
                 "ideal": "400-450",
                 "unit": "ppm",
                 "detail": "珊瑚骨骼和藻类生长的核心元素，SPS硬骨消耗尤其快。",
-                "tip": "通用参考约 400-450ppm；请结合盐度、测试误差与碱度趋势判断，不建议仅凭一次读数追值。",
+                "tip": "通用参考约 400–450ppm；把盐度、测试误差和碱度趋势放在一起看，单次读数不用急着追。",
                 "direction": "up",
                 "conc_presets": ["5", "10", "20", "30", "40", "50", "75"],
                 "additives": [
@@ -72,7 +72,7 @@ ADDITIVE_GROUPS = [
                 "ideal": "1250-1400",
                 "unit": "ppm",
                 "detail": "参与维持钙、碱度与碳酸盐体系的稳定；镁偏低时碳酸钙更容易非生物沉淀。",
-                "tip": "通用参考约 1250-1400ppm（随盐度而变），先确认盐度和复测结果再调整。",
+                "tip": "通用参考约 1250–1400ppm，并会随盐度变化；盐度和镁一起复测，心里更有底。",
                 "direction": "up",
                 "conc_presets": ["30", "50", "75", "100", "150", "200"],
                 "additives": [
@@ -90,14 +90,14 @@ ADDITIVE_GROUPS = [
         "title": "进阶元素",
         "badge": "视情况补充",
         "collapsed": True,
-        "note": "取决于饲养方向（SPS/LPS）和生物密度，不必每周都测。",
+        "note": "要不要测、要不要补，跟饲养方向和生物密度有关，不用按固定周期开作业。",
         "elements": [
             {
                 "name": "锶 Sr",
                 "ideal": "8-9",
                 "unit": "ppm",
                 "detail": "可进入珊瑚骨骼，但其实际需求与独立补充收益并不能仅由钙消耗直接推定。",
-                "tip": "海水中常见约 8ppm；没有可靠检测或明确方案时，不建议为追数值单独补充。",
+                "tip": "海水中常见约 8ppm；手里没有可靠检测和明确方案时，这一项可以先不单独补。",
                 "direction": "up",
                 "conc_presets": ["1", "2", "3", "5", "8", "10", "20"],
                 "additives": [
@@ -123,16 +123,16 @@ ADDITIVE_GROUPS = [
     {
         "id": "trace",
         "title": "微量元素",
-        "badge": "换水即可",
+        "badge": "通常随换水",
         "collapsed": True,
-        "note": "多数情况下规律换水即可维持，单独补充需谨慎。",
+        "note": "多数缸能靠规律换水带入这些元素；真要单独补，检测和剂量都得更仔细。",
         "elements": [
             {
                 "name": "碘 I",
                 "ideal": "0.06",
                 "unit": "ppm",
                 "detail": "参与蜕壳类生物和珊瑚新陈代谢，剂量极小。",
-                "tip": "天然海水约 0.06ppm，补充请用低浓度溶液。",
+                "tip": "天然海水约 0.06ppm。需要补时用低浓度溶液，剂量会更好控制。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.03", "0.05", "0.1", "0.2"],
                 "additives": [
@@ -144,7 +144,7 @@ ADDITIVE_GROUPS = [
                 "ideal": "67",
                 "unit": "ppm",
                 "detail": "海水天然含量较高，一般不需要单独补充。",
-                "tip": "天然海水约 67ppm，换水即可维持。",
+                "tip": "天然海水约 67ppm；多数缸会随规律换水带入，通常不用单独追。",
                 "direction": "up",
                 "conc_presets": ["1", "5", "10", "20", "50"],
                 "additives": [
@@ -155,7 +155,7 @@ ADDITIVE_GROUPS = [
                 "name": "氟 F",
                 "ideal": "1.3",
                 "unit": "ppm",
-                "detail": "微量元素，正常换水即可满足需求。",
+                "detail": "微量元素，多数缸会随规律换水带入。",
                 "tip": "天然海水约 1.3ppm，极少需要单独补充。",
                 "direction": "up",
                 "conc_presets": ["0.1", "0.2", "0.5", "1", "2"],
@@ -178,8 +178,8 @@ ADDITIVE_GROUPS = [
                 "name": "硝酸盐 NO3（提升）",
                 "ideal": "2-10",
                 "unit": "ppm",
-                "detail": "NO3偏低或水体氮匮乏时使用：硝酸钙/硝酸钾补充氮源，让珊瑚恢复生长。",
-                "tip": "仅在确认 NO3 偏低且明确需要补氮时使用；少量分次添加并复测，NO3 偏高时不要使用。",
+                "detail": "确认 NO3 长期偏低、系统确有补氮需求时，可用硝酸钙或硝酸钾提供氮源。",
+                "tip": "这一项先确认趋势再动手。少量分次添加并复测；NO3 已经偏高时不使用。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2", "0.5", "1"],
                 "additives": [
@@ -191,8 +191,8 @@ ADDITIVE_GROUPS = [
                 "name": "磷酸盐 PO4",
                 "ideal": "0.03-0.05",
                 "unit": "ppm",
-                "detail": "藻类养分，过高容易爆藻，需要控制。",
-                "tip": "常见参考约 0.03-0.08ppm，但需结合系统类型与检测下限；长期不可检出可能增加营养限制风险，提升需谨慎。",
+                "detail": "是珊瑚和藻类都会利用的营养盐；过高或长期测不到，都值得结合整缸状态排查。",
+                "tip": "常见参考约 0.03–0.08ppm，也要看系统类型和检测下限。长期测不到可能出现营养限制，提升时每次只动一点。",
                 "direction": "up",
                 "conc_presets": ["0.01", "0.02", "0.05", "0.1", "0.2"],
                 "additives": [
@@ -250,21 +250,21 @@ def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
             v1 <= 0 or v2 <= 0):
         return {
             "status": "invalid",
-            "message": "参数无效：请检查实际水量、实测值、目标区间和添加物数据",
+            "message": "这次没算出来：实际水量、实测值、参考范围或添加物数据里有一项不对",
             "recommend_delta": 0,
             "grams": 0,
         }
     if current_value >= ideal_low and current_value <= ideal_high:
         return {
             "status": "ok",
-            "message": f"当前 {_fmt(current_value)}{unit} 在理想范围 {_fmt(ideal_low)}-{_fmt(ideal_high)}{unit} 内，无需添加",
+            "message": f"当前 {_fmt(current_value)}{unit} 落在本缸参考范围 {_fmt(ideal_low)}–{_fmt(ideal_high)}{unit}，这一轮不用补",
             "recommend_delta": 0,
             "grams": 0,
         }
     if current_value > ideal_high:
         return {
             "status": "high",
-            "message": f"当前 {_fmt(current_value)}{unit} 高于理想上限 {_fmt(ideal_high)}{unit}，建议先观察/少量换水，暂不添加",
+            "message": f"当前 {_fmt(current_value)}{unit} 高于本缸参考上限 {_fmt(ideal_high)}{unit}。这一项先停补，复测并回看最近的添加和换水记录",
             "recommend_delta": 0,
             "grams": 0,
         }
@@ -275,7 +275,7 @@ def calc_dose_auto(water_liters: float, current_value: float, ideal_low: float,
     grams = calc_additive(water_liters, delta, v1, v2)
     return {
         "status": "low",
-        "message": f"当前 {_fmt(current_value)}{unit} 低于理想下限 {_fmt(ideal_low)}{unit}，建议补充 {_fmt(delta)}{unit} 到 {_fmt(target)}{unit}",
+        "message": f"当前 {_fmt(current_value)}{unit} 低于本缸参考下限 {_fmt(ideal_low)}{unit}。确认读数后，可分次补 {_fmt(delta)}{unit}，先到 {_fmt(target)}{unit}",
         "recommend_delta": round(delta, 2),
         "grams": grams,
     }
