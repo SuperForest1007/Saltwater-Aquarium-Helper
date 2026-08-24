@@ -79,6 +79,59 @@ def _latest_by_element(records_by_element):
     return latest
 
 
+def _build_recent_events(records_by_element, water_changes, dosing_logs):
+    """把现有记录投影成今日页的轻量时间线，不另存一份事件数据。"""
+    recent = []
+    measurements = []
+    for element, records in records_by_element.items():
+        for recorded_at, value in records:
+            measured_at = _as_datetime(recorded_at)
+            if measured_at:
+                measurements.append((measured_at, element, float(value)))
+    if measurements:
+        newest_at = max(item[0] for item in measurements)
+        same_day = [item for item in measurements if item[0].date() == newest_at.date()]
+        latest_per_element = {}
+        for measured_at, element, value in same_day:
+            previous = latest_per_element.get(element)
+            if previous is None or measured_at >= previous[0]:
+                latest_per_element[element] = (measured_at, value)
+        labels = [ELEMENT_LABELS.get(element, element) for element in ELEMENT_ORDER if element in latest_per_element]
+        recent.append({
+            "kind": "water", "icon": "⌁", "title": "记录水质",
+            "detail": " / ".join(labels) if labels else "新读数已记下",
+            "recorded_at": newest_at.isoformat(),
+        })
+
+    valid_changes = [(item, _as_datetime(item.get("recorded_at"))) for item in water_changes]
+    valid_changes = [(item, recorded_at) for item, recorded_at in valid_changes if recorded_at]
+    if valid_changes:
+        change, changed_at = max(valid_changes, key=lambda item: item[1])
+        liters = float(change.get("water_liters") or 0)
+        liters_text = f"{liters:g} L" if liters else "已记录"
+        brand = str(change.get("salt_brand") or "").strip()
+        recent.append({
+            "kind": "water_change", "icon": "↻", "title": "完成换水",
+            "detail": liters_text + (f" · {brand}" if brand else ""),
+            "recorded_at": changed_at.isoformat(),
+        })
+
+    valid_logs = [(item, _as_datetime(item.get("recorded_at"))) for item in dosing_logs]
+    valid_logs = [(item, recorded_at) for item, recorded_at in valid_logs if recorded_at]
+    if valid_logs:
+        log, logged_at = max(valid_logs, key=lambda item: (item[1], int(item[0].get("id") or 0)))
+        action = {"start": "启用", "end": "停用", "adjust": "调整"}.get(log.get("action"), "更新")
+        dose = float(log.get("dose_ml") or 0)
+        recent.append({
+            "kind": "dosing", "icon": "∿", "title": f"{action} {log.get('element') or ''} 滴定".replace("  ", " ").strip(),
+            "detail": f"{dose:g} ml/天" if dose else "方案已更新",
+            "recorded_at": logged_at.isoformat(),
+        })
+
+    recent.sort(key=lambda item: _as_datetime(item["recorded_at"]) or datetime.min, reverse=True)
+    return recent[:3]
+
+
 def _latest_event(events, task_key, action=None):
     matches = [e for e in events if e.get("task_key") == task_key and (action is None or e.get("action") == action)]
     if not matches:
@@ -151,7 +204,7 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
             "status": {"code": "setup", "label": "鱼缸档案还差几项", "tone": "neutral",
                        "summary": "实际水量、主要类型和当前阶段填好后，这口缸的维护节奏就能排起来了。"},
             "coverage": {"count": 0, "total": len(ELEMENT_ORDER), "latest_date": None, "label": "尚未开始"},
-            "evidence": [], "actions": [], "rhythm": [], "insights": [],
+            "evidence": [], "actions": [], "rhythm": [], "insights": [], "recent_events": [],
             "basis_note": "现在的记录还不够，先不急着下结论。",
         }
 
@@ -245,5 +298,6 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
         "status": status,
         "coverage": {"count": fresh_count, "total": len(ELEMENT_ORDER), "latest_date": latest_date, "label": coverage_label},
         "evidence": evidence, "actions": actions, "rhythm": rhythm, "insights": insights,
+        "recent_events": _build_recent_events(records_by_element, water_changes, dosing_logs),
         "basis_note": f"参考范围按 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 生成，只看已经记下的数据。生物状态和设备运行，还是得一起观察。",
     }

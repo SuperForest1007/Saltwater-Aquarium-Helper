@@ -14,6 +14,22 @@
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="/static/echarts.min.js"></script>
+<script>
+(function () {
+  try {
+    var preference = localStorage.getItem('reefpal_theme') || 'system';
+    var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var resolved = preference === 'dark' || (preference === 'system' && systemDark) ? 'dark' : 'light';
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.dataset.themePreference = preference;
+    var themeMeta = document.getElementById('themeColorMeta');
+    if (themeMeta) themeMeta.setAttribute('content', resolved === 'dark' ? '#061820' : '#F4F8F7');
+  } catch (e) {
+    document.documentElement.dataset.theme = 'light';
+    document.documentElement.dataset.themePreference = 'system';
+  }
+})();
+</script>
 <style>
   :root {
     /* ── 阳光潮池：先建立语义层，旧组件逐步映射到这里 ── */
@@ -36,6 +52,27 @@
     --focus-ring: rgba(11,113,128,.2);
     --chart-grid: rgba(18,59,71,.11);
     --chart-reference: rgba(43,138,104,.1);
+    --bg-gradient-mid: #edf5f2;
+    --bg-gradient-end: #e8f1ef;
+    --surface-input: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-soft: #f6fafb;
+    --surface-hover: #eef6f8;
+    --surface-glass: rgba(252,254,253,.76);
+    --surface-glass-strong: rgba(252,254,253,.96);
+    --surface-note: #fff8ec;
+    --surface-risk: #fdf2f2;
+    --text-on-brand: #ffffff;
+    --text-on-risk: #ffffff;
+    --overlay: rgba(10,30,45,.5);
+    --chart-axis: #5c7a8c;
+    --chart-axis-line: #b7cbd5;
+    --chart-tooltip: #ffffff;
+    --chart-blue: #0a6ea8;
+    --chart-orange: #c0560e;
+    --chart-green: #2e8b57;
+    --chart-violet: #7b1fa2;
+    --chart-red: #c0392b;
 
     /* ── 兼容现有组件命名；完成拆分前保持单一颜色来源 ── */
     --ocean: var(--brand-primary);
@@ -78,6 +115,59 @@
     --space-4: 16px;
     --space-5: 20px;
   }
+  html[data-theme="light"] { color-scheme: light; }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-canvas: #061820;
+    --bg-elevated: #0b2731;
+    --surface-primary: #103642;
+    --surface-secondary: #0b2731;
+    --surface-muted: #12303a;
+    --text-primary: #e7f2f2;
+    --text-secondary: #b7cbce;
+    --text-tertiary: #91aeb3;
+    --brand-primary: #4fd2c5;
+    --brand-secondary: #8be5dc;
+    --signal-ok: #4fd2c5;
+    --signal-watch: #f1b75b;
+    --signal-risk: #ff7b6b;
+    --signal-info: #63afff;
+    --border-subtle: rgba(150,196,200,.15);
+    --border-strong-token: rgba(108,210,202,.34);
+    --focus-ring: rgba(79,210,197,.26);
+    --chart-grid: rgba(196,224,226,.1);
+    --chart-reference: rgba(79,210,197,.1);
+    --bg-gradient-mid: #081f28;
+    --bg-gradient-end: #041319;
+    --surface-input: #071f28;
+    --surface-raised: #123d49;
+    --surface-soft: #0d2d37;
+    --surface-hover: #123c47;
+    --surface-glass: rgba(11,39,49,.9);
+    --surface-glass-strong: rgba(8,30,38,.97);
+    --surface-note: rgba(241,183,91,.1);
+    --surface-risk: rgba(255,123,107,.1);
+    --text-on-brand: #032126;
+    --text-on-risk: #2b0b08;
+    --overlay: rgba(1,10,14,.74);
+    --chart-axis: #91aeb3;
+    --chart-axis-line: rgba(145,174,179,.35);
+    --chart-tooltip: #103642;
+    --chart-blue: #63afff;
+    --chart-orange: #f1b75b;
+    --chart-green: #4fd2c5;
+    --chart-violet: #c49cff;
+    --chart-red: #ff7b6b;
+    --ocean-soft: rgba(79,210,197,.12);
+    --accent: #ff8b79;
+    --bg-b: #081f28;
+    --border-light: rgba(196,224,226,.09);
+    --ok-bg: rgba(79,210,197,.13);
+    --warn-bg: rgba(241,183,91,.13);
+    --danger-bg: rgba(255,123,107,.13);
+    --shadow: 0 7px 24px rgba(0,8,12,.16);
+    --shadow-lg: 0 18px 48px rgba(0,6,10,.34);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
   /* ── 跟手反馈：按压缩放 + 卡片悬停 ── */
@@ -107,13 +197,27 @@
     background:
       radial-gradient(ellipse 48% 22% at 8% 2%, rgba(91,190,181,.12), transparent 72%),
       radial-gradient(ellipse 42% 24% at 94% 28%, rgba(242,198,109,.09), transparent 74%),
-      linear-gradient(180deg, var(--bg-canvas) 0%, #edf5f2 54%, #e8f1ef 100%);
+      linear-gradient(180deg, var(--bg-canvas) 0%, var(--bg-gradient-mid) 54%, var(--bg-gradient-end) 100%);
     background-attachment: fixed;
     color: var(--ink); min-height: 100vh; padding-bottom: 40px;
   }
   body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .42;
     background-image: repeating-linear-gradient(112deg, transparent 0 42px, rgba(11,113,128,.025) 43px 44px, transparent 45px 82px);
     mask-image: linear-gradient(to bottom, #000, transparent 72%); }
+  html[data-theme="dark"] body {
+    background:
+      radial-gradient(ellipse 42% 20% at 14% 1%, rgba(79,210,197,.09), transparent 72%),
+      radial-gradient(ellipse 34% 22% at 92% 31%, rgba(99,175,255,.055), transparent 76%),
+      linear-gradient(180deg,var(--bg-canvas) 0%,var(--bg-gradient-mid) 48%,var(--bg-gradient-end) 100%);
+  }
+  html[data-theme="dark"] body::before { opacity: .58;
+    background-image:
+      radial-gradient(circle at 14% 13%, rgba(79,210,197,.22) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 81% 21%, rgba(99,175,255,.16) 0 1px, transparent 1.7px),
+      radial-gradient(circle at 68% 73%, rgba(79,210,197,.12) 0 1px, transparent 1.6px),
+      repeating-linear-gradient(112deg,transparent 0 54px,rgba(79,210,197,.018) 55px 56px,transparent 57px 106px);
+    background-size: 310px 260px, 370px 330px, 430px 390px, auto;
+  }
   ::selection { background: var(--ring); }
 
   /* 旧版漂浮水滴与大波浪已退出主视觉，背景改由低对比焦散承担。 */
@@ -122,7 +226,7 @@
   /* ─── 紧凑应用栏：品牌和低频工具共用一行 ─── */
   .app-header { position: relative; z-index: 3; max-width: 780px; min-height: 62px; margin: 14px auto 12px;
     padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    border: 1px solid rgba(11,113,128,.1); border-radius: 18px; background: rgba(252,254,253,.76);
+    border: 1px solid rgba(11,113,128,.1); border-radius: 18px; background: var(--surface-glass);
     box-shadow: 0 8px 26px rgba(18,59,71,.05); backdrop-filter: blur(16px); }
   .brand { min-width: 0; text-align: left; margin: 0; position: relative; z-index: 2; }
   .brand .logo { display: flex; align-items: center; gap: 10px; color: var(--ocean-deep); letter-spacing: .3px; }
@@ -149,7 +253,7 @@
   .est-row label { width: 110px; color: var(--ink-soft); font-weight: 600; }
   .est-row input[type=number] { width: 72px; padding: 7px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); text-align: center; font-size: 14px; }
   .est-row input[type=number]:focus { outline: none; border-color: var(--ocean); }
-  .est-row select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 13px; background: #fff; }
+  .est-row select { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 13px; background: var(--surface-input); color: var(--ink); }
   .est-dim-inputs { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .est-dim-inputs input[type=number] { min-width: 0; }
   .est-result { background: var(--ocean-soft); border-radius: var(--radius-sm); padding: 14px 16px; margin: 12px 0;
@@ -157,9 +261,9 @@
   .est-result .big { font-size: 20px; font-weight: 800; color: var(--ocean-deep); }
   .est-actions { display: flex; gap: 10px; margin-bottom: 8px; }
   .est-actions button { padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; border: none; transition: all .15s; }
-  .est-actions button:first-child { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.3); }
+  .est-actions button:first-child { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.3); }
   .est-actions button:first-child:hover { background: var(--ocean-deep); }
-  .est-actions button:last-child { background: #f0f4f5; color: var(--ink-soft); }
+  .est-actions button:last-child { background: var(--surface-soft); color: var(--ink-soft); }
   .est-note { font-size: 11px; color: var(--ink-faint); line-height: 1.6; }
 
   /* ─── Tabs（分段控制） ─── */
@@ -170,7 +274,7 @@
     border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s;
   }
   .tab-btn .tb-ico { display: none; } /* 桌面端隐藏独立图标，保持原横排 */
-  .tab-btn.active { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.35); font-weight: 700; }
+  .tab-btn.active { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.35); font-weight: 700; }
   .panel { display: none; }
   .panel.active { display: block; } /* 无默认动画，避免切换后重播闪烁 */
   .panel.slide-in-right { animation: slideRight .32s cubic-bezier(.25,.8,.35,1) both; }
@@ -217,7 +321,7 @@
   .calc-row .field .flabel { font-size: 10.5px; color: var(--ink-faint); font-weight: 600; letter-spacing: .3px; }
   .calc-row input[type=number], .calc-row select {
     padding: 9px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); text-align: center;
-    font-size: 15px; font-weight: 600; color: var(--ink); background: #fff; transition: border .2s, box-shadow .2s;
+    font-size: 15px; font-weight: 600; color: var(--ink); background: var(--surface-input); transition: border .2s, box-shadow .2s;
   }
   .calc-row input[type=number]:focus, .calc-row select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
   .calc-row .water-in { width: 88px; }
@@ -232,7 +336,7 @@
 
   /* ─── 自动推荐条 ─── */
   .auto-strip { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px;
-    background: #f6fafb; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; }
+    background: var(--surface-soft); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; }
   .auto-strip > span { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
   .auto-strip input[type=number] { width: 84px; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-xs);
     text-align: center; font-size: 15px; font-weight: 600; }
@@ -259,13 +363,13 @@
   .dose-card .dc-tank .unit { font-size: 12px; color: var(--ink-faint); }
   .module-role { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 11px 14px;
     border: 1px solid var(--border-strong); border-radius: 14px; background: linear-gradient(135deg,var(--surface-primary),var(--surface-secondary)); }
-  .module-role strong { flex: 0 0 auto; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--ocean-deep); color: #fff; font-size: 11px; }
+  .module-role strong { flex: 0 0 auto; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--ocean-deep); color: var(--text-on-brand); font-size: 11px; }
   .module-role span { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
   #panel-salt.active { display: flex; flex-direction: column; }
   #panel-salt .salt-calculator-card { order: 1; }
   #panel-salt .water-change-history-card { order: 2; }
   #panel-salt .salt-reference-card { order: 3; }
-  .manual-record-details { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #f8fbfc; }
+  .manual-record-details { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); }
   .manual-record-details summary { cursor: pointer; padding: 10px 13px; color: var(--ocean-deep); font-size: 12px; font-weight: 700; }
   .manual-record-details .record-form { padding: 2px 13px 13px; }
   .evidence-details { margin-top: 10px; border-top: 1px solid var(--border-light); padding-top: 8px; }
@@ -280,17 +384,17 @@
   .dose-row .d-field { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .dose-row .d-field .fl { font-size: 10px; color: var(--ink-faint); font-weight: 600; }
   .dose-row input[type=number] { width: 86px; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); text-align: center;
-    font-size: 14px; font-weight: 600; background: #fff; }
+    font-size: 14px; font-weight: 600; color: var(--ink); background: var(--surface-input); }
   .dose-row input[type=number]:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
   .dose-row .d-read { min-width: 86px; padding: 8px 10px; border-radius: var(--radius-xs); text-align: center; font-size: 14px; font-weight: 700;
-    background: #f3f8fb; border: 1.5px solid var(--border); color: var(--ink-soft); }
+    background: var(--surface-soft); border: 1.5px solid var(--border); color: var(--ink-soft); }
   .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-color: var(--border-strong); color: var(--ocean-deep); font-size: 16px; }
   .dose-row .arrow { color: var(--ink-faint); font-size: 12px; padding-bottom: 14px; }
 
   /* 通用表单控件 */
-  .ctl { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--ink); background: #fff; }
+  .ctl { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; color: var(--ink); background: var(--surface-input); }
   .ctl:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
-  .ctl-btn { padding: 10px 22px; background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-deep) 100%); color: #fff;
+  .ctl-btn { padding: 10px 22px; background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-deep) 100%); color: var(--text-on-brand);
     border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; position: relative; overflow: hidden;
     transition: transform .15s ease, box-shadow .2s ease; box-shadow: 0 3px 10px rgba(10,61,92,.2); }
   /* 按钮光效：hover 光晕扩散 + 上浮 */
@@ -299,22 +403,22 @@
   .ctl-btn:hover::after { opacity: 1; }
   .ctl-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(10,61,92,.3); }
   .seg-btn { padding: 7px 18px; border: none; background: transparent; color: var(--ink-soft); border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
-  .seg-btn.active { background: #fff; color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
-  .pager-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: #fff; color: var(--ocean-deep); border-radius: var(--radius-xs); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .seg-btn.active { background: var(--surface-raised); color: var(--ocean-deep); box-shadow: 0 3px 10px rgba(30,58,77,.1); }
+  .pager-btn { padding: 7px 14px; border: 1.5px solid var(--border-strong); background: var(--surface-input); color: var(--ocean-deep); border-radius: var(--radius-xs); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
   .pager-btn:hover { background: var(--ocean-soft); border-color: var(--ocean); }
   .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
-  .dose-toggle { padding: 7px 14px; border: 1.5px solid var(--ok); background: #fff; color: var(--ok); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
-  .dose-toggle:hover { background: var(--ok); color: #fff; }
-  .dose-toggle.running { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .dose-toggle { padding: 7px 14px; border: 1.5px solid var(--ok); background: var(--surface-input); color: var(--ok); border-radius: var(--radius-pill); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .dose-toggle:hover { background: var(--ok); color: var(--text-on-brand); }
+  .dose-toggle.running { background: var(--danger); border-color: var(--danger); color: var(--text-on-risk); }
   .dose-toggle.running:hover { background: #a93226; }
 
   /* 滴定记录二级菜单 */
   .dose-log-menu { margin-top: 16px; }
-  .dose-log-menu .dlm-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f6fafb;
+  .dose-log-menu .dlm-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface-soft);
     border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; user-select: none; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
-  .dose-log-menu .dlm-head:hover { background: #eef6f8; }
+  .dose-log-menu .dlm-head:hover { background: var(--surface-hover); }
   .dose-log-menu .dlm-head .dlm-arrow { margin-left: auto; color: var(--ink-faint); transition: transform .2s; }
-  .dose-log-menu .dlm-body { display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: #fff; }
+  .dose-log-menu .dlm-body { display: none; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: var(--surface-input); }
   .dose-log-menu .dlm-body.open { display: block; }
   .dlm-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
   .dlm-form .ctl { padding: 7px 10px; font-size: 13px; }
@@ -324,19 +428,19 @@
   .dlm-list td { padding: 6px; border-bottom: 1px solid var(--border-light); font-size: 12px; }
   .ctl-btn:hover { background: var(--ocean-deep); }
   .data-table { width: 100%; border-collapse: collapse; }
-  .data-table th { padding: 8px; background: var(--ocean); color: #fff; font-weight: 600; font-size: 12.5px; }
+  .data-table th { padding: 8px; background: var(--ocean); color: var(--text-on-brand); font-weight: 600; font-size: 12.5px; }
   .data-table td { padding: 7px; border: 1px solid var(--border); font-size: 13px; }
-  .data-table tr:hover td { background: #f5fafd; }
+  .data-table tr:hover td { background: var(--surface-hover); }
 
   /* 配比参考 */
-  .mix-ref { margin-top: 14px; background: #f4fafd; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 12px 14px; }
+  .mix-ref { margin-top: 14px; background: var(--surface-soft); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 12px 14px; }
   .mix-ref .mr-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
   .mix-ref .mr-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; flex-wrap: wrap; font-size: 12px; }
   .mix-ref .mr-row .mr-elem { width: 60px; color: var(--ink-soft); font-weight: 600; }
-  .mix-ref .mr-btn { padding: 6px 13px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: #fff; color: var(--ocean);
+  .mix-ref .mr-btn { padding: 6px 13px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: var(--surface-input); color: var(--ocean);
     font-size: 11.5px; cursor: pointer; transition: all .15s; }
-  .mix-ref .mr-btn:hover { background: var(--ocean); color: #fff; }
-  .mix-ref .mr-btn.active { background: var(--ocean); color: #fff; }
+  .mix-ref .mr-btn:hover { background: var(--ocean); color: var(--text-on-brand); }
+  .mix-ref .mr-btn.active { background: var(--ocean); color: var(--text-on-brand); }
   .mix-ref .mr-tip { font-size: 11px; color: var(--ink-faint); margin-top: 8px; line-height: 1.6; }
   .mix-ref .mr-tip b { color: var(--ocean); }
 
@@ -391,7 +495,8 @@
   .salt-target-picker { width: min(260px,100%); margin: -2px 0 13px; padding: 10px 12px;
     border: 1px solid var(--border); border-radius: 14px; background: var(--surface-secondary); box-shadow: 0 8px 22px rgba(18,59,71,.08); }
   .salt-wheel { display: grid; grid-template-rows: 27px 38px 27px; position: relative; overflow: hidden;
-    border-radius: 12px; background: var(--surface-primary); }
+    border-radius: 12px; background: var(--surface-primary); touch-action: none; user-select: none; cursor: ns-resize; }
+  .salt-wheel.dragging { cursor: grabbing; }
   .salt-wheel::before, .salt-wheel::after { content: ''; position: absolute; z-index: 2; left: 10px; right: 10px; height: 1px; background: var(--border-strong); pointer-events: none; }
   .salt-wheel::before { top: 27px; }
   .salt-wheel::after { bottom: 27px; }
@@ -406,11 +511,13 @@
   .salt-ref-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
   .salt-ref-head-copy { min-width: 0; }
   .salt-ref-toggle { flex: 0 0 auto; border: 1px solid var(--border-strong); border-radius: 999px; padding: 7px 11px;
-    background: #fff; color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
-  .salt-reference-card.collapsed { padding-top: 14px; padding-bottom: 14px; background: rgba(255,255,255,.72); }
+    background: var(--surface-input); color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
+  .salt-reference-card.collapsed { padding-top: 14px; padding-bottom: 14px; background: var(--surface-glass); }
   .salt-reference-card.collapsed .dc-title { margin-bottom: 2px; font-size: 13px; }
   .salt-reference-card.collapsed .dc-sub { margin-bottom: 0; }
   .salt-reference-body[hidden] { display: none; }
+  .salt-reference-table { width: 100%; max-width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .salt-reference-table th { padding: 7px; border: 1px solid var(--ocean-deep); background: var(--ocean); color: var(--text-on-brand); }
 
   .note { max-width: 780px; margin: 14px auto 0; font-size: 11px; color: var(--ink-faint); line-height: 1.8; text-align: center; padding: 0 20px; }
   .chart-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -426,7 +533,7 @@
   /* ─── 移动端适配 ─── */
   @media (max-width: 560px) {
     .app-header { min-height: 56px; margin: 0 0 8px; padding: calc(7px + env(safe-area-inset-top)) 12px 7px;
-      border-width: 0 0 1px; border-radius: 0; background: rgba(244,248,247,.91); box-shadow: 0 5px 18px rgba(18,59,71,.04); }
+      border-width: 0 0 1px; border-radius: 0; background: var(--surface-glass-strong); box-shadow: 0 5px 18px rgba(18,59,71,.04); }
     .brand .logo .mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
     .brand .logo .mark svg { width: 23px; height: 23px; }
     .brand .logo .brand-name { font-size: 20px; }
@@ -441,7 +548,7 @@
     /* 手机 App 化：tab 固定底部导航 */
     .tabs { position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; margin: 0;
       border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-      background: rgba(252,254,253,.96); backdrop-filter: blur(14px);
+      background: var(--surface-glass-strong); backdrop-filter: blur(14px);
       border-top: 1px solid var(--border-light); z-index: 100; gap: 2px;
       box-shadow: 0 -5px 18px rgba(18,59,71,.07); }
     .tab-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -595,7 +702,7 @@
   /* ─── 服务连接状态：像设备面板上的状态灯，常态不打扰 ─── */
   #connectionState { position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
     z-index: 8800; display: flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.75);
-    border-radius: 999px; background: rgba(255,255,255,.94); color: var(--ink-soft); box-shadow: var(--shadow);
+    border-radius: 999px; background: var(--surface-glass-strong); color: var(--ink-soft); box-shadow: var(--shadow);
     font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transform: translateY(8px);
     pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
   #connectionState.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
@@ -616,7 +723,7 @@
   .modal-mask { position: fixed; inset: 0; background: rgba(10,30,45,.45); backdrop-filter: blur(3px);
     display: none; align-items: center; justify-content: center; z-index: 9000; padding: 16px; }
   .modal-mask.open { display: flex; }
-  .modal-box { background: #fff; border-radius: var(--radius); max-width: 430px; width: 100%; padding: 20px 22px;
+  .modal-box { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); max-width: 430px; width: 100%; padding: 20px 22px;
     box-shadow: var(--shadow-lg); animation: fadeUp .22s ease; max-height: calc(100vh - 60px); overflow-y: auto;
     -webkit-overflow-scrolling: touch; }
   .modal-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
@@ -625,17 +732,17 @@
   .modal-field label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
   .modal-field input, .modal-field select {
     padding: 9px 11px; border: 1.5px solid var(--border); border-radius: var(--radius-xs); font-size: 14px;
-    color: var(--ink); background: #fff; transition: border .2s; width: 100%; }
+    color: var(--ink); background: var(--surface-input); transition: border .2s; width: 100%; }
   .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--ocean); }
   .modal-row { display: flex; gap: 10px; }
   .modal-row .modal-field { flex: 1; }
   .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
   .modal-actions button { flex: 1; padding: 10px 0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
-  .modal-actions .m-save { background: var(--ocean); color: #fff; box-shadow: 0 4px 12px rgba(10,110,168,.3); }
+  .modal-actions .m-save { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.3); }
   .modal-actions .m-save:hover { background: var(--ocean-deep); }
-  .modal-actions .m-cancel { background: #f0f4f5; color: var(--ink-soft); }
-  .modal-actions .m-cancel:hover { background: #e3e9ec; }
+  .modal-actions .m-cancel { background: var(--surface-soft); color: var(--ink-soft); }
+  .modal-actions .m-cancel:hover { background: var(--surface-hover); }
   .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; font-size: 14px; border-radius: var(--radius-xs);
     transition: background .15s; }
   .icon-btn:hover { background: var(--ocean-soft); }
@@ -643,22 +750,39 @@
   /* ─── 应用栏工具：低频入口保持可达，不再另占一行 ─── */
   .toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 7px; margin: 0; flex: 0 0 auto; }
   .mini-btn { min-height: 38px; padding: 7px 11px; display: inline-flex; align-items: center; gap: 6px;
-    border: 1px solid var(--border); background: rgba(252,254,253,.86); color: var(--ocean-deep);
+    border: 1px solid var(--border); background: var(--surface-glass); color: var(--ocean-deep);
     border-radius: 11px; cursor: pointer; font-size: 11px; font-weight: 700; transition: all .18s; }
   .mini-btn svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8;
     stroke-linecap: round; stroke-linejoin: round; }
   .mini-btn:hover { background: var(--ocean-soft); color: var(--ocean-deep); border-color: var(--border-strong); transform: translateY(-1px); }
+  .theme-control { position: relative; }
+  .theme-menu[hidden] { display: none; }
+  .theme-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 120;
+    width: 224px; padding: 7px; border: 1px solid var(--border-strong); border-radius: 14px;
+    background: var(--bg-elevated); box-shadow: var(--shadow-lg); }
+  .theme-menu::before { content: ''; position: absolute; top: -5px; right: 16px; width: 9px; height: 9px;
+    border: solid var(--border-strong); border-width: 1px 0 0 1px; background: var(--bg-elevated); transform: rotate(45deg); }
+  .theme-choice { width: 100%; padding: 9px 10px; display: grid; grid-template-columns: 25px minmax(0,1fr) auto;
+    align-items: center; gap: 8px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+  .theme-choice:hover { background: var(--surface-secondary); }
+  .theme-choice[aria-checked="true"] { background: var(--ocean-soft); }
+  .theme-choice-icon { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface-input); color: var(--ocean); }
+  .theme-choice strong { display: block; font-size: 11.5px; }
+  .theme-choice small { display: block; margin-top: 1px; color: var(--ink-faint); font-size: 9px; }
+  .theme-choice-check { color: var(--ocean); font-size: 13px; opacity: 0; }
+  .theme-choice[aria-checked="true"] .theme-choice-check { opacity: 1; }
 
   /* ─── 我的鱼缸：一条持续存在的缸体上下文 ─── */
   .tank-identity { position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px;
     max-width: 780px; min-height: 50px; margin: 0 auto 12px; padding: 8px 12px; border-radius: 15px;
-    border: 1px solid rgba(11,113,128,.14); background: rgba(252,254,253,.86);
+    border: 1px solid rgba(11,113,128,.14); background: var(--surface-glass);
     box-shadow: 0 4px 16px rgba(18,59,71,.04); cursor: pointer; text-align: left; }
   .tank-identity::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
     background: linear-gradient(90deg,var(--ocean-deep),var(--ocean),#53bcb1,var(--accent)); opacity: .78; }
   .tank-identity:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
   .tank-avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px;
-    display: grid; place-items: center; color: #fff; font-size: 16px;
+    display: grid; place-items: center; color: var(--text-on-brand); font-size: 16px;
     background: linear-gradient(150deg,var(--ocean),var(--ocean-deep)); box-shadow: 0 4px 10px rgba(18,81,96,.18); }
   .tank-identity-main { min-width: 0; flex: 1; }
   .tank-identity-name { font-size: 13px; font-weight: 800; color: var(--ocean-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -674,17 +798,17 @@
     border-radius: 5px; background: linear-gradient(180deg,var(--ocean),#52b8c2,#0a8f6e); }
   .tank-step { position: relative; margin-bottom: 16px; }
   .tank-step::before { content: ''; position: absolute; left: -20px; top: 5px; width: 7px; height: 7px;
-    border: 3px solid #fff; border-radius: 50%; background: var(--ocean); box-shadow: 0 0 0 1px var(--border-strong); }
+    border: 3px solid var(--surface-primary); border-radius: 50%; background: var(--ocean); box-shadow: 0 0 0 1px var(--border-strong); }
   .tank-step-label { display: flex; gap: 8px; align-items: baseline; margin-bottom: 7px; font-size: 13px; font-weight: 800; color: var(--ink); }
   .tank-step-label small { color: var(--ink-faint); font-size: 10px; font-weight: 500; }
   .tank-step input, .tank-step select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border);
-    border-radius: 12px; color: var(--ink); background: #fff; font-size: 14px; }
+    border-radius: 12px; color: var(--ink); background: var(--surface-input); font-size: 14px; }
   .tank-step input:focus, .tank-step select:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
   .tank-type-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .tank-type-grid label { position: relative; }
   .tank-type-grid input { position: absolute; opacity: 0; pointer-events: none; }
   .tank-type-grid span { display: flex; flex-direction: column; justify-content: center; min-height: 58px; padding: 8px 10px;
-    border: 1.5px solid var(--border); border-radius: 11px; text-align: left; color: var(--ink-soft); cursor: pointer; background: #fff; }
+    border: 1.5px solid var(--border); border-radius: 11px; text-align: left; color: var(--ink-soft); cursor: pointer; background: var(--surface-input); }
   .tank-type-grid strong { font-size: 12px; color: var(--ink); }
   .tank-type-grid small { margin-top: 3px; font-size: 10px; line-height: 1.35; color: var(--ink-faint); }
   .tank-type-grid input:checked + span { color: var(--ocean-deep); border-color: var(--ocean); background: var(--ocean-soft); box-shadow: inset 0 0 0 1px var(--ocean); }
@@ -701,10 +825,10 @@
     font-size: 10px; line-height: 1.35; }
   .tank-target-title { margin-top: 8px; font-size: 10px; font-weight: 700; color: var(--ink-faint); }
   .tank-targets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-  .tank-target { padding: 4px 7px; border-radius: 8px; background: #fff; border: 1px solid var(--border-light);
+  .tank-target { padding: 4px 7px; border-radius: 8px; background: var(--surface-input); border: 1px solid var(--border-light);
     color: var(--ink-soft); font-size: 10px; white-space: nowrap; }
   .tank-target b { color: var(--ocean-deep); }
-  .tank-estimator { margin: 10px 0 0; padding: 14px; border-radius: 14px; box-shadow: none; background: #f8fbfc; }
+  .tank-estimator { margin: 10px 0 0; padding: 14px; border-radius: 14px; box-shadow: none; background: var(--surface-soft); }
   .tank-estimator .est-title { margin-bottom: 10px; font-size: 13px; }
   .tank-estimator .est-row { margin-bottom: 9px; }
   .tank-estimator .est-row label { width: 92px; }
@@ -716,12 +840,12 @@
   .estimator-modal-box .est-result { margin-top: 14px; }
   .square-presets { display: flex; gap: 5px; flex-wrap: wrap; }
   .square-presets button { min-width: 38px; padding: 6px 7px; border: 1px solid var(--border-strong); border-radius: 9px;
-    background: #fff; color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
+    background: var(--surface-input); color: var(--ocean-deep); font-size: 11px; font-weight: 700; cursor: pointer; }
   .square-presets button:hover { background: var(--ocean-soft); border-color: var(--ocean); }
   .tank-optional { margin: 2px 0 14px 18px; }
   .tank-optional summary { cursor: pointer; font-size: 11px; color: var(--ink-faint); }
   .tank-optional-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  .tank-setup-note { margin-top: 4px; padding: 10px 12px; border-radius: 12px; background: #fff8ec;
+  .tank-setup-note { margin-top: 4px; padding: 10px 12px; border-radius: 12px; background: var(--surface-note);
     color: #795a2e; font-size: 11px; line-height: 1.6; }
 
   @media (max-width: 560px) {
@@ -758,7 +882,7 @@
   .today-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 1.4px; color: var(--ocean); }
   .today-date { margin-top: 3px; color: var(--ink-faint); font-size: 10px; }
   .today-status { flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--border-strong); border-radius: 999px;
-    background: rgba(255,255,255,.78); color: var(--ocean-deep); font-size: 11px; font-weight: 800; }
+    background: var(--surface-glass); color: var(--ocean-deep); font-size: 11px; font-weight: 800; }
   .tone-ok .today-status { color: #176b4a; border-color: rgba(46,139,87,.28); background: rgba(215,240,224,.7); }
   .tone-warn .today-status { color: #9a5719; border-color: rgba(217,130,43,.3); background: rgba(253,240,221,.76); }
   .tone-danger .today-status { color: #9f3025; border-color: rgba(192,57,43,.28); background: rgba(253,232,229,.76); }
@@ -775,7 +899,7 @@
   .tone-danger .today-tide-marker { left: 91%; background: var(--danger); }
   .today-summary { max-width: 660px; color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.65; }
   .today-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 13px; }
-  .today-metric { min-width: 0; padding: 9px 10px; border: 1px solid rgba(15,95,134,.1); border-radius: 12px; background: rgba(255,255,255,.68); }
+  .today-metric { min-width: 0; padding: 9px 10px; border: 1px solid rgba(15,95,134,.1); border-radius: 12px; background: var(--surface-glass); }
   .today-metric-label { display: block; color: var(--ink-faint); font-size: 9.5px; }
   .today-metric-value { display: block; margin-top: 3px; color: var(--ocean-deep); font-size: 11.5px; font-weight: 800;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -784,18 +908,33 @@
   .today-actions-title small { color: var(--ink-faint); font-size: 9.5px; font-weight: 500; }
   .today-action-list { display: grid; gap: 6px; }
   .today-action { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 9px;
-    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 13px; background: #fff; }
+    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 13px; background: var(--surface-input); }
+  .today-action.is-primary { border-color: var(--border-strong); background: linear-gradient(135deg,var(--surface-input),var(--ocean-soft));
+    box-shadow: inset 3px 0 0 var(--ocean); }
+  .today-action.is-primary .today-action-icon { background: var(--ocean); color: var(--text-on-brand); }
+  .today-action.is-secondary { padding-top: 8px; padding-bottom: 8px; background: var(--surface-glass); }
   .today-action-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px;
     background: var(--ocean-soft); color: var(--ocean-deep); font-size: 14px; font-weight: 900; }
   .today-action-title { color: var(--ink); font-size: 11.5px; font-weight: 800; }
   .today-action-reason { margin-top: 2px; color: var(--ink-faint); font-size: 9.5px; line-height: 1.45;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .today-action-buttons { display: flex; gap: 5px; }
+  .today-next-label { margin: 3px 2px 0; color: var(--ink-faint); font-size: 9.5px; font-weight: 700; }
   .today-small-btn { min-height: 34px; padding: 6px 9px; border: 1px solid var(--border-strong); border-radius: 10px;
-    background: #fff; color: var(--ocean-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
-  .today-small-btn.primary { border-color: var(--ocean); background: var(--ocean); color: #fff; }
+    background: var(--surface-input); color: var(--ocean-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
+  .today-small-btn.primary { border-color: var(--ocean); background: var(--ocean); color: var(--text-on-brand); }
   .today-empty-action { padding: 10px 12px; border-radius: 12px; background: rgba(215,240,224,.48);
     color: #27694f; font-size: 11px; line-height: 1.55; }
+  .today-recent { margin-top: 12px; }
+  .today-recent-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 7px; color: var(--ink); font-size: 10.5px; font-weight: 800; }
+  .today-recent-head small { color: var(--ink-faint); font-size: 9px; font-weight: 500; }
+  .today-recent-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .today-recent-item { min-width: 0; display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: center; gap: 8px;
+    padding: 8px 9px; border: 1px solid var(--border-light); border-radius: 11px; background: var(--surface-glass); }
+  .today-recent-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px;
+    background: var(--ocean-soft); color: var(--ocean-deep); font-size: 13px; font-weight: 900; }
+  .today-recent-title { overflow: hidden; color: var(--ink); font-size: 10px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  .today-recent-meta { margin-top: 2px; overflow: hidden; color: var(--ink-faint); font-size: 8.8px; text-overflow: ellipsis; white-space: nowrap; }
   .today-expand { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 12px;
     padding: 9px 2px 0; border: none; border-top: 1px solid rgba(15,95,134,.1); background: transparent;
     color: var(--ocean-deep); font-size: 10.5px; font-weight: 800; cursor: pointer; }
@@ -807,7 +946,7 @@
   .today-section-title { font-size: 11.5px; font-weight: 800; color: var(--ink); }
   .today-section-sub { color: var(--ink-faint); font-size: 9.5px; }
   .today-evidence { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 6px; }
-  .today-evidence-item { min-width: 0; padding: 9px 8px; border: 1px solid var(--border-light); border-radius: 11px; background: #fff; }
+  .today-evidence-item { min-width: 0; padding: 9px 8px; border: 1px solid var(--border-light); border-radius: 11px; background: var(--surface-input); }
   .today-evidence-top { display: flex; justify-content: space-between; gap: 4px; color: var(--ink-soft); font-size: 9.5px; font-weight: 700; }
   .today-evidence-value { margin-top: 5px; color: var(--ink); font-size: 13px; font-weight: 800; white-space: nowrap; }
   .today-evidence-value small { color: var(--ink-faint); font-size: 8.5px; font-weight: 600; }
@@ -816,10 +955,10 @@
   .today-evidence-item.missing .today-evidence-value, .today-evidence-item.stale .today-evidence-value { color: var(--ink-faint); }
   .today-insights { display: grid; gap: 5px; margin-top: 8px; }
   .today-insight { padding: 8px 10px; border-left: 3px solid var(--border-strong); border-radius: 0 9px 9px 0;
-    background: rgba(255,255,255,.65); color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+    background: var(--surface-glass); color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
   .rhythm-list { display: grid; gap: 6px; }
   .rhythm-row { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 8px; align-items: center;
-    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 11px; background: rgba(255,255,255,.76); }
+    padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 11px; background: var(--surface-glass); }
   .rhythm-title { color: var(--ink); font-size: 10.5px; font-weight: 800; }
   .rhythm-reason { margin-top: 2px; color: var(--ink-faint); font-size: 9px; }
   .rhythm-timing { color: var(--ink-soft); font-size: 9.5px; font-weight: 700; white-space: nowrap; }
@@ -864,6 +1003,10 @@
     .today-action { grid-template-columns: 30px minmax(0,1fr); }
     .today-action-buttons { grid-column: 1 / -1; }
     .today-action-buttons .today-small-btn { flex: 1; }
+    .today-recent-list { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(158px,72%); overflow-x: auto;
+      padding-bottom: 2px; scroll-snap-type: x proximity; scrollbar-width: none; }
+    .today-recent-list::-webkit-scrollbar { display: none; }
+    .today-recent-item { scroll-snap-align: start; }
     .today-evidence { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .rhythm-row { grid-template-columns: minmax(0,1fr) auto; }
     .rhythm-row .today-small-btn { grid-column: 1 / -1; width: 100%; }
@@ -880,7 +1023,7 @@
   .mode-switch { position: relative; display: inline-flex; background: var(--border-light); border-radius: var(--radius-pill);
     padding: 4px; box-shadow: inset 0 1px 3px rgba(30,58,77,.06); }
   .mode-switch .ms-slider { position: absolute; top: 4px; left: 4px; height: calc(100% - 8px); width: calc(50% - 4px);
-    background: #fff; border-radius: var(--radius-pill); box-shadow: 0 3px 10px rgba(30,58,77,.12); transition: transform .28s cubic-bezier(.4,0,.2,1); }
+    background: var(--surface-raised); border-radius: var(--radius-pill); box-shadow: 0 3px 10px rgba(30,58,77,.12); transition: transform .28s cubic-bezier(.4,0,.2,1); }
   .mode-switch.pro .ms-slider { transform: translateX(100%); }
   .mode-switch .seg-btn { position: relative; z-index: 1; padding: 8px 26px; min-width: 88px; }
 
@@ -891,16 +1034,16 @@
   .advice-action span b { color: var(--ocean-deep); }
   .advice-action button { padding: 6px 12px; border: 1.5px solid var(--ocean); background: var(--ocean-soft);
     color: var(--ocean-deep); border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; }
-  .advice-action button:hover { background: var(--ocean); color: #fff; }
+  .advice-action button:hover { background: var(--ocean); color: var(--text-on-brand); }
 
 
 
   /* 配比参考折叠 */
   .mix-ref-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-top: 14px; padding: 9px 14px; background: #f4fafd; border: 1px dashed var(--border-strong);
+    margin-top: 14px; padding: 9px 14px; background: var(--surface-soft); border: 1px dashed var(--border-strong);
     border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ocean-deep);
     user-select: none; transition: background .15s; }
-  .mix-ref-toggle:hover { background: #e9f4fa; }
+  .mix-ref-toggle:hover { background: var(--surface-hover); }
   .mix-ref-toggle .mr-arrow { color: var(--ink-faint); font-size: 11px; transition: transform .2s; }
 
 
@@ -913,9 +1056,9 @@
   .rate-warn.show { display: block; }
   @keyframes overPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,.35); } 50% { box-shadow: 0 0 0 6px rgba(231,76,60,0); } }
   /* 元素补充 → 滴定 联动按钮 */
-  .dose-link-btn { padding: 7px 14px; border: 1.5px solid var(--accent); background: #fff; color: var(--accent);
+  .dose-link-btn { padding: 7px 14px; border: 1.5px solid var(--accent); background: var(--surface-input); color: var(--accent);
     border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .15s; white-space: nowrap; }
-  .dose-link-btn:hover { background: var(--accent); color: #fff; }
+  .dose-link-btn:hover { background: var(--accent); color: var(--text-on-brand); }
 
   /* ─── 入门指南：像一页简短的养缸手记，不做功能说明书 ─── */
   .guide-mask { position: fixed; inset: 0; background: rgba(10,30,45,.5); backdrop-filter: blur(4px);
@@ -946,7 +1089,7 @@
   .guide-step-title { color: var(--ink); font-size: 13.5px; font-weight: 800; margin-bottom: 2px; }
   .guide-step-desc { color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
   .guide-truth { margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 13px;
-    background: rgba(255,255,255,.62); color: var(--ink-soft); font-size: 11.5px; line-height: 1.6; }
+    background: var(--surface-glass); color: var(--ink-soft); font-size: 11.5px; line-height: 1.6; }
   .guide-truth strong { color: var(--ocean-deep); }
   .guide-map-title { margin-bottom: 8px; color: var(--ink); font-size: 12px; font-weight: 800; }
   .guide-map { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
@@ -960,10 +1103,114 @@
   .guide-actions { display: flex; gap: 10px; margin-top: 18px; }
   .guide-actions button { flex: 1; padding: 11px 0; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
-  .guide-start { background: var(--ocean); color: #fff; box-shadow: 0 4px 14px rgba(10,110,168,.35); }
+  .guide-start { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 14px rgba(10,110,168,.35); }
   .guide-start:hover { background: var(--ocean-deep); }
-  .guide-later { background: #eef3f6; color: var(--ink-soft); }
-  .guide-later:hover { background: #e2eaef; }
+  .guide-later { background: var(--surface-soft); color: var(--ink-soft); }
+  .guide-later:hover { background: var(--surface-hover); }
+
+  /* ─── 午夜礁盘：统一所有遗留亮色表面，不让局部白块漏进深色主题 ─── */
+  html[data-theme="dark"] .app-header,
+  html[data-theme="dark"] .tank-identity { background: var(--surface-glass); border-color: var(--border); box-shadow: var(--shadow); }
+  html[data-theme="dark"] .group-card,
+  html[data-theme="dark"] .dose-card,
+  html[data-theme="dark"] .wq-card,
+  html[data-theme="dark"] .today-board { box-shadow: var(--shadow); }
+  html[data-theme="dark"] input,
+  html[data-theme="dark"] select,
+  html[data-theme="dark"] textarea,
+  html[data-theme="dark"] .ctl,
+  html[data-theme="dark"] .modal-field input,
+  html[data-theme="dark"] .modal-field select { background: var(--surface-input) !important; color: var(--ink) !important; border-color: var(--border) !important; }
+  html[data-theme="dark"] input::placeholder,
+  html[data-theme="dark"] textarea::placeholder { color: var(--ink-faint); }
+  html[data-theme="dark"] option { color: var(--ink); background: var(--surface-input); }
+  html[data-theme="dark"] .mini-btn,
+  html[data-theme="dark"] .pager-btn,
+  html[data-theme="dark"] .mix-ref .mr-btn,
+  html[data-theme="dark"] .dose-toggle,
+  html[data-theme="dark"] .salt-ref-toggle,
+  html[data-theme="dark"] .today-small-btn,
+  html[data-theme="dark"] .estimator-back,
+  html[data-theme="dark"] .square-size,
+  html[data-theme="dark"] .dose-link-btn { background: var(--surface-input); }
+  html[data-theme="dark"] .est-actions button:last-child,
+  html[data-theme="dark"] .modal-actions .m-cancel,
+  html[data-theme="dark"] .guide-later { background: var(--surface-soft); color: var(--ink-soft); }
+  html[data-theme="dark"] .est-actions button:last-child:hover,
+  html[data-theme="dark"] .modal-actions .m-cancel:hover,
+  html[data-theme="dark"] .guide-later:hover { background: var(--surface-hover); }
+  html[data-theme="dark"] .today-small-btn.primary,
+  html[data-theme="dark"] .mix-ref .mr-btn.active {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary);
+    color: var(--text-on-brand);
+  }
+  html[data-theme="dark"] .dose-toggle.running {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--text-on-risk);
+  }
+  html[data-theme="dark"] .today-action.is-primary {
+    border-color: var(--border-strong);
+    background: linear-gradient(135deg,var(--surface-input),rgba(79,210,197,.12));
+  }
+  html[data-theme="dark"] .auto-strip,
+  html[data-theme="dark"] .manual-record-details,
+  html[data-theme="dark"] .dose-log-menu .dlm-head,
+  html[data-theme="dark"] .dose-log-menu .dlm-body,
+  html[data-theme="dark"] .mix-ref,
+  html[data-theme="dark"] .mix-ref-toggle,
+  html[data-theme="dark"] .tank-estimator { background: var(--surface-soft); }
+  html[data-theme="dark"] .dose-log-menu .dlm-head:hover,
+  html[data-theme="dark"] .mix-ref-toggle:hover,
+  html[data-theme="dark"] .data-table tr:hover td { background: var(--surface-hover); }
+  html[data-theme="dark"] .dose-result,
+  html[data-theme="dark"] .dose-row .d-read.hot,
+  html[data-theme="dark"] .calc-row .result { background: linear-gradient(135deg,rgba(79,210,197,.12),rgba(99,175,255,.1)); }
+  html[data-theme="dark"] .dose-row .d-read { background: var(--surface-input); }
+  html[data-theme="dark"] .seg-btn.active,
+  html[data-theme="dark"] .mode-switch .ms-slider { background: var(--surface-raised); box-shadow: none; }
+  html[data-theme="dark"] .modal-mask,
+  html[data-theme="dark"] .guide-mask { background: var(--overlay); }
+  html[data-theme="dark"] .modal-box,
+  html[data-theme="dark"] .guide-box { background: var(--bg-elevated); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg); }
+  html[data-theme="dark"] .salt-reference-card.collapsed { background: var(--surface-secondary); }
+  html[data-theme="dark"] #connectionState { background: var(--surface-glass-strong); border-color: var(--border-strong); }
+  html[data-theme="dark"] .badge-core { background: rgba(241,183,91,.13); color: var(--warn); }
+  html[data-theme="dark"] .badge-adv { background: rgba(99,175,255,.13); color: var(--info); }
+  html[data-theme="dark"] .badge-other,
+  html[data-theme="dark"] .wq-status.no_data { background: rgba(145,174,179,.12); color: var(--ink-faint); }
+  html[data-theme="dark"] .tank-focus-item { background: rgba(79,210,197,.1); color: var(--brand-primary); }
+  html[data-theme="dark"] .tank-target,
+  html[data-theme="dark"] .today-action,
+  html[data-theme="dark"] .today-evidence-item,
+  html[data-theme="dark"] .rhythm-row { background: var(--surface-input); }
+  html[data-theme="dark"] .tank-setup-note { background: var(--surface-note); color: var(--warn); }
+  html[data-theme="dark"] .today-board { background: linear-gradient(145deg,var(--surface-primary),var(--surface-secondary)); }
+  html[data-theme="dark"] .today-status,
+  html[data-theme="dark"] .today-metric,
+  html[data-theme="dark"] .today-detail-note,
+  html[data-theme="dark"] .today-rhythm-summary,
+  html[data-theme="dark"] .guide-truth { background: rgba(7,31,40,.7); }
+  html[data-theme="dark"] .tone-ok .today-status { color: var(--ok); border-color: rgba(79,210,197,.28); background: var(--ok-bg); }
+  html[data-theme="dark"] .tone-warn .today-status { color: var(--warn); border-color: rgba(241,183,91,.3); background: var(--warn-bg); }
+  html[data-theme="dark"] .tone-danger .today-status { color: var(--danger); border-color: rgba(255,123,107,.3); background: var(--danger-bg); }
+  html[data-theme="dark"] .today-empty-action { background: var(--ok-bg); color: var(--ok); }
+  html[data-theme="dark"] .today-tide { background: linear-gradient(90deg,#28424a 0 20%,#28776f 20% 62%,#9b7437 62% 82%,#995047 82%); }
+  html[data-theme="dark"] .today-tide-marker { border-color: var(--surface-primary); box-shadow: 0 0 0 2px rgba(79,210,197,.12); }
+  html[data-theme="dark"] .d-read.over,
+  html[data-theme="dark"] .dose-result.over { background: var(--surface-risk) !important; border-color: var(--danger) !important; }
+  html[data-theme="dark"] .guide-num { border-color: var(--bg-elevated); color: var(--text-on-brand); background: var(--brand-primary); }
+  html[data-theme="dark"] .guide-map button { background: var(--surface-input); }
+  html[data-theme="dark"] .guide-map button:hover { background: var(--surface-hover); }
+  html[data-theme="dark"] .salt-wheel-current { background: linear-gradient(90deg,transparent,rgba(79,210,197,.13),transparent); }
+  html[data-theme="dark"] .salt-target-picker { box-shadow: none; }
+  html[data-theme="dark"] .data-table th { color: var(--text-on-brand); }
+  html[data-theme="dark"] .tabs { background: rgba(196,224,226,.08); }
+  @media (max-width: 560px) {
+    html[data-theme="dark"] .app-header { background: var(--surface-glass-strong); }
+    html[data-theme="dark"] .tabs { background: var(--surface-glass-strong); border-color: var(--border); box-shadow: 0 -5px 20px rgba(0,8,12,.28); }
+  }
 
 </style>
 </head>
@@ -1005,7 +1252,24 @@
     </div>
     <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
   </div>
-  <div class="toolbar" aria-label="帮助与数据工具">
+  <div class="toolbar" aria-label="主题、帮助与数据工具">
+    <div class="theme-control">
+      <button class="mini-btn" id="themeButton" type="button" onclick="toggleThemeMenu(event)" aria-label="选择显示主题" aria-haspopup="menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.7-.08-1.38-.23-2.03A7 7 0 0 1 14.03 3.23 9.1 9.1 0 0 0 12 3z"/></svg>
+        <span class="mini-label" id="themeButtonLabel">主题</span>
+      </button>
+      <div class="theme-menu" id="themeMenu" role="menu" hidden onclick="event.stopPropagation()">
+        <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="system" aria-checked="false" onclick="setThemePreference('system')">
+          <span class="theme-choice-icon">◐</span><span><strong>跟随系统</strong><small>随手机或电脑切换</small></span><span class="theme-choice-check">✓</span>
+        </button>
+        <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="light" aria-checked="false" onclick="setThemePreference('light')">
+          <span class="theme-choice-icon">☼</span><span><strong>阳光潮池</strong><small>清亮，适合白天查看</small></span><span class="theme-choice-check">✓</span>
+        </button>
+        <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="dark" aria-checked="false" onclick="setThemePreference('dark')">
+          <span class="theme-choice-icon">☾</span><span><strong>午夜礁盘</strong><small>沉静，适合夜间维护</small></span><span class="theme-choice-check">✓</span>
+        </button>
+      </div>
+    </div>
     <button class="mini-btn" onclick="openGuide()" aria-label="打开入门指南">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5zM20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>
       <span class="mini-label">入门指南</span>
@@ -1028,7 +1292,7 @@
   </button>
 
   <section class="today-board tone-neutral" id="todayBoard" aria-live="polite">
-    <button class="today-compact" type="button" onclick="openTodayHome()" aria-label="回到水质首页查看完整今日海况">
+    <button class="today-compact" type="button" onclick="openTodayHome()" aria-label="回到今日首页查看完整海况">
       <span class="today-compact-signal" aria-hidden="true"></span>
       <span class="today-compact-copy">
         <span class="today-compact-title"><strong id="todayCompactStatus">今日海况</strong><span id="todayCompactMeta">正在读取</span></span>
@@ -1045,6 +1309,7 @@
       <div class="today-summary" id="todaySummary">正在整理水质、换水和维护记录。</div>
       <div class="today-metrics" id="todayMetrics"></div>
       <div class="today-actions" id="todayActions"></div>
+      <div class="today-recent" id="todayRecent"></div>
       <button class="today-expand" id="todayExpand" type="button" onclick="toggleTodayDetail()" aria-expanded="false">
         <span>查看判断依据与维护节奏</span><span id="todayExpandArrow">⌄</span>
       </button>
@@ -1068,10 +1333,10 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('water')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9M10 18V5M15 18v-7M20 18V7M3 18h19"/></svg></span><span>水质</span></button>
-    <button class="tab-btn" onclick="showTab('salt')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l2 4-7 9-7-9zM9 7l3-3 3 3M5 11h14"/></svg></span><span>换水</span></button>
-    <button class="tab-btn" onclick="showTab('calc')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 8a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-8V3M8 14h8"/></svg></span><span>补充</span></button>
-    <button class="tab-btn" onclick="showTab('dosing')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.1 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 2.9-7 6-11zM9 15.5c.4 1.3 1.4 2 3 2"/></svg></span><span>滴定</span></button>
+    <button class="tab-btn active" onclick="navigateMainTab('water')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18V9M10 18V5M15 18v-7M20 18V7M3 18h19"/></svg></span><span>今日</span></button>
+    <button class="tab-btn" onclick="navigateMainTab('salt')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l2 4-7 9-7-9zM9 7l3-3 3 3M5 11h14"/></svg></span><span>换水</span></button>
+    <button class="tab-btn" onclick="navigateMainTab('calc')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 8a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-8V3M8 14h8"/></svg></span><span>补充</span></button>
+    <button class="tab-btn" onclick="navigateMainTab('dosing')"><span class="tb-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.1 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 2.9-7 6-11zM9 15.5c.4 1.3 1.4 2 3 2"/></svg></span><span>滴定</span></button>
   </div>
 
   <!-- 计算仍使用“我的鱼缸”水量；不再在补充/滴定页重复显示设置条。 -->
@@ -1332,15 +1597,15 @@
         </div>
         <div class="salt-target-picker" id="saltTargetPicker" hidden>
           <div class="salt-wheel" id="saltTargetWheel" aria-label="目标比重微调轮盘">
-            <button class="salt-wheel-option" id="saltWheelPrev" type="button" onclick="adjustSaltTarget(-1)" aria-label="降低目标比重">1.024</button>
+            <button class="salt-wheel-option" id="saltWheelPrev" type="button" onclick="adjustSaltTarget(-1,event)" aria-label="降低目标比重">1.024</button>
             <div class="salt-wheel-current" id="saltWheelCurrent" role="spinbutton" tabindex="0" aria-valuemin="1.022" aria-valuemax="1.028" aria-valuenow="1.025" aria-label="当前目标比重">1.025</div>
-            <button class="salt-wheel-option" id="saltWheelNext" type="button" onclick="adjustSaltTarget(1)" aria-label="提高目标比重">1.026</button>
+            <button class="salt-wheel-option" id="saltWheelNext" type="button" onclick="adjustSaltTarget(1,event)" aria-label="提高目标比重">1.026</button>
           </div>
-          <div class="salt-wheel-note">范围 1.022–1.028，每格 0.001。这里按比例估算，具体盐袋说明和溶解后的实测读数更重要。</div>
+          <div class="salt-wheel-note">上下滑动细调，每格 0.001，范围 1.022–1.028。这里按比例估算，具体盐袋说明和溶解后的实测读数更重要。</div>
         </div>
         <div class="dc-tank">
           <label>海盐品牌</label>
-          <select id="saltBrand" style="padding:9px 12px;border:1.5px solid var(--border-strong);border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:#fff"></select>
+          <select id="saltBrand" style="padding:9px 12px;border:1.5px solid var(--border-strong);border-radius:12px;font-size:14px;font-weight:600;color:var(--ocean-deep);background:var(--surface-input)"></select>
         </div>
         <div class="dc-tank">
           <label>要配水量</label>
@@ -1373,16 +1638,8 @@
       <div class="salt-reference-body" id="saltReferenceBody">
       <div class="dc-sub">这份表来自单一玩家实测，选盐时可以横向看看，不拿来直接算加药。点击品牌行可带入配盐计算。</div>
       <div style="overflow-x:auto">
-      <table style="width:100%;max-width:100%;border-collapse:collapse;margin-top:4px">
-        <thead><tr><th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">品牌/类型</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">盐重(克/L)</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">KH</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Ca</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Mg</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">K</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">Sr</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">NO₃原记录</th>
-          <th style="padding:7px;background:var(--ocean);color:#fff;border:1px solid #0a5f94">PO₄</th></tr></thead>
+      <table class="salt-reference-table">
+        <thead><tr><th>品牌/类型</th><th>盐重(克/L)</th><th>KH</th><th>Ca</th><th>Mg</th><th>K</th><th>Sr</th><th>NO₃原记录</th><th>PO₄</th></tr></thead>
         <tbody id="saltTableBody"></tbody>
       </table>
       </div>
@@ -1535,7 +1792,7 @@
     <div class="guide-truth"><strong>“今日海况”从哪来？</strong> 它根据你留下的水质、换水和维护记录整理提醒，并不是设备在自动读缸。记录越连续，回头看越有参考价值。</div>
     <div class="guide-map-title">四个入口，各管一件事</div>
     <nav class="guide-map" aria-label="ReefPal 四个主要入口">
-      <button type="button" onclick="guideJump('water')"><span><strong>水质</strong><small>记读数，看趋势</small></span><span class="guide-map-arrow">›</span></button>
+      <button type="button" onclick="guideJump('water')"><span><strong>今日</strong><small>看海况，记水质</small></span><span class="guide-map-arrow">›</span></button>
       <button type="button" onclick="guideJump('salt')"><span><strong>换水</strong><small>算配盐，留记录</small></span><span class="guide-map-arrow">›</span></button>
       <button type="button" onclick="guideJump('calc')"><span><strong>补充</strong><small>算这次补多少</small></span><span class="guide-map-arrow">›</span></button>
       <button type="button" onclick="guideJump('dosing')"><span><strong>滴定</strong><small>算每日维持量</small></span><span class="guide-map-arrow">›</span></button>
@@ -1672,16 +1929,16 @@
     <div class="modal-sub">数据都在这台设备上。隔一阵备份一次更踏实，换设备或重装后也能恢复。</div>
     <div class="modal-field"><label>完整备份（推荐）</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--ocean);color:#fff;font-weight:700;cursor:pointer" onclick="exportJson()">📤 导出 JSON 备份</button>
-        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#2e8b57;color:#fff;font-weight:700;cursor:pointer" onclick="document.getElementById('importFile').click()">📥 导入恢复</button>
+        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--ocean);color:var(--text-on-brand);font-weight:700;cursor:pointer" onclick="exportJson()">📤 导出 JSON 备份</button>
+        <button class="m-save" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--ok);color:var(--text-on-brand);font-weight:700;cursor:pointer" onclick="document.getElementById('importFile').click()">📥 导入恢复</button>
         <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJson(event)">
       </div>
     </div>
     <div class="modal-field"><label>单表导出（CSV，Excel 可打开）</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('water')">水质记录</button>
-        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('dosing')">滴定记录</button>
-        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:#f0f4f5;color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('change')">换水记录</button>
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--surface-soft);color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('water')">水质记录</button>
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--surface-soft);color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('dosing')">滴定记录</button>
+        <button class="m-cancel" style="flex:1;padding:10px 0;border:none;border-radius:12px;background:var(--surface-soft);color:var(--ink-soft);font-weight:700;cursor:pointer" onclick="exportCsv('change')">换水记录</button>
       </div>
     </div>
     <div class="modal-actions">
@@ -1705,6 +1962,75 @@
 
 <script>
 let groupData = null;
+const THEME_KEY = 'reefpal_theme';
+const THEME_META_COLORS = { light: '#F4F8F7', dark: '#061820' };
+
+function resolvedTheme(preference) {
+  const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return preference === 'dark' || (preference === 'system' && systemDark) ? 'dark' : 'light';
+}
+
+function syncThemeControls(preference, resolved) {
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.dataset.themePreference = preference;
+  const meta = document.getElementById('themeColorMeta');
+  if (meta) meta.setAttribute('content', THEME_META_COLORS[resolved]);
+  const button = document.getElementById('themeButton');
+  const label = document.getElementById('themeButtonLabel');
+  const choiceNames = { system: '跟随系统', light: '阳光潮池', dark: '午夜礁盘' };
+  if (button) button.setAttribute('aria-label', '选择显示主题，当前' + choiceNames[preference]);
+  if (label) label.textContent = preference === 'system' ? '主题' : choiceNames[preference];
+  document.querySelectorAll('[data-theme-choice]').forEach(el => {
+    el.setAttribute('aria-checked', el.dataset.themeChoice === preference ? 'true' : 'false');
+  });
+}
+
+function applyThemePreference(preference, persist, refreshCharts) {
+  if (!['system', 'light', 'dark'].includes(preference)) preference = 'system';
+  if (persist) localStorage.setItem(THEME_KEY, preference);
+  syncThemeControls(preference, resolvedTheme(preference));
+  if (refreshCharts && wqChartInstance && waterMode === 'pro') renderWaterChart();
+}
+
+function toggleThemeMenu(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('themeMenu');
+  const button = document.getElementById('themeButton');
+  const opening = menu.hidden;
+  menu.hidden = !opening;
+  button.setAttribute('aria-expanded', opening ? 'true' : 'false');
+}
+
+function closeThemeMenu() {
+  const menu = document.getElementById('themeMenu');
+  const button = document.getElementById('themeButton');
+  if (menu) menu.hidden = true;
+  if (button) button.setAttribute('aria-expanded', 'false');
+}
+
+function setThemePreference(preference) {
+  applyThemePreference(preference, true, true);
+  closeThemeMenu();
+  const names = { system: '跟随系统', light: '阳光潮池', dark: '午夜礁盘' };
+  toast('已切换为' + names[preference], 'info');
+}
+
+applyThemePreference(document.documentElement.dataset.themePreference || 'system', false, false);
+document.addEventListener('click', event => {
+  if (!event.target.closest || !event.target.closest('.theme-control')) closeThemeMenu();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeThemeMenu();
+});
+const reefpalSystemTheme = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+if (reefpalSystemTheme) {
+  const followSystemTheme = () => {
+    if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyThemePreference('system', false, true);
+  };
+  if (reefpalSystemTheme.addEventListener) reefpalSystemTheme.addEventListener('change', followSystemTheme);
+  else if (reefpalSystemTheme.addListener) reefpalSystemTheme.addListener(followSystemTheme);
+}
+
 /* ═══ 数字滚动动画：数值变化时从旧值滚到新值（活力感） ═══ */
 let _numAnim = {}; // pre -> 当前显示值
 function animateNumber(el, newVal, unit) {
@@ -1849,6 +2175,7 @@ let dosingDailyResults = {};
 let tankOptions = [];
 let tankEffectiveTargets = {};
 let todayDashboard = null;
+let todayTaskContext = null;
 let maintenanceRules = [];
 
 function escapeToday(value) {
@@ -1883,15 +2210,25 @@ function renderTodayEvidence(items) {
   }).join('') || '<div class="today-empty-action" style="grid-column:1/-1">完成鱼缸设置后，这里会显示每项数据的判断依据。</div>';
 }
 
-function todayTaskButtons(task) {
+function todayTaskButtons(task, prominent) {
   const key = escapeToday(task.task_key);
+  const target = escapeToday(task.target_tab || 'water');
+  const mainClass = prominent ? 'today-small-btn primary' : 'today-small-btn';
   if (task.action_type === 'record') {
-    const go = '<button class="today-small-btn primary" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\')">去记录</button>';
+    const go = '<button class="' + mainClass + '" type="button" onclick="goToTodayTask(\'' + target + '\',\'' + key + '\')">去记录</button>';
     if (task.task_key === 'water_warning') return go;
     return go + '<button class="today-small-btn" type="button" onclick="postponeMaintenance(\'' + key + '\',1)">晚一天</button>';
   }
-  return '<button class="today-small-btn primary" type="button" onclick="completeMaintenance(\'' + key + '\')">完成</button>' +
+  return '<button class="' + mainClass + '" type="button" onclick="completeMaintenance(\'' + key + '\')">完成</button>' +
     '<button class="today-small-btn" type="button" onclick="postponeMaintenance(\'' + key + '\',1)">晚一天</button>';
+}
+
+function todayActionCard(task, index) {
+  const prominent = index === 0;
+  return '<div class="today-action ' + (prominent ? 'is-primary' : 'is-secondary') + '"><div class="today-action-icon">' + escapeToday(task.icon || '·') + '</div>' +
+    '<div><div class="today-action-title">' + escapeToday(task.title) + ' · ' + escapeToday(task.timing) + '</div>' +
+    '<div class="today-action-reason">' + escapeToday(task.reason || task.category) + '</div></div>' +
+    '<div class="today-action-buttons">' + todayTaskButtons(task, prominent) + '</div></div>';
 }
 
 function renderTodayActions(actions) {
@@ -1901,18 +2238,44 @@ function renderTodayActions(actions) {
       '<div class="today-empty-action">今天没有到期项目，照常看看生物状态和设备就好。</div>';
     return;
   }
-  wrap.innerHTML = '<div class="today-actions-title">今天优先看这 ' + actions.length + ' 项 <small>先列最要紧的</small></div><div class="today-action-list">' +
-    actions.map(task => '<div class="today-action"><div class="today-action-icon">' + escapeToday(task.icon || '·') + '</div>' +
-      '<div><div class="today-action-title">' + escapeToday(task.title) + ' · ' + escapeToday(task.timing) + '</div>' +
-      '<div class="today-action-reason">' + escapeToday(task.reason || task.category) + '</div></div>' +
-      '<div class="today-action-buttons">' + todayTaskButtons(task) + '</div></div>').join('') + '</div>';
+  const primary = todayActionCard(actions[0], 0);
+  const secondary = actions.slice(1);
+  wrap.innerHTML = '<div class="today-actions-title">今天先看这件事 <small>其余安排接着往下放</small></div>' +
+    '<div class="today-action-list">' + primary +
+    (secondary.length ? '<div class="today-next-label">接下来还有 ' + secondary.length + ' 项</div>' +
+      secondary.map((task, index) => todayActionCard(task, index + 1)).join('') : '') + '</div>';
+}
+
+function recentEventDate(value) {
+  const date = String(value || '').slice(0, 10);
+  if (!date) return '';
+  if (date === todayLocal()) return '今天';
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const y = yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
+  if (date === y) return '昨天';
+  return Number(date.slice(5, 7)) + '月' + Number(date.slice(8, 10)) + '日';
+}
+
+function renderTodayRecent(items) {
+  const wrap = document.getElementById('todayRecent');
+  if (!items || items.length === 0) {
+    wrap.hidden = true;
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.hidden = false;
+  wrap.innerHTML = '<div class="today-recent-head">最近发生 <small>从现有记录自动整理</small></div><div class="today-recent-list">' +
+    items.map(item => '<div class="today-recent-item"><div class="today-recent-icon">' + escapeToday(item.icon || '·') + '</div><div>' +
+      '<div class="today-recent-title">' + escapeToday(item.title) + '</div>' +
+      '<div class="today-recent-meta">' + escapeToday(item.detail) + ' · ' + escapeToday(recentEventDate(item.recorded_at)) + '</div></div></div>').join('') + '</div>';
 }
 
 function renderTodayRhythm(items) {
   document.getElementById('todayRhythm').innerHTML = (items || []).map(task => {
     const action = task.action_type === 'complete'
       ? '<button class="today-small-btn" type="button" onclick="completeMaintenance(\'' + escapeToday(task.task_key) + '\')">' + (task.state === 'untracked' ? '今天做了' : '完成') + '</button>'
-      : '<button class="today-small-btn" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\')">去记录</button>';
+      : '<button class="today-small-btn" type="button" onclick="goToTodayTask(\'' + escapeToday(task.target_tab || 'water') + '\',\'' + escapeToday(task.task_key) + '\')">去记录</button>';
     return '<div class="rhythm-row ' + escapeToday(task.state) + '"><div><div class="rhythm-title">' + escapeToday(task.icon) + ' ' + escapeToday(task.title) + '</div>' +
       '<div class="rhythm-reason">' + escapeToday(task.reason) + '</div></div><div class="rhythm-timing">' + escapeToday(task.timing) + '</div>' + action + '</div>';
   }).join('') || '<div class="today-empty-action">维护清单现在是空的；想重新安排，可以去“调整节奏”里打开。</div>';
@@ -1941,6 +2304,7 @@ function renderTodayDashboard(data) {
     '<div class="today-metric"><span class="today-metric-label">最近水质</span><span class="today-metric-value">' + escapeToday(data.coverage.latest_date || '还没记录') + '</span></div>' +
     '<div class="today-metric"><span class="today-metric-label">下一节奏</span><span class="today-metric-value">' + escapeToday(next ? next.title + ' · ' + next.timing : '待建立') + '</span></div>';
   renderTodayActions(data.actions || []);
+  renderTodayRecent(data.recent_events || []);
   renderTodayEvidence(data.evidence || []);
   document.getElementById('todayInsights').innerHTML = (data.insights || []).map(item => '<div class="today-insight">' + escapeToday(item) + '</div>').join('');
   renderTodayRhythm(rhythm);
@@ -1967,10 +2331,23 @@ function openTodayHome() {
   if (board) board.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function goToTodayTask(tab) {
-  showTab(tab || 'water');
-  const panel = document.getElementById('panel-' + (tab || 'water'));
+function goToTodayTask(tab, taskKey) {
+  const target = tab || 'water';
+  todayTaskContext = { targetTab: target, taskKey: taskKey || '', startedAt: Date.now() };
+  showTab(target);
+  const panel = document.getElementById('panel-' + target);
   if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function returnToTodayAfterRecord(targetTab) {
+  if (!todayTaskContext || todayTaskContext.targetTab !== targetTab) return false;
+  if (Date.now() - todayTaskContext.startedAt > 30 * 60 * 1000) {
+    todayTaskContext = null;
+    return false;
+  }
+  todayTaskContext = null;
+  openTodayHome();
+  return true;
 }
 
 async function completeMaintenance(taskKey) {
@@ -2451,7 +2828,7 @@ function renderElement(gi, ei, elem) {
     '</div>' +
     '<div class="field"><span class="flabel">' + elem.unit + '</span></div>' +
     '<div class="field"><span class="flabel">使用量(克)</span><input type="text" class="result" data-g="' + gi + '" data-e="' + ei + '" readonly></div>' +
-    (mixKey ? '<div class="field"><span class="flabel">需滴配液(ml)</span><input type="text" class="ml-result" data-mix="' + mixKey + '" readonly style="width:88px;background:#eaf2f9;border:1.5px solid var(--border-strong);border-radius:12px;color:var(--ocean-deep);font-weight:700;text-align:center;padding:9px 8px;font-size:15px" title="按「滴定方案」里该元素的配液浓度换算：要达到同样的补充量，需要滴入多少毫升配好的液体"></div>' : '') +
+    (mixKey ? '<div class="field"><span class="flabel">需滴配液(ml)</span><input type="text" class="ml-result" data-mix="' + mixKey + '" readonly style="width:88px;background:var(--surface-secondary);border:1.5px solid var(--border-strong);border-radius:12px;color:var(--ocean-deep);font-weight:700;text-align:center;padding:9px 8px;font-size:15px" title="按「滴定方案」里该元素的配液浓度换算：要达到同样的补充量，需要滴入多少毫升配好的液体"></div>' : '') +
     '<span class="hint sat-hint"></span>' +
   '</div>';
   html += '<div class="auto-strip">' +
@@ -2574,6 +2951,11 @@ function syncTodayBoardMode(tabName) {
   if (!board) return;
   board.classList.toggle('is-compact', tabName !== 'water');
   board.setAttribute('data-tab-context', tabName);
+}
+
+function navigateMainTab(name) {
+  todayTaskContext = null;
+  showTab(name);
 }
 
 function showTab(name) {
@@ -2819,7 +3201,7 @@ async function calcAdjust(pre, syncDose) {
       const doseRow = doseEl.closest('.dose-result');
       if (doseRow) doseRow.classList.remove('over');
       if (raiseDose > 0) {
-        doseEl.style.background = 'linear-gradient(135deg, #d8f0e2, #b9e3cc)';
+        doseEl.style.background = 'linear-gradient(135deg, var(--ok-bg), var(--surface-secondary))';
         setTimeout(() => { doseEl.style.background = ''; }, 1200);
       }
       if (rateOver && doseRow) doseRow.classList.add('over');
@@ -3047,7 +3429,7 @@ function renderSystemAlerts(balance) {
     }
   }
   if (balanceAlerts.length > 0) {
-    alerts += '<div class="advice-item sys-balance-alert" style="background:#eef7f5;border-radius:10px;margin-bottom:4px">' +
+    alerts += '<div class="advice-item sys-balance-alert" style="background:var(--surface-secondary);border-radius:10px;margin-bottom:4px">' +
       '<span class="advice-strength mid">⚖️</span>' +
       '<span class="advice-text"><b>收支平衡：</b>' + balanceAlerts.join('；') + '</span></div>';
   }
@@ -3314,10 +3696,11 @@ async function addWaterRecord() {
   });
   document.getElementById('wqValue').value = '';
   document.getElementById('wqNote').value = '';
-  loadWater();
-  buzz(15); toast(el + ' ' + v + ' 已保存 ✓', 'ok');
-  // 连续录入：保存后焦点回到测试值，且元素保持不变
-  document.getElementById('wqValue').focus();
+  await loadWater();
+  const returning = returnToTodayAfterRecord('water');
+  buzz(15); toast(returning ? el + ' 已记下，今日海况也更新了 ✓' : el + ' ' + v + ' 已保存 ✓', 'ok');
+  // 日常连续录入时保留当前元素；从今日任务进入时，记录后回到今日。
+  if (!returning) document.getElementById('wqValue').focus();
 }
 
 async function delWaterRecord(id) {
@@ -3353,7 +3736,7 @@ function renderSimple() {
       '<div class="wq-range">本缸参考 ' + (a.ideal ? a.ideal.low + ' - ' + a.ideal.high + ' ' + a.ideal.unit : '') + '</div>' +
       '<div class="wq-trend"><span class="arrow">' + arrow + '</span>趋势' + trendText +
       (s.rate ? ' · 每天' + s.rate + (a.ideal ? a.ideal.unit : '') : '') + '</div>' +
-      (s.count ? '<div class="wq-mini">' + s.count + ' 条记录' + (s.anomaly_cn ? ' · <b style="color:#c0392b">' + s.anomaly_cn + '</b>' : '') + '</div>' : '') +
+      (s.count ? '<div class="wq-mini">' + s.count + ' 条记录' + (s.anomaly_cn ? ' · <b style="color:var(--danger)">' + s.anomaly_cn + '</b>' : '') + '</div>' : '') +
       '</div>';
     if (a.advice && a.advice.summary) allAdvice.push({ el: a.display || el, key: el, summary: a.advice.summary, prio: a.advice.priority, supplement: a.advice.supplement });
   }
@@ -3439,6 +3822,30 @@ function onWqElChange() {
   renderWaterChart();
 }
 
+function getChartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  const value = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+  const dark = document.documentElement.dataset.theme === 'dark';
+  return {
+    text: value('--text-primary', '#123b47'),
+    muted: value('--chart-axis', '#5c7a8c'),
+    faint: value('--text-tertiary', '#789197'),
+    axis: value('--chart-axis-line', '#b7cbd5'),
+    grid: value('--chart-grid', 'rgba(18,59,71,.11)'),
+    reference: value('--chart-reference', 'rgba(43,138,104,.1)'),
+    tooltip: value('--chart-tooltip', '#ffffff'),
+    tooltipBorder: value('--border-strong-token', '#a9ccc5'),
+    blue: value('--chart-blue', '#0a6ea8'),
+    orange: value('--chart-orange', '#c0560e'),
+    green: value('--chart-green', '#2e8b57'),
+    violet: value('--chart-violet', '#7b1fa2'),
+    red: value('--chart-red', '#c0392b'),
+    zoomFiller: dark ? 'rgba(79,210,197,.14)' : 'rgba(11,113,128,.1)',
+    areaTop: dark ? 'rgba(99,175,255,.28)' : 'rgba(10,110,168,.25)',
+    areaBottom: dark ? 'rgba(99,175,255,.015)' : 'rgba(10,110,168,.02)'
+  };
+}
+
 function renderWaterChart() {
   const el = document.getElementById('wqChartEl').value;
   const showRange = document.getElementById('wqChartRange').value === '1';
@@ -3457,19 +3864,24 @@ function renderWaterChart() {
   }
   const chart = wqChartInstance;
   chart.resize();
+  const chartTheme = getChartTheme();
   const chartDateLabel = function(v) {
     var d = new Date(v);
     var month = String(d.getMonth() + 1).padStart(2, '0');
     var day = String(d.getDate()).padStart(2, '0');
     return narrow ? month + '-' + day : d.getFullYear() + '-' + month + '-' + day;
   };
+  const zoomVisual = { borderColor: chartTheme.axis, backgroundColor: 'transparent', fillerColor: chartTheme.zoomFiller,
+    textStyle: { color: chartTheme.muted }, handleStyle: { color: chartTheme.blue, borderColor: chartTheme.axis },
+    dataBackground: { lineStyle: { color: chartTheme.axis }, areaStyle: { color: chartTheme.zoomFiller } },
+    selectedDataBackground: { lineStyle: { color: chartTheme.blue }, areaStyle: { color: chartTheme.zoomFiller } } };
   const chartZoom = narrow
-    ? [{ type: 'inside' }, { type: 'slider', height: 14, bottom: 16, showDetail: false, showDataShadow: false, brushSelect: false }]
-    : [{ type: 'inside' }, { type: 'slider', height: 18, bottom: 36, showDetail: false }];
+    ? [{ type: 'inside' }, Object.assign({ type: 'slider', height: 14, bottom: 16, showDetail: false, showDataShadow: false, brushSelect: false }, zoomVisual)]
+    : [{ type: 'inside' }, Object.assign({ type: 'slider', height: 18, bottom: 36, showDetail: false }, zoomVisual)];
 
   // 🌟 综合趋势模式：归一化所有元素
   if (el === '__all__') {
-    const colors = ['#0a6ea8', '#c0560e', '#2e8b57', '#7b1fa2', '#c0392b'];
+    const colors = [chartTheme.blue, chartTheme.orange, chartTheme.green, chartTheme.violet, chartTheme.red];
     const series = [];
     const order = ['KH', '钙', '镁', 'NO3', 'PO4'];
     let ci = 0;
@@ -3488,25 +3900,26 @@ function renderWaterChart() {
       ci++;
     }
     if (series.length === 0) {
-      chart.setOption({ title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+      chart.setOption({ backgroundColor: 'transparent', title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: chartTheme.faint } } }, true);
       return;
     }
     chart.setOption({
-      tooltip: { trigger: 'axis', confine: true, backgroundColor: '#fff', borderColor: '#d9e3e8', textStyle: { color: '#1e3a4d', fontSize: 12 },
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: chartTheme.tooltip, borderColor: chartTheme.tooltipBorder, textStyle: { color: chartTheme.text, fontSize: 12 },
         formatter: function(params) {
           var d = new Date(params[0].value[0]);
           var s = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '<br>';
           params.forEach(function(p){ s += p.marker + ' ' + p.seriesName + ': ' + p.value[1] + '%<br>'; }); return s; } },
       legend: { top: 0, left: 4, right: 4, type: 'scroll', orient: 'horizontal', itemGap: narrow ? 8 : 10,
         itemWidth: narrow ? 12 : 20, itemHeight: narrow ? 7 : 12,
-        textStyle: { fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 9 : 12,
-        pageButtonGap: 4, pageTextStyle: { color: '#5c7a8c', fontSize: 10 } },
+        textStyle: { color: chartTheme.muted, fontSize: narrow ? 10 : 12 }, pageIconSize: narrow ? 9 : 12,
+        pageButtonGap: 4, pageTextStyle: { color: chartTheme.muted, fontSize: 10 } },
       grid: { left: narrow ? 42 : 60, right: narrow ? 8 : 16, top: narrow ? 42 : 40, bottom: narrow ? 58 : 92 },
       dataZoom: chartZoom,
-      xAxis: { type: 'time', axisLine: { lineStyle: { color: '#b7cbd5' } },
-        axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
-      yAxis: { type: 'value', name: '相对变化 %', nameTextStyle: { fontSize: narrow ? 10 : 12 }, scale: true,
-        splitLine: { lineStyle: { color: '#edf2f4' } }, axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 12, formatter: '{value}%' } },
+      xAxis: { type: 'time', axisLine: { lineStyle: { color: chartTheme.axis } },
+        axisLabel: { color: chartTheme.muted, fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
+      yAxis: { type: 'value', name: '相对变化 %', nameTextStyle: { color: chartTheme.muted, fontSize: narrow ? 10 : 12 }, scale: true,
+        splitLine: { lineStyle: { color: chartTheme.grid } }, axisLabel: { color: chartTheme.muted, fontSize: narrow ? 10 : 12, formatter: '{value}%' } },
       series: series
     }, true);
     return;
@@ -3514,7 +3927,7 @@ function renderWaterChart() {
 
   const a = waterAnalysis && waterAnalysis[el];
   if (!a || !a.records || a.records.length === 0) {
-    chart.setOption({ title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: '#aaa' } } });
+    chart.setOption({ backgroundColor: 'transparent', title: { text: '还没有数据', left: 'center', top: 'middle', textStyle: { color: chartTheme.faint } } }, true);
     return;
   }
   // time轴: [时间戳, 数值]，真实反映测量间隔
@@ -3541,25 +3954,25 @@ function renderWaterChart() {
         }
         openStart = { date: d, dose: l.dose_ml };
         // 开始标记：带数值（窄屏只显示图标）
-        lines.push({ xAxis: d, label: { formatter: narrow ? '💧' : '💧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#2e8b57', fontSize: narrow ? 8 : 10 }, lineStyle: { color: '#2e8b57', type: 'solid', width: 1.5 } });
+        lines.push({ xAxis: d, label: { formatter: narrow ? '💧' : '💧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: chartTheme.green, fontSize: narrow ? 8 : 10 }, lineStyle: { color: chartTheme.green, type: 'solid', width: 1.5 } });
       } else if (l.action === 'end') {
         if (openStart) {
           if (openStart.date === d) {
             // 同日开始+结束 → 当日总量（start+end）
             const total = openStart.dose + (l.dose_ml || 0);
-            lines.push({ xAxis: d, label: { formatter: narrow ? '⚡' : '⚡ 当日共 ' + total + 'ml', position: 'insideEndTop', color: '#7b1fa2', fontSize: narrow ? 8 : 10 }, lineStyle: { color: '#7b1fa2', type: 'solid', width: 1.5 } });
+            lines.push({ xAxis: d, label: { formatter: narrow ? '⚡' : '⚡ 当日共 ' + total + 'ml', position: 'insideEndTop', color: chartTheme.violet, fontSize: narrow ? 8 : 10 }, lineStyle: { color: chartTheme.violet, type: 'solid', width: 1.5 } });
           } else {
             areas.push({ name: '滴定', start: openStart.date, end: d });
-            lines.push({ xAxis: d, label: { formatter: '⏹', position: 'insideEndTop', color: '#c0392b', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#c0392b', type: 'dashed', width: 1.2 } });
+            lines.push({ xAxis: d, label: { formatter: '⏹', position: 'insideEndTop', color: chartTheme.red, fontSize: narrow ? 8 : 9 }, lineStyle: { color: chartTheme.red, type: 'dashed', width: 1.2 } });
           }
           openStart = null;
         } else {
           // 缺开始的end → 红色异常标记
-          lines.push({ xAxis: d, label: { formatter: narrow ? '⚠️' : '⚠️ 结束(缺开始)', position: 'insideEndTop', color: '#c0392b', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#c0392b', type: 'solid', width: 1.5 } });
+          lines.push({ xAxis: d, label: { formatter: narrow ? '⚠️' : '⚠️ 结束(缺开始)', position: 'insideEndTop', color: chartTheme.red, fontSize: narrow ? 8 : 9 }, lineStyle: { color: chartTheme.red, type: 'solid', width: 1.5 } });
         }
       } else if (l.action === 'adjust') {
         // 调整 → 蓝色细线（带数值）
-        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: '#0a6ea8', fontSize: narrow ? 8 : 9 }, lineStyle: { color: '#0a6ea8', type: 'dotted', width: 1.2 } });
+        lines.push({ xAxis: d, label: { formatter: narrow ? '🔧' : '🔧 ' + l.dose_ml + 'ml', position: 'insideEndTop', color: chartTheme.blue, fontSize: narrow ? 8 : 9 }, lineStyle: { color: chartTheme.blue, type: 'dotted', width: 1.2 } });
       }
     }
     if (openStart) {
@@ -3577,15 +3990,15 @@ function renderWaterChart() {
   const showWCMark = document.getElementById('wqChartWC').value === '1';
   const wcLines = showWCMark ? waterChangeCache.map(wc => ({
     xAxis: wc.recorded_at.slice(0, 10),
-    label: { formatter: narrow ? '🔄' : '🔄' + wc.water_liters + 'L', position: 'start', distance: 2, color: '#e67e22', fontSize: narrow ? 7 : 9 },
-    lineStyle: { color: '#e67e22', type: 'solid', width: 1.2 }
+    label: { formatter: narrow ? '🔄' : '🔄' + wc.water_liters + 'L', position: 'start', distance: 2, color: chartTheme.orange, fontSize: narrow ? 7 : 9 },
+    lineStyle: { color: chartTheme.orange, type: 'solid', width: 1.2 }
   })) : [];
   const markArea = {
     silent: true,
     data: doseMarkers.areas.map(a => [{
-      xAxis: a.start, itemStyle: { color: 'rgba(46,139,87,.10)' }, name: a.name
+      xAxis: a.start, itemStyle: { color: chartTheme.reference }, name: a.name
     }, {
-      xAxis: a.end, itemStyle: { color: 'rgba(46,139,87,.10)' }
+      xAxis: a.end, itemStyle: { color: chartTheme.reference }
     }])
   };
   const markLine = {
@@ -3595,24 +4008,25 @@ function renderWaterChart() {
   // 数据点多时缩小符号防重叠：<=15 个点用 7，更多则递减到最小 3
   const pointSize = Math.max(3, 7 - Math.floor(tsValues.length / 15));
   const series = [{ name: el, type: 'line', data: tsValues, smooth: true, symbolSize: pointSize,
-    lineStyle: { width: 2.5, color: '#0a6ea8' }, itemStyle: { color: '#0a6ea8' },
+    lineStyle: { width: 2.5, color: chartTheme.blue }, itemStyle: { color: chartTheme.blue },
     markLine: markLine,
     markArea: markArea,
-    areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:'rgba(10,110,168,.25)'},{offset:1,color:'rgba(10,110,168,.02)'}]) } }];
+    areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [{offset:0,color:chartTheme.areaTop},{offset:1,color:chartTheme.areaBottom}]) } }];
   if (showRange && ideal) {
-    series.push({ name: '上限', type: 'line', data: [[minTs, ideal.high], [maxTs, ideal.high]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
-    series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: '#c0392b', width: 1 }, symbol: 'none', tooltip: { show: false } });
+    series.push({ name: '上限', type: 'line', data: [[minTs, ideal.high], [maxTs, ideal.high]], lineStyle: { type: 'dashed', color: chartTheme.red, width: 1 }, symbol: 'none', tooltip: { show: false } });
+    series.push({ name: '下限', type: 'line', data: [[minTs, ideal.low], [maxTs, ideal.low]], lineStyle: { type: 'dashed', color: chartTheme.red, width: 1 }, symbol: 'none', tooltip: { show: false } });
   }
   chart.setOption({
-    tooltip: { trigger: 'axis', confine: true, backgroundColor: '#fff', borderColor: '#d9e3e8', textStyle: { color: '#1e3a4d', fontSize: 12 },
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis', confine: true, backgroundColor: chartTheme.tooltip, borderColor: chartTheme.tooltipBorder, textStyle: { color: chartTheme.text, fontSize: 12 },
       valueFormatter: function(v) { return v; } },
-    legend: { show: !narrow, data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { fontSize: 12 } },
+    legend: { show: !narrow, data: showRange ? [el, '上限', '下限'] : [el], top: 0, textStyle: { color: chartTheme.muted, fontSize: 12 } },
     grid: { left: narrow ? 42 : 55, right: narrow ? 8 : 14, top: narrow ? 18 : 42, bottom: narrow ? 58 : 92 },
     dataZoom: chartZoom,
-    xAxis: { type: 'time', axisLine: { lineStyle: { color: '#b7cbd5' } },
-      axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
-    yAxis: { type: 'value', scale: true, name: ideal ? ideal.unit : '', nameTextStyle: { color: '#5c7a8c', fontSize: 11 },
-      splitLine: { lineStyle: { color: '#edf2f4' } }, axisLabel: { color: '#5c7a8c', fontSize: narrow ? 10 : 12 } },
+    xAxis: { type: 'time', axisLine: { lineStyle: { color: chartTheme.axis } },
+      axisLabel: { color: chartTheme.muted, fontSize: narrow ? 10 : 11, hideOverlap: true, formatter: chartDateLabel } },
+    yAxis: { type: 'value', scale: true, name: ideal ? ideal.unit : '', nameTextStyle: { color: chartTheme.muted, fontSize: 11 },
+      splitLine: { lineStyle: { color: chartTheme.grid } }, axisLabel: { color: chartTheme.muted, fontSize: narrow ? 10 : 12 } },
     series: series
   }, true);  // notMerge: 切换"显示/隐藏理想范围"时清空旧series
 }
@@ -3670,6 +4084,8 @@ const SALT_SG_STEP = 0.001;
 let saltTargetSg = SALT_BASE_SG;
 let saltWaterTouched = false;
 let saltWheelLastAdjustedAt = 0;
+let saltWheelDrag = null;
+let saltWheelSuppressClick = false;
 
 function selectedSaltBrand() {
   const sel = document.getElementById('saltBrand');
@@ -3726,9 +4142,15 @@ function toggleSaltTargetPicker() {
   if (opening) document.getElementById('saltWheelCurrent').focus({ preventScroll: true });
 }
 
-function adjustSaltTarget(direction) {
+function adjustSaltTarget(direction, event) {
+  if (event && saltWheelSuppressClick) {
+    event.preventDefault();
+    return;
+  }
+  const before = saltTargetSg;
   const next = Math.round((saltTargetSg + Number(direction) * SALT_SG_STEP) * 1000) / 1000;
   saltTargetSg = Math.min(SALT_MAX_SG, Math.max(SALT_MIN_SG, next));
+  if (saltTargetSg === before) return;
   renderSaltTargetWheel();
   calcSalt();
   buzz(6);
@@ -3793,21 +4215,17 @@ function updateSaltReferenceVisibility() {
   if (!sel || !card || !body || !toggle || !summary) return;
   const idx = sel.value !== '' ? parseInt(sel.value) : -1;
   const brand = idx >= 0 ? SALT_BRANDS[idx] : null;
-  if (!brand) {
-    body.hidden = false;
-    toggle.hidden = true;
-    toggle.setAttribute('aria-expanded', 'true');
-    card.classList.remove('collapsed');
-    summary.textContent = '选盐时可以对照看看；数据来自单一公开分享，未独立复现。';
-    return;
-  }
   const open = saltReferenceManuallyOpen;
   body.hidden = !open;
   toggle.hidden = false;
   toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  toggle.textContent = open ? '收起参考' : '查看其他海盐参考';
+  toggle.textContent = open ? '收起品牌参考' : '展开品牌参考';
   card.classList.toggle('collapsed', !open);
-  summary.textContent = '已选 ' + brand[0] + ' · ' + brand[1] + ' 克/升' + (open ? '' : '，参考表已收起');
+  summary.textContent = brand
+    ? '已选 ' + brand[0] + ' · ' + brand[1] + ' 克/升' + (open ? '' : '，其他品牌先收起来')
+    : (open
+      ? '这里是 ' + SALT_BRANDS.length + ' 个品牌的单一玩家实测，未独立复现。'
+      : SALT_BRANDS.length + ' 个品牌实测参考，想对比时再展开。');
 }
 
 function toggleSaltReference() {
@@ -3868,8 +4286,9 @@ async function recordCalculatedWaterChange() {
     document.getElementById('wcDate').value = todayLocal();
     await loadWaterChanges();
     await refreshWaterChangeCache();
+    const returning = returnToTodayAfterRecord('salt');
     buzz(15);
-    toast('已记录 ' + context.displayName + ' · ' + water + 'L · ' + grams + '克 ✓', 'ok');
+    toast(returning ? '换水已经记下，今天的安排也更新了 ✓' : '已记录 ' + context.displayName + ' · ' + water + 'L · ' + grams + '克 ✓', 'ok');
     button.textContent = '✓ 已记录';
     setTimeout(() => { button.textContent = '✓ 已换水'; button.disabled = false; }, 1400);
   } catch (e) {
@@ -3888,6 +4307,40 @@ document.getElementById('saltTargetWheel').addEventListener('wheel', event => {
   saltWheelLastAdjustedAt = now;
   adjustSaltTarget(event.deltaY > 0 ? 1 : -1);
 }, { passive: false });
+const saltTargetWheel = document.getElementById('saltTargetWheel');
+saltTargetWheel.addEventListener('pointerdown', event => {
+  if (event.button !== undefined && event.button !== 0) return;
+  saltWheelDrag = { pointerId: event.pointerId, lastY: event.clientY, carry: 0, moved: false };
+  saltTargetWheel.classList.add('dragging');
+  if (saltTargetWheel.setPointerCapture) saltTargetWheel.setPointerCapture(event.pointerId);
+});
+saltTargetWheel.addEventListener('pointermove', event => {
+  if (!saltWheelDrag || saltWheelDrag.pointerId !== event.pointerId) return;
+  const delta = event.clientY - saltWheelDrag.lastY;
+  saltWheelDrag.lastY = event.clientY;
+  saltWheelDrag.carry += delta;
+  if (Math.abs(saltWheelDrag.carry) < 18) return;
+  event.preventDefault();
+  const direction = saltWheelDrag.carry < 0 ? 1 : -1;
+  saltWheelDrag.carry += direction > 0 ? 18 : -18;
+  saltWheelDrag.moved = true;
+  adjustSaltTarget(direction);
+});
+function finishSaltWheelDrag(event) {
+  if (!saltWheelDrag || saltWheelDrag.pointerId !== event.pointerId) return;
+  const moved = saltWheelDrag.moved;
+  saltWheelDrag = null;
+  saltTargetWheel.classList.remove('dragging');
+  if (saltTargetWheel.hasPointerCapture && saltTargetWheel.hasPointerCapture(event.pointerId)) {
+    saltTargetWheel.releasePointerCapture(event.pointerId);
+  }
+  if (moved) {
+    saltWheelSuppressClick = true;
+    setTimeout(() => { saltWheelSuppressClick = false; }, 80);
+  }
+}
+saltTargetWheel.addEventListener('pointerup', finishSaltWheelDrag);
+saltTargetWheel.addEventListener('pointercancel', finishSaltWheelDrag);
 document.getElementById('saltWheelCurrent').addEventListener('keydown', event => {
   if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
   event.preventDefault();
@@ -3928,7 +4381,7 @@ async function loadWaterChanges() {
   wcAllChanges = data.changes || [];
   wcPage = 1;
   renderWcTable();
-  if (tankProfile) loadTodayDashboard();
+  if (tankProfile) await loadTodayDashboard();
 }
 
 function renderWcTable() {
@@ -3975,8 +4428,9 @@ async function addWaterChange() {
   document.getElementById('wcNote').value = '';
   await loadWaterChanges();
   // 同步刷新趋势图缓存和标记
-  refreshWaterChangeCache();
-  buzz(15); toast('换水 ' + water + 'L 已记录 ✓', 'ok');
+  await refreshWaterChangeCache();
+  const returning = returnToTodayAfterRecord('salt');
+  buzz(15); toast(returning ? '换水已经记下，今天的安排也更新了 ✓' : '换水 ' + water + 'L 已记录 ✓', 'ok');
 }
 
 async function delWaterChange(id) {

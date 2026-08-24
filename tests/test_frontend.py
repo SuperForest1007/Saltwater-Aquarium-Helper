@@ -119,7 +119,7 @@ class TestFrontend:
         assert 'class="est-row est-dim-row"' in html
         assert 'class="est-dim-inputs"' in html
         assert 'class="today-board tone-neutral"' in html
-        assert "先列最要紧的" in html
+        assert "今天先看这件事" in html
         assert "查看判断依据与维护节奏" in html
 
     def test_public_beta_stability_guards(self):
@@ -145,7 +145,14 @@ class TestFrontend:
         assert 'id="wcSaltGrams"' in html
         assert 'id="saltReferenceBody"' in html
         assert "updateSaltReferenceVisibility" in html
-        assert "参考表已收起" in html
+        assert "展开品牌参考" in html
+        reference_code = html[
+            html.index("function updateSaltReferenceVisibility"):
+            html.index("function toggleSaltReference")
+        ]
+        assert "body.hidden = !open" in reference_code
+        assert "toggle.hidden = false" in reference_code
+        assert "if (!brand)" not in reference_code
 
     def test_salt_calculator_defaults_and_target_adjustment(self):
         """不选品牌也能按 35g/L 计算，配水量与目标比重均有轻量默认值。"""
@@ -157,6 +164,10 @@ class TestFrontend:
         assert "const SALT_MAX_SG = 1.028" in html
         assert "function saltPerLiterAtTarget" in html
         assert "adjustSaltTarget(event.key === 'ArrowUp' ? 1 : -1)" in html
+        assert "touch-action: none" in html
+        assert "saltTargetWheel.addEventListener('pointerdown'" in html
+        assert "saltTargetWheel.addEventListener('pointermove'" in html
+        assert "saltWheelDrag.carry < 0 ? 1 : -1" in html
         assert "tankWater / 5" in html
         assert "setDefaultSaltWaterFromTank(false)" in html
         assert "setDefaultSaltWaterFromTank(true)" in html
@@ -271,3 +282,46 @@ class TestFrontend:
         assert tabs.count('<svg viewBox="0 0 24 24"') == 4
         for emoji in ['📈', '🔄', '🧪', '💧']:
             assert emoji not in tabs
+
+    def test_today_is_the_first_task_hub_without_removing_existing_tools(self):
+        """IA-01A 先升级今日入口，现有换水、补充和滴定仍保持可达。"""
+        html = _read_index()
+        tabs = html[html.index('<!-- Tabs -->'):html.index('<!-- 计算仍使用')]
+        for label in ["今日", "换水", "补充", "滴定"]:
+            assert f"<span>{label}</span>" in tabs
+        assert "navigateMainTab('water')" in tabs
+        assert 'id="todayRecent"' in html
+        assert 'function renderTodayRecent(items)' in html
+        assert "recent_events" in html
+        assert '今天先看这件事' in html
+        assert 'is-primary' in html and 'is-secondary' in html
+        assert 'function returnToTodayAfterRecord(targetTab)' in html
+        assert "returnToTodayAfterRecord('water')" in html
+        assert "returnToTodayAfterRecord('salt')" in html
+
+    def test_midnight_reef_theme_is_tokenized_and_persistent(self):
+        """午夜礁盘使用语义 Token、三态选择和主题化图表，而不是简单反色。"""
+        html = _read_index()
+        for token in [
+            '--bg-canvas: #061820',
+            '--surface-primary: #103642',
+            '--text-primary: #e7f2f2',
+            '--brand-primary: #4fd2c5',
+            '--signal-risk: #ff7b6b',
+        ]:
+            assert token in html
+        assert 'html[data-theme="dark"]' in html
+        assert "const THEME_KEY = 'reefpal_theme'" in html
+        assert "localStorage.setItem(THEME_KEY, preference)" in html
+        assert "function getChartTheme()" in html
+        assert "backgroundColor: chartTheme.tooltip" in html
+        assert "backgroundColor: '#fff'" not in html
+        for choice in ['system', 'light', 'dark']:
+            assert f'data-theme-choice="{choice}"' in html
+        for label in ["跟随系统", "阳光潮池", "午夜礁盘"]:
+            assert label in html
+        # 深色通用背景覆盖不能吃掉高优先级按钮的反色文字。
+        assert 'html[data-theme="dark"] .today-small-btn.primary' in html
+        assert 'html[data-theme="dark"] .mix-ref .mr-btn.active' in html
+        assert 'html[data-theme="dark"] .dose-toggle.running' in html
+        assert '--text-on-risk: #2b0b08' in html

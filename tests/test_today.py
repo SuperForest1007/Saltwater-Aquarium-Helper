@@ -39,6 +39,28 @@ class TestTodayDashboard:
         assert len(data["evidence"]) == 5
         assert "只看已经记下的数据" in data["basis_note"]
 
+    def test_recent_events_project_existing_records_without_new_storage(self, test_client):
+        test_client.put("/api/tank", json=_tank_payload())
+        today = date.today().isoformat()
+        _add_record(test_client, "KH", 8.2, 0)
+        _add_record(test_client, "钙", 420, 0)
+        test_client.post("/api/water-change", json={
+            "water_liters": 36, "salt_grams": 1260, "salt_brand": "TM", "recorded_at": today,
+        })
+        test_client.post("/api/dosing/log", json={
+            "element": "KH", "dose_ml": 12, "action": "adjust", "recorded_at": today,
+        })
+        events = test_client.get("/api/today").json()["recent_events"]
+        assert {item["kind"] for item in events} == {"water", "water_change", "dosing"}
+        water = next(item for item in events if item["kind"] == "water")
+        assert water["title"] == "记录水质"
+        assert "KH" in water["detail"] and "钙" in water["detail"]
+        change = next(item for item in events if item["kind"] == "water_change")
+        assert change["detail"] == "36 L · TM"
+        dosing = next(item for item in events if item["kind"] == "dosing")
+        assert dosing["title"] == "调整 KH 滴定"
+        assert dosing["detail"] == "12 ml/天"
+
     def test_fresh_abnormal_trend_is_prioritized(self, test_client):
         test_client.put("/api/tank", json=_tank_payload())
         _add_record(test_client, "KH", 10.5, 2)
