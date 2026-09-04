@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>海水缸助手 · ReefPal</title>
-<meta name="theme-color" content="#F4F8F7" id="themeColorMeta">
+<meta name="theme-color" content="#F4F5F7" id="themeColorMeta">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,12 +18,13 @@
 (function () {
   try {
     var preference = localStorage.getItem('reefpal_theme') || 'system';
-    var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var resolved = preference === 'dark' || (preference === 'system' && systemDark) ? 'dark' : 'light';
+    var hour = new Date().getHours();
+    var ambient = hour >= 6 && hour < 17 ? 'light' : (hour >= 17 && hour < 20 ? 'dusk' : 'dark');
+    var resolved = preference === 'system' ? ambient : (['light', 'dusk', 'dark'].indexOf(preference) >= 0 ? preference : ambient);
     document.documentElement.dataset.theme = resolved;
     document.documentElement.dataset.themePreference = preference;
     var themeMeta = document.getElementById('themeColorMeta');
-    if (themeMeta) themeMeta.setAttribute('content', resolved === 'dark' ? '#061820' : '#F4F8F7');
+    if (themeMeta) themeMeta.setAttribute('content', resolved === 'dark' ? '#090E1C' : (resolved === 'dusk' ? '#D9B3AD' : '#F4F5F7'));
   } catch (e) {
     document.documentElement.dataset.theme = 'light';
     document.documentElement.dataset.themePreference = 'system';
@@ -31,35 +32,46 @@
 })();
 </script>
 <style>
+  @font-face {
+    font-family: "ReefPal Display";
+    src: url("/static/fonts/ReefPalDisplay.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+  }
   :root {
     /* ── 阳光潮池：先建立语义层，旧组件逐步映射到这里 ── */
-    --bg-canvas: #f4f8f7;
-    --bg-elevated: #fcfefd;
-    --surface-primary: #fcfefd;
-    --surface-secondary: #eef6f3;
-    --surface-muted: #e7f1ee;
-    --text-primary: #123b47;
-    --text-secondary: #4d6c72;
-    --text-tertiary: #789197;
-    --brand-primary: #0b7180;
-    --brand-secondary: #125160;
+    --bg-canvas: #f4f5f7;
+    --bg-elevated: #fffdf9;
+    --surface-primary: #fffdf9;
+    --surface-secondary: #f0f2f4;
+    --surface-muted: #e8ecee;
+    --text-primary: #293449;
+    --text-secondary: #596579;
+    --text-tertiary: #818b9a;
+    --brand-primary: #4b4f88;
+    --brand-secondary: #353867;
+    --brand-coral: #f27661;
+    --brand-violet: #565a96;
+    --brand-mint: #9edbc9;
+    --brand-cream: #f6e8cf;
     --signal-ok: #2b8a68;
     --signal-watch: #d99a35;
     --signal-risk: #d95f50;
     --signal-info: #4784a7;
-    --border-subtle: #dce9e5;
-    --border-strong-token: #a9ccc5;
-    --focus-ring: rgba(11,113,128,.2);
-    --chart-grid: rgba(18,59,71,.11);
+    --border-subtle: #dee2e8;
+    --border-strong-token: #b8bfd0;
+    --focus-ring: rgba(75,79,136,.22);
+    --chart-grid: rgba(41,52,73,.1);
     --chart-reference: rgba(43,138,104,.1);
-    --bg-gradient-mid: #edf5f2;
-    --bg-gradient-end: #e8f1ef;
+    --bg-gradient-mid: #eef1f3;
+    --bg-gradient-end: #e8edf0;
     --surface-input: #ffffff;
     --surface-raised: #ffffff;
-    --surface-soft: #f6fafb;
-    --surface-hover: #eef6f8;
-    --surface-glass: rgba(252,254,253,.76);
-    --surface-glass-strong: rgba(252,254,253,.96);
+    --surface-soft: #f7f7f8;
+    --surface-hover: #edf1f4;
+    --surface-glass: rgba(255,253,249,.78);
+    --surface-glass-strong: rgba(255,253,249,.96);
     --surface-note: #fff8ec;
     --surface-risk: #fdf2f2;
     --text-on-brand: #ffffff;
@@ -68,7 +80,7 @@
     --chart-axis: #5c7a8c;
     --chart-axis-line: #b7cbd5;
     --chart-tooltip: #ffffff;
-    --chart-blue: #0a6ea8;
+    --chart-blue: #4b4f88;
     --chart-orange: #c0560e;
     --chart-green: #2e8b57;
     --chart-violet: #7b1fa2;
@@ -77,18 +89,18 @@
     /* ── 兼容现有组件命名；完成拆分前保持单一颜色来源 ── */
     --ocean: var(--brand-primary);
     --ocean-deep: var(--brand-secondary);
-    --ocean-soft: #d9ece7;
-    --accent: #e36f5c;
+    --ocean-soft: #e1f2ec;
+    --accent: var(--brand-coral);
     --ink: var(--text-primary);
     --ink-soft: var(--text-secondary);
     --ink-faint: var(--text-tertiary);
     --card: var(--surface-primary);
     --bg-a: var(--bg-canvas);
-    --bg-b: #eaf3f0;
+    --bg-b: #eceff2;
     --surface-2: var(--surface-secondary);
     --border: var(--border-subtle);
     --border-strong: var(--border-strong-token);
-    --border-light: #edf4f1;
+    --border-light: #eef0f4;
     --ok: var(--signal-ok);
     --ok-bg: #d7f0e0;
     --warn: var(--signal-watch);
@@ -98,8 +110,8 @@
     --info: var(--signal-info);
 
     /* ── 阴影（更深更有层次） ── */
-    --shadow: 0 4px 20px rgba(10,44,66,.06);
-    --shadow-lg: 0 12px 36px rgba(10,44,66,.13);
+    --shadow: 0 4px 20px rgba(44,48,86,.07);
+    --shadow-lg: 0 12px 36px rgba(39,43,77,.14);
     --ring: var(--focus-ring);
 
     /* ── 圆角 ── */
@@ -116,57 +128,101 @@
     --space-5: 20px;
   }
   html[data-theme="light"] { color-scheme: light; }
+  html[data-theme="dusk"] {
+    color-scheme: light;
+    --bg-canvas: #e4dfe7;
+    --bg-elevated: #fff9f3;
+    --surface-primary: #fff9f3;
+    --surface-secondary: #f2e8e8;
+    --surface-muted: #e9dfe5;
+    --text-primary: #35364d;
+    --text-secondary: #686174;
+    --text-tertiary: #918698;
+    --brand-primary: #5a5e99;
+    --brand-secondary: #3c406f;
+    --brand-coral: #e96f59;
+    --brand-violet: #716fa8;
+    --brand-mint: #8bcfc5;
+    --brand-cream: #f7dfbd;
+    --border-subtle: #e3d8df;
+    --border-strong-token: #c8b9c8;
+    --focus-ring: rgba(90,94,153,.24);
+    --chart-grid: rgba(53,54,77,.1);
+    --chart-reference: rgba(139,207,197,.16);
+    --bg-gradient-mid: #dfd7e1;
+    --bg-gradient-end: #d4dce5;
+    --surface-soft: #faf3f1;
+    --surface-hover: #f1e8ed;
+    --surface-glass: rgba(255,249,243,.8);
+    --surface-glass-strong: rgba(255,249,243,.95);
+    --surface-note: #fff2df;
+    --chart-axis: #746b7d;
+    --chart-axis-line: #c9bdc9;
+    --chart-tooltip: #fff9f3;
+    --chart-blue: #5a5e99;
+    --chart-violet: #716fa8;
+    --ocean-soft: #dff1ec;
+    --accent: var(--brand-coral);
+    --bg-b: #ddd9e3;
+    --border-light: #eee6ea;
+    --shadow: 0 5px 22px rgba(64,55,83,.08);
+    --shadow-lg: 0 15px 42px rgba(55,48,78,.17);
+  }
   html[data-theme="dark"] {
     color-scheme: dark;
-    --bg-canvas: #061820;
-    --bg-elevated: #0b2731;
-    --surface-primary: #103642;
-    --surface-secondary: #0b2731;
-    --surface-muted: #12303a;
-    --text-primary: #e7f2f2;
-    --text-secondary: #b7cbce;
-    --text-tertiary: #91aeb3;
-    --brand-primary: #4fd2c5;
-    --brand-secondary: #8be5dc;
-    --signal-ok: #4fd2c5;
+    --bg-canvas: #090e1c;
+    --bg-elevated: #11182b;
+    --surface-primary: #161f35;
+    --surface-secondary: #111a2e;
+    --surface-muted: #19243b;
+    --text-primary: #f2f2f5;
+    --text-secondary: #c2c9d4;
+    --text-tertiary: #929dab;
+    --brand-primary: #9edbc9;
+    --brand-secondary: #c0ebde;
+    --brand-coral: #ff8069;
+    --brand-violet: #6569aa;
+    --brand-mint: #9edbc9;
+    --brand-cream: #f6e8cf;
+    --signal-ok: #77cfb2;
     --signal-watch: #f1b75b;
     --signal-risk: #ff7b6b;
     --signal-info: #63afff;
-    --border-subtle: rgba(150,196,200,.15);
-    --border-strong-token: rgba(108,210,202,.34);
-    --focus-ring: rgba(79,210,197,.26);
-    --chart-grid: rgba(196,224,226,.1);
-    --chart-reference: rgba(79,210,197,.1);
-    --bg-gradient-mid: #081f28;
-    --bg-gradient-end: #041319;
-    --surface-input: #071f28;
-    --surface-raised: #123d49;
-    --surface-soft: #0d2d37;
-    --surface-hover: #123c47;
-    --surface-glass: rgba(11,39,49,.9);
-    --surface-glass-strong: rgba(8,30,38,.97);
+    --border-subtle: rgba(181,192,218,.15);
+    --border-strong-token: rgba(158,219,201,.34);
+    --focus-ring: rgba(158,219,201,.28);
+    --chart-grid: rgba(209,215,229,.1);
+    --chart-reference: rgba(158,219,201,.11);
+    --bg-gradient-mid: #0d1426;
+    --bg-gradient-end: #080c18;
+    --surface-input: #0e1729;
+    --surface-raised: #222c4a;
+    --surface-soft: #151e34;
+    --surface-hover: #1d2844;
+    --surface-glass: rgba(17,24,43,.9);
+    --surface-glass-strong: rgba(12,18,34,.97);
     --surface-note: rgba(241,183,91,.1);
     --surface-risk: rgba(255,123,107,.1);
-    --text-on-brand: #032126;
+    --text-on-brand: #15182b;
     --text-on-risk: #2b0b08;
     --overlay: rgba(1,10,14,.74);
-    --chart-axis: #91aeb3;
-    --chart-axis-line: rgba(145,174,179,.35);
-    --chart-tooltip: #103642;
-    --chart-blue: #63afff;
+    --chart-axis: #9aa5b7;
+    --chart-axis-line: rgba(154,165,183,.35);
+    --chart-tooltip: #161f35;
+    --chart-blue: #9298e4;
     --chart-orange: #f1b75b;
-    --chart-green: #4fd2c5;
+    --chart-green: #9edbc9;
     --chart-violet: #c49cff;
     --chart-red: #ff7b6b;
-    --ocean-soft: rgba(79,210,197,.12);
-    --accent: #ff8b79;
-    --bg-b: #081f28;
-    --border-light: rgba(196,224,226,.09);
-    --ok-bg: rgba(79,210,197,.13);
+    --ocean-soft: rgba(158,219,201,.13);
+    --accent: var(--brand-coral);
+    --bg-b: #0d1426;
+    --border-light: rgba(209,215,229,.09);
+    --ok-bg: rgba(119,207,178,.13);
     --warn-bg: rgba(241,183,91,.13);
     --danger-bg: rgba(255,123,107,.13);
-    --shadow: 0 7px 24px rgba(0,8,12,.16);
-    --shadow-lg: 0 18px 48px rgba(0,6,10,.34);
+    --shadow: 0 7px 24px rgba(1,3,11,.2);
+    --shadow-lg: 0 18px 48px rgba(1,3,11,.4);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
@@ -202,20 +258,32 @@
     color: var(--ink); min-height: 100vh; padding-bottom: 40px;
   }
   body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .42;
-    background-image: repeating-linear-gradient(112deg, transparent 0 42px, rgba(11,113,128,.025) 43px 44px, transparent 45px 82px);
+    background-image: repeating-linear-gradient(112deg, transparent 0 42px, rgba(75,79,136,.026) 43px 44px, transparent 45px 82px);
     mask-image: linear-gradient(to bottom, #000, transparent 72%); }
+  html[data-theme="dusk"] body {
+    background:
+      radial-gradient(ellipse 46% 18% at 82% 2%,rgba(255,184,112,.34),transparent 74%),
+      radial-gradient(ellipse 42% 24% at 8% 18%,rgba(105,105,171,.18),transparent 76%),
+      linear-gradient(180deg,#cdd7e9 0%,#dfcddd 20%,#efb59d 35%,#f5cfaa 42%,#d9dce6 56%,#cbd9e0 100%);
+    background-attachment: fixed;
+  }
+  html[data-theme="dusk"] body::before { opacity: .34;
+    background-image:
+      repeating-radial-gradient(ellipse at 76% -8%,transparent 0 28px,rgba(255,249,239,.17) 29px 31px,transparent 32px 61px),
+      repeating-linear-gradient(112deg,transparent 0 52px,rgba(90,94,153,.025) 53px 54px,transparent 55px 102px);
+  }
   html[data-theme="dark"] body {
     background:
-      radial-gradient(ellipse 42% 20% at 14% 1%, rgba(79,210,197,.09), transparent 72%),
-      radial-gradient(ellipse 34% 22% at 92% 31%, rgba(99,175,255,.055), transparent 76%),
+      radial-gradient(ellipse 42% 20% at 14% 1%, rgba(158,219,201,.1), transparent 72%),
+      radial-gradient(ellipse 34% 22% at 92% 31%, rgba(101,105,170,.07), transparent 76%),
       linear-gradient(180deg,var(--bg-canvas) 0%,var(--bg-gradient-mid) 48%,var(--bg-gradient-end) 100%);
   }
   html[data-theme="dark"] body::before { opacity: .58;
     background-image:
-      radial-gradient(circle at 14% 13%, rgba(79,210,197,.22) 0 1px, transparent 1.6px),
-      radial-gradient(circle at 81% 21%, rgba(99,175,255,.16) 0 1px, transparent 1.7px),
-      radial-gradient(circle at 68% 73%, rgba(79,210,197,.12) 0 1px, transparent 1.6px),
-      repeating-linear-gradient(112deg,transparent 0 54px,rgba(79,210,197,.018) 55px 56px,transparent 57px 106px);
+      radial-gradient(circle at 14% 13%, rgba(158,219,201,.2) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 81% 21%, rgba(101,105,170,.16) 0 1px, transparent 1.7px),
+      radial-gradient(circle at 68% 73%, rgba(158,219,201,.12) 0 1px, transparent 1.6px),
+      repeating-linear-gradient(112deg,transparent 0 54px,rgba(158,219,201,.018) 55px 56px,transparent 57px 106px);
     background-size: 310px 260px, 370px 330px, 430px 390px, auto;
   }
   ::selection { background: var(--ring); }
@@ -223,22 +291,23 @@
   /* 旧版漂浮水滴与大波浪已退出主视觉，背景改由低对比焦散承担。 */
   .deco-drops, .wave-top { display: none; }
 
-  /* ─── 紧凑应用栏：品牌和低频工具共用一行 ─── */
+  /* ─── ReefPal 应用栏：D4 负责识别，工具保持克制 ─── */
   .app-header { position: relative; z-index: 3; max-width: 780px; min-height: 62px; margin: 14px auto 12px;
     padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    border: 1px solid rgba(11,113,128,.1); border-radius: 18px; background: var(--surface-glass);
-    box-shadow: 0 8px 26px rgba(18,59,71,.05); backdrop-filter: blur(16px); }
+    border: 1px solid color-mix(in srgb,var(--brand-primary) 15%,var(--border)); border-radius: 10px 22px 22px 22px;
+    background: linear-gradient(112deg,color-mix(in srgb,var(--surface-glass-strong) 94%,var(--brand-violet) 6%),var(--surface-glass));
+    box-shadow: 0 10px 30px rgba(18,59,71,.07); backdrop-filter: blur(16px); }
+  .app-header::after { content: ''; position: absolute; left: 58px; bottom: 0; width: 72px; height: 2px;
+    border-radius: 2px; background: linear-gradient(90deg,var(--brand-coral),transparent); opacity: .78; }
   .brand { min-width: 0; text-align: left; margin: 0; position: relative; z-index: 2; }
   .brand .logo { display: flex; align-items: center; gap: 10px; color: var(--ocean-deep); letter-spacing: .3px; }
-  .brand .logo .mark { position: relative; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px;
-    background: linear-gradient(145deg, var(--ocean) 0%, var(--ocean-deep) 100%); display: inline-flex;
-    align-items: center; justify-content: center; box-shadow: 0 5px 14px rgba(18,81,96,.2), inset 0 1px 0 rgba(255,255,255,.18); }
-  .brand .logo .mark::after { content: ''; position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px;
-    border: 2px solid var(--surface-primary); border-radius: 50%; background: #53bcb1; }
+  .brand .logo .mark { position: relative; width: 40px; height: 40px; flex: 0 0 40px; overflow: hidden; border-radius: 13px;
+    background: var(--brand-violet); box-shadow: 0 7px 18px color-mix(in srgb,var(--brand-violet) 27%,transparent),inset 0 0 0 1px rgba(255,255,255,.16); }
+  .brand .logo .mark img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .brand-copy { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-  .brand .logo .brand-name { font-size: 22px; line-height: 1; font-weight: 850; color: var(--ocean-deep); letter-spacing: .4px; }
+  .brand .logo .brand-name { font-family: "ReefPal Display","Arial Narrow",sans-serif; font-size: 23px; line-height: 1; font-weight: 700; color: var(--ink); letter-spacing: -.7px; }
+  .brand .logo .brand-name .brand-pal { color: var(--brand-primary); }
   .brand .logo .brand-sub { font-size: 11px; color: var(--ink-faint); font-weight: 650; letter-spacing: .8px; padding: 0; white-space: nowrap; }
-  .brand .tagline { margin: 4px 0 0 48px; font-size: 8.5px; color: var(--ink-faint); letter-spacing: 1.6px; }
 
   /* ─── 容器 ─── */
   .wrap { max-width: 780px; margin: 0 auto; padding: 0 16px; }
@@ -247,7 +316,7 @@
 
   /* ─── 估算器 ─── */
   .estimator { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
-    border: 1px solid rgba(10,110,168,.12); margin-bottom: 16px; }
+    border: 1px solid color-mix(in srgb,var(--brand-primary) 14%,var(--border)); margin-bottom: 16px; }
   .est-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   .est-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; font-size: 13px; }
   .est-row label { width: 110px; color: var(--ink-soft); font-weight: 600; }
@@ -261,7 +330,7 @@
   .est-result .big { font-size: 20px; font-weight: 800; color: var(--ocean-deep); }
   .est-actions { display: flex; gap: 10px; margin-bottom: 8px; }
   .est-actions button { padding: 10px 20px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; border: none; transition: all .15s; }
-  .est-actions button:first-child { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.3); }
+  .est-actions button:first-child { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px color-mix(in srgb,var(--brand-primary) 34%,transparent); }
   .est-actions button:first-child:hover { background: var(--ocean-deep); }
   .est-actions button:last-child { background: var(--surface-soft); color: var(--ink-soft); }
   .est-note { font-size: 11px; color: var(--ink-faint); line-height: 1.6; }
@@ -274,7 +343,7 @@
     border-radius: var(--radius-pill); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s;
   }
   .tab-btn .tb-ico { display: none; } /* 桌面端隐藏独立图标，保持原横排 */
-  .tab-btn.active { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.35); font-weight: 700; }
+  .tab-btn.active { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px color-mix(in srgb,var(--brand-primary) 34%,transparent); font-weight: 700; }
   .panel { display: none; }
   .panel.active { display: block; } /* 无默认动画，避免切换后重播闪烁 */
   .panel.slide-in-right { animation: slideRight .32s cubic-bezier(.25,.8,.35,1) both; }
@@ -329,7 +398,7 @@
   .calc-row .conc-in::placeholder { font-size: 11.5px; color: #a7bfd0; }
   .calc-row .add-in { width: 190px; text-align: left; font-weight: 500; font-size: 13px; }
   .calc-row .result {
-    background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--ocean-soft), color-mix(in srgb,var(--brand-violet) 12%,var(--surface-primary))); border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm);
     font-weight: 800; color: var(--ocean-deep); width: 104px; padding: 9px 8px; text-align: center; font-size: 17px;
   }
   .calc-row .sat-hint { font-size: 10.5px; color: var(--ink-faint); align-self: center; padding-bottom: 8px; }
@@ -388,7 +457,7 @@
   .dose-row input[type=number]:focus { outline: none; border-color: var(--ocean); box-shadow: 0 0 0 3px var(--ring); }
   .dose-row .d-read { min-width: 86px; padding: 8px 10px; border-radius: var(--radius-xs); text-align: center; font-size: 14px; font-weight: 700;
     background: var(--surface-soft); border: 1.5px solid var(--border); color: var(--ink-soft); }
-  .dose-row .d-read.hot { background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-color: var(--border-strong); color: var(--ocean-deep); font-size: 16px; }
+  .dose-row .d-read.hot { background: linear-gradient(135deg, var(--ocean-soft), color-mix(in srgb,var(--brand-violet) 12%,var(--surface-primary))); border-color: var(--border-strong); color: var(--ocean-deep); font-size: 16px; }
   .dose-row .arrow { color: var(--ink-faint); font-size: 12px; padding-bottom: 14px; }
 
   /* 通用表单控件 */
@@ -445,7 +514,7 @@
   .mix-ref .mr-tip b { color: var(--ocean); }
 
   .dose-result { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: linear-gradient(135deg, #e4f1fa, var(--border-strong)); border-radius: var(--radius-sm); padding: 14px; }
+    background: linear-gradient(135deg, var(--ocean-soft), color-mix(in srgb,var(--brand-violet) 12%,var(--surface-primary))); border-radius: var(--radius-sm); padding: 14px; }
 
   /* 水质仪表盘 */
   .wq-card.empty-state { padding: 32px 20px; border: 1.5px dashed var(--border-strong); }
@@ -526,7 +595,7 @@
   /* 水滴装饰 */
   .deco-drops { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
   .deco-drops span { position: absolute; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-    background: radial-gradient(circle at 35% 35%, rgba(10,110,168,.16), rgba(10,110,168,.03));
+    background: radial-gradient(circle at 35% 35%, rgba(75,79,136,.16), rgba(75,79,136,.03));
     animation: floatDrop 14s ease-in-out infinite; }
   @keyframes floatDrop { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-26px) rotate(8deg); } }
 
@@ -534,11 +603,10 @@
   @media (max-width: 560px) {
     .app-header { min-height: 56px; margin: 0 0 8px; padding: calc(7px + env(safe-area-inset-top)) 12px 7px;
       border-width: 0 0 1px; border-radius: 0; background: var(--surface-glass-strong); box-shadow: 0 5px 18px rgba(18,59,71,.04); }
+    .app-header::after { left: 54px; width: 58px; }
     .brand .logo .mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
-    .brand .logo .mark svg { width: 23px; height: 23px; }
     .brand .logo .brand-name { font-size: 20px; }
     .brand .logo .brand-sub { display: none; }
-    .brand .tagline { margin-left: 44px; font-size: 7.5px; letter-spacing: 1px; white-space: nowrap; }
     .toolbar { gap: 5px; }
     .mini-btn { width: 38px; min-height: 38px; padding: 0; justify-content: center; border-radius: 12px; }
     .mini-btn .mini-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
@@ -671,7 +739,6 @@
     #wqChart { height: 300px; margin: 0 -4px; width: calc(100% + 8px); }
   }
   @media (max-width: 400px) {
-    .brand .tagline { display: none; }
     .seg-btn { padding: 7px 12px; font-size: 12px; }
     .tab-btn { font-size: 11px; }
     .d-field .fl { font-size: 11px; }
@@ -713,7 +780,7 @@
   #connectionState.online { color: #16745e; }
   #connectionState.online::before { background: #169873; box-shadow: 0 0 0 4px rgba(22,152,115,.12); }
 
-  :where(button, [role="button"], input, select):focus-visible { outline: 3px solid rgba(10,110,168,.28); outline-offset: 2px; }
+  :where(button, [role="button"], input, select):focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important;
       animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -739,7 +806,7 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
   .modal-actions button { flex: 1; padding: 10px 0; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
-  .modal-actions .m-save { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px rgba(10,110,168,.3); }
+  .modal-actions .m-save { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 12px color-mix(in srgb,var(--brand-primary) 34%,transparent); }
   .modal-actions .m-save:hover { background: var(--ocean-deep); }
   .modal-actions .m-cancel { background: var(--surface-soft); color: var(--ink-soft); }
   .modal-actions .m-cancel:hover { background: var(--surface-hover); }
@@ -776,14 +843,14 @@
   /* ─── 我的鱼缸：一条持续存在的缸体上下文 ─── */
   .tank-identity { position: relative; overflow: hidden; display: flex; align-items: center; gap: 11px;
     max-width: 780px; min-height: 50px; margin: 0 auto 12px; padding: 8px 12px; border-radius: 15px;
-    border: 1px solid rgba(11,113,128,.14); background: var(--surface-glass);
+    border: 1px solid color-mix(in srgb,var(--brand-primary) 14%,var(--border)); background: var(--surface-glass);
     box-shadow: 0 4px 16px rgba(18,59,71,.04); cursor: pointer; text-align: left; }
   .tank-identity::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-    background: linear-gradient(90deg,var(--ocean-deep),var(--ocean),#53bcb1,var(--accent)); opacity: .78; }
+    background: linear-gradient(90deg,var(--brand-violet),var(--brand-primary),var(--brand-mint),var(--brand-coral)); opacity: .78; }
   .tank-identity:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
   .tank-avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px;
     display: grid; place-items: center; color: var(--text-on-brand); font-size: 16px;
-    background: linear-gradient(150deg,var(--ocean),var(--ocean-deep)); box-shadow: 0 4px 10px rgba(18,81,96,.18); }
+    background: linear-gradient(150deg,var(--brand-violet),var(--brand-primary)); box-shadow: 0 4px 10px color-mix(in srgb,var(--brand-violet) 28%,transparent); }
   .tank-identity-main { min-width: 0; flex: 1; }
   .tank-identity-name { font-size: 13px; font-weight: 800; color: var(--ocean-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tank-identity-meta { margin-top: 2px; font-size: 10px; color: var(--ink-soft); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -795,7 +862,7 @@
   .tank-setup-sub { color: var(--ink-soft); font-size: 12px; line-height: 1.7; margin-bottom: 18px; }
   .tank-setup-flow { position: relative; padding-left: 18px; }
   .tank-setup-flow::before { content: ''; position: absolute; left: 3px; top: 7px; bottom: 7px; width: 3px;
-    border-radius: 5px; background: linear-gradient(180deg,var(--ocean),#52b8c2,#0a8f6e); }
+    border-radius: 5px; background: linear-gradient(180deg,var(--brand-violet),var(--brand-primary),var(--brand-mint)); }
   .tank-step { position: relative; margin-bottom: 16px; }
   .tank-step::before { content: ''; position: absolute; left: -20px; top: 5px; width: 7px; height: 7px;
     border: 3px solid var(--surface-primary); border-radius: 50%; background: var(--ocean); box-shadow: 0 0 0 1px var(--border-strong); }
@@ -869,53 +936,90 @@
     .estimator-modal-box .est-dim-inputs { width: 100%; }
   }
 
-  /* ─── 本缸今日状态：结论在前，依据与节奏按需展开 ─── */
-  .today-board { position: relative; overflow: hidden; margin: 0 0 14px; border: 1px solid rgba(15,95,134,.18);
-    border-radius: 20px; background: linear-gradient(145deg,var(--surface-primary) 0%,#f4faf8 68%,var(--surface-secondary) 100%);
-    box-shadow: 0 8px 28px rgba(18,59,71,.07); }
-  .today-board::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--ocean); }
-  .today-board.tone-ok::before { background: var(--ok); }
-  .today-board.tone-warn::before { background: var(--warn); }
-  .today-board.tone-danger::before { background: var(--danger); }
-  .today-main { padding: 17px 18px 15px 20px; }
-  .today-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
-  .today-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 1.4px; color: var(--ocean); }
+  /* ─── 今日主任务：结论是标题，第一项动作负责接棒 ─── */
+  .today-board { position: relative; overflow: visible; margin: 2px 0 14px; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none; isolation: isolate; }
+  .today-board::before { display: none; }
+  .today-main { padding: 12px 3px 10px; }
+  .today-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .today-eyebrow { display: flex; align-items: center; gap: 7px; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; color: var(--ocean); }
+  .today-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 9px currentColor; }
   .today-date { margin-top: 3px; color: var(--ink-faint); font-size: 10px; }
-  .today-status { flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--border-strong); border-radius: 999px;
-    background: var(--surface-glass); color: var(--ocean-deep); font-size: 11px; font-weight: 800; }
+  .today-status { flex: 0 0 auto; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: 999px;
+    background: var(--surface-glass); color: var(--ocean-deep); font-size: 10px; font-weight: 800; }
   .tone-ok .today-status { color: #176b4a; border-color: rgba(46,139,87,.28); background: rgba(215,240,224,.7); }
   .tone-warn .today-status { color: #9a5719; border-color: rgba(217,130,43,.3); background: rgba(253,240,221,.76); }
   .tone-danger .today-status { color: #9f3025; border-color: rgba(192,57,43,.28); background: rgba(253,232,229,.76); }
-  .today-tide { position: relative; height: 5px; margin: 14px 0 12px; border-radius: 99px;
-    overflow: visible; background: linear-gradient(90deg,#cddce4 0 20%,#9fcbbb 20% 62%,#edc694 62% 82%,#e5a39b 82%); }
-  .today-tide::after { content: ''; position: absolute; inset: -2px 0; border-radius: inherit; pointer-events: none;
-    background: linear-gradient(105deg,transparent 20%,rgba(255,255,255,.62) 46%,transparent 68%); opacity: .38;
-    transform: translateX(-70%); animation: reefPulseSweep 8s ease-in-out infinite; }
-  @keyframes reefPulseSweep { 0%,58% { transform: translateX(-70%); } 82%,100% { transform: translateX(70%); } }
-  .today-tide-marker { position: absolute; top: 50%; left: 12%; width: 13px; height: 13px; border: 3px solid #fff;
-    border-radius: 50%; background: var(--ink-faint); box-shadow: 0 2px 7px rgba(18,48,68,.22); transform: translate(-50%,-50%); transition: left .35s ease; }
-  .tone-ok .today-tide-marker { left: 42%; background: var(--ok); }
-  .tone-warn .today-tide-marker { left: 72%; background: var(--warn); }
-  .tone-danger .today-tide-marker { left: 91%; background: var(--danger); }
-  .today-summary { max-width: 660px; color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.65; }
-  .today-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 13px; }
-  .today-metric { min-width: 0; padding: 9px 10px; border: 1px solid rgba(15,95,134,.1); border-radius: 12px; background: var(--surface-glass); }
-  .today-metric-label { display: block; color: var(--ink-faint); font-size: 9.5px; }
-  .today-metric-value { display: block; margin-top: 3px; color: var(--ocean-deep); font-size: 11.5px; font-weight: 800;
+  .today-pulse { margin-top: 17px; padding: 14px 15px 13px; border: 1px solid var(--border-light);
+    border-radius: 7px 20px 20px 20px; background: linear-gradient(145deg,color-mix(in srgb,var(--surface-glass) 88%,var(--brand-mint) 12%),var(--surface-glass)); }
+  .today-pulse-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .today-pulse-head strong { font-family: "ReefPal Display",var(--font-ui,sans-serif); color: var(--ink); font-size: 14px; letter-spacing: .03em; }
+  .today-pulse-head small { color: var(--ink-faint); font-size: 8.5px; text-align: right; }
+  .today-pulse-water { display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 9px; margin-top: 10px; }
+  .today-pulse-axis { color: var(--ink-faint); font-size: 8px; letter-spacing: .08em; }
+  .today-pulse-chart { min-width: 0; }
+  .today-pulse-chart-plot { position: relative; }
+  .today-pulse-chart svg { display: block; width: 100%; height: 52px; overflow: visible; }
+  .today-pulse-band { fill: color-mix(in srgb,var(--brand-mint) 15%,transparent); }
+  .today-pulse-line { fill: none; stroke: var(--ocean); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px color-mix(in srgb,var(--ocean) 35%,transparent)); }
+  .today-pulse-dot { position: absolute; z-index: 1; width: 9px; height: 9px; border: 2px solid var(--surface-primary);
+    border-radius: 50%; background: var(--ocean); box-shadow: 0 0 0 1px color-mix(in srgb,var(--ocean) 36%,transparent),0 0 8px color-mix(in srgb,var(--ocean) 28%,transparent);
+    transform: translate(-50%,-50%); pointer-events: none; }
+  .today-pulse-chart-foot { display: flex; justify-content: space-between; margin-top: -3px; color: var(--ink-faint); font-size: 8px; }
+  .today-pulse-chart-foot strong { color: var(--ink); font-size: 9px; font-weight: 800; }
+  .today-pulse-focus { display: grid; grid-template-columns: 3px minmax(0,1fr) auto; gap: 9px; align-items: start;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }
+  .today-pulse-focus::before { content: ''; width: 3px; height: 34px; border-radius: 3px; background: var(--ocean);
+    box-shadow: 0 0 8px color-mix(in srgb,var(--ocean) 36%,transparent); }
+  .today-pulse-focus strong { display: block; color: var(--ink); font-size: 10.5px; }
+  .today-pulse-focus p { margin: 3px 0 0; color: var(--ink-soft); font-size: 9px; line-height: 1.5;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .today-pulse-focus-side { display: grid; justify-items: end; gap: 7px; }
+  .today-pulse-focus time { color: var(--ink-faint); font-size: 8px; white-space: nowrap; }
+  .today-pulse-deep { min-height: 27px; padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 999px;
+    background: transparent; color: var(--ocean-deep); cursor: pointer; font-size: 8.5px; font-weight: 800; white-space: nowrap; }
+  .today-pulse-deep:hover { background: var(--surface-hover); }
+  .today-pulse-deep:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+  .today-pulse-events { position: relative; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; margin-top: 12px; padding-top: 13px; }
+  .today-pulse-events::before { content: ''; position: absolute; left: 8%; right: 8%; top: 4px; border-top: 1px dashed var(--border-strong); }
+  .today-pulse-event { position: relative; min-width: 0; padding-top: 2px; }
+  .today-pulse-event::before { content: ''; position: absolute; left: 2px; top: -13px; width: 7px; height: 7px; border: 2px solid var(--surface-primary);
+    border-radius: 50%; background: var(--brand-coral); box-shadow: 0 0 0 1px color-mix(in srgb,var(--brand-coral) 55%,transparent); }
+  .today-pulse-event.kind-water::before { background: var(--ocean); box-shadow: 0 0 0 1px color-mix(in srgb,var(--ocean) 55%,transparent); }
+  .today-pulse-event.kind-dosing::before { background: var(--brand-violet); box-shadow: 0 0 0 1px color-mix(in srgb,var(--brand-violet) 55%,transparent); }
+  .today-pulse-event strong { display: block; overflow: hidden; color: var(--ink); font-size: 8.5px; text-overflow: ellipsis; white-space: nowrap; }
+  .today-pulse-event span { display: block; margin-top: 2px; color: var(--ink-faint); font-size: 8px; }
+  .today-summary { max-width: 620px; margin-top: 7px; color: var(--ink); font-family: "ReefPal Display",var(--font-ui,sans-serif); font-size: clamp(18px,2.5vw,23px); font-weight: 700; line-height: 1.32; letter-spacing: -.02em; }
+  .today-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0; margin-top: 12px; padding: 9px 0 0; border-top: 1px solid var(--border-light); }
+  .today-metric { min-width: 0; padding: 0 12px; border-left: 1px solid var(--border-light); }
+  .today-metric:first-child { padding-left: 0; border-left: 0; }
+  .today-metric-label { display: block; color: var(--ink-faint); font-size: 8.5px; letter-spacing: .04em; }
+  .today-metric-value { display: block; margin-top: 4px; color: var(--ink); font-size: 11px; font-weight: 750;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .today-actions { margin-top: 13px; }
-  .today-actions-title { display: flex; align-items: baseline; gap: 7px; margin-bottom: 7px; font-size: 11px; font-weight: 800; color: var(--ink); }
+  .today-actions { margin-top: 17px; }
+  .today-actions-title { display: flex; align-items: baseline; gap: 7px; margin-bottom: 8px; font-size: 11px; font-weight: 800; color: var(--ink); }
   .today-actions-title small { color: var(--ink-faint); font-size: 9.5px; font-weight: 500; }
   .today-action-list { display: grid; gap: 6px; }
   .today-action { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 9px;
     padding: 9px 10px; border: 1px solid var(--border-light); border-radius: 13px; background: var(--surface-input); }
-  .today-action.is-primary { border-color: var(--border-strong); background: linear-gradient(135deg,var(--surface-input),var(--ocean-soft));
-    box-shadow: inset 3px 0 0 var(--ocean); }
-  .today-action.is-primary .today-action-icon { background: var(--ocean); color: var(--text-on-brand); }
+  .today-action.is-primary { position: relative; overflow: hidden; grid-template-columns: 42px minmax(0,1fr) auto; gap: 13px; min-height: 92px;
+    padding: 15px 15px; border-color: color-mix(in srgb,var(--brand-primary) 30%,var(--border)); border-radius: 7px 22px 22px 22px;
+    background: linear-gradient(125deg,color-mix(in srgb,var(--ocean-soft) 76%,var(--surface-input)),var(--surface-input) 62%);
+    box-shadow: 0 10px 25px color-mix(in srgb,var(--brand-primary) 10%,transparent); }
+  .today-action.is-primary::after { content: ''; position: absolute; right: -42px; top: -70px; width: 150px; height: 150px;
+    border: 1px solid color-mix(in srgb,var(--brand-coral) 22%,transparent); border-radius: 50%; pointer-events: none; }
+  .today-action.is-primary .today-action-icon { width: 42px; height: 42px; border-radius: 14px; background: var(--brand-violet); color: #fff;
+    box-shadow: 0 8px 18px color-mix(in srgb,var(--brand-violet) 22%,transparent); }
   .today-action.is-secondary { padding-top: 8px; padding-bottom: 8px; background: var(--surface-glass); }
   .today-action-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px;
     background: var(--ocean-soft); color: var(--ocean-deep); font-size: 14px; font-weight: 900; }
+  .today-action-kicker { margin-bottom: 5px; color: var(--brand-coral); font-size: 8px; font-weight: 850; letter-spacing: .12em; }
   .today-action-title { color: var(--ink); font-size: 11.5px; font-weight: 800; }
+  .is-primary .today-action-title { display: flex; align-items: baseline; gap: 8px; font-family: "ReefPal Display",var(--font-ui,sans-serif); font-size: 17px; line-height: 1.2; letter-spacing: -.015em; }
+  .is-primary .today-action-title time { color: var(--ink-faint); font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: 0; white-space: nowrap; }
+  .is-secondary .today-action-title time { color: var(--ink-faint); font-size: 9px; font-weight: 650; }
+  .is-secondary .today-action-title time::before { content: ' · '; }
   .today-action-reason { margin-top: 2px; color: var(--ink-faint); font-size: 9.5px; line-height: 1.45;
     overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .today-action-buttons { display: flex; gap: 5px; }
@@ -923,24 +1027,24 @@
   .today-small-btn { min-height: 34px; padding: 6px 9px; border: 1px solid var(--border-strong); border-radius: 10px;
     background: var(--surface-input); color: var(--ocean-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
   .today-small-btn.primary { border-color: var(--ocean); background: var(--ocean); color: var(--text-on-brand); }
+  .is-primary .today-action-buttons { position: relative; z-index: 1; }
+  .is-primary .today-small-btn { min-height: 40px; padding: 8px 13px; border-radius: 12px; }
+  .today-queue { margin-top: 8px; border: 1px solid var(--border-light); border-radius: 13px; background: color-mix(in srgb,var(--surface-glass) 72%,transparent); }
+  .today-queue summary { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px;
+    color: var(--ink-soft); font-size: 10px; font-weight: 750; cursor: pointer; list-style: none; }
+  .today-queue summary::-webkit-details-marker { display: none; }
+  .today-queue summary span { color: var(--ink-faint); font-size: 9px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .today-queue summary::after { content: '⌄'; flex: 0 0 auto; color: var(--ocean); transition: transform .2s ease; }
+  .today-queue[open] summary::after { transform: rotate(180deg); }
+  .today-queue-list { display: grid; gap: 6px; padding: 0 7px 7px; }
   .today-empty-action { padding: 10px 12px; border-radius: 12px; background: rgba(215,240,224,.48);
     color: #27694f; font-size: 11px; line-height: 1.55; }
-  .today-recent { margin-top: 12px; }
-  .today-recent-head { display: flex; align-items: baseline; gap: 7px; margin-bottom: 7px; color: var(--ink); font-size: 10.5px; font-weight: 800; }
-  .today-recent-head small { color: var(--ink-faint); font-size: 9px; font-weight: 500; }
-  .today-recent-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
-  .today-recent-item { min-width: 0; display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: center; gap: 8px;
-    padding: 8px 9px; border: 1px solid var(--border-light); border-radius: 11px; background: var(--surface-glass); }
-  .today-recent-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px;
-    background: var(--ocean-soft); color: var(--ocean-deep); font-size: 13px; font-weight: 900; }
-  .today-recent-title { overflow: hidden; color: var(--ink); font-size: 10px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-  .today-recent-meta { margin-top: 2px; overflow: hidden; color: var(--ink-faint); font-size: 8.8px; text-overflow: ellipsis; white-space: nowrap; }
   .today-expand { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 12px;
-    padding: 9px 2px 0; border: none; border-top: 1px solid rgba(15,95,134,.1); background: transparent;
+    padding: 9px 2px 0; border: none; border-top: 1px solid var(--border-light); background: transparent;
     color: var(--ocean-deep); font-size: 10.5px; font-weight: 800; cursor: pointer; }
-  .today-detail { padding: 0 18px 18px 20px; }
+  .today-detail { padding: 0 3px 12px; }
   .today-detail[hidden] { display: none; }
-  .today-section { padding-top: 13px; border-top: 1px solid rgba(15,95,134,.1); }
+  .today-section { padding-top: 13px; border-top: 1px solid var(--border-light); }
   .today-section + .today-section { margin-top: 14px; }
   .today-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
   .today-section-title { font-size: 11.5px; font-weight: 800; color: var(--ink); }
@@ -980,7 +1084,8 @@
   .today-compact-summary { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); font-size: 10.5px; }
   .today-compact-open { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; color: var(--ocean); font-size: 10px; font-weight: 800; }
   .today-compact-open svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .today-board.is-compact { margin-bottom: 10px; border-radius: 15px; box-shadow: 0 3px 14px rgba(18,59,71,.04); }
+  .today-board.is-compact { overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 15px;
+    background: var(--surface-glass); box-shadow: var(--shadow); }
   .today-board.is-compact .today-compact { display: flex; }
   .today-board.is-compact .today-main, .today-board.is-compact .today-detail { display: none !important; }
   .maintenance-settings { display: grid; gap: 8px; }
@@ -994,19 +1099,21 @@
   .maintenance-toggle { accent-color: var(--ocean); width: 18px; height: 18px; justify-self: center; }
 
   @media (max-width: 560px) {
-    .today-main { padding: 15px 14px 13px 17px; }
-    .today-detail { padding: 0 14px 15px 17px; }
-    .today-summary { font-size: 13px; }
-    .today-metrics { gap: 5px; }
-    .today-metric { padding: 8px 7px; }
+    .today-main { padding: 10px 2px 8px; }
+    .today-detail { padding: 0 2px 12px; }
+    .today-summary { font-size: 19px; }
+    .today-metrics { gap: 0; }
+    .today-metric { padding: 0 8px; }
     .today-metric-value { font-size: 10.5px; }
     .today-action { grid-template-columns: 30px minmax(0,1fr); }
+    .today-action.is-primary { grid-template-columns: 38px minmax(0,1fr); min-height: 0; padding: 13px; }
+    .today-action.is-primary .today-action-icon { width: 38px; height: 38px; }
     .today-action-buttons { grid-column: 1 / -1; }
     .today-action-buttons .today-small-btn { flex: 1; }
-    .today-recent-list { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(158px,72%); overflow-x: auto;
-      padding-bottom: 2px; scroll-snap-type: x proximity; scrollbar-width: none; }
-    .today-recent-list::-webkit-scrollbar { display: none; }
-    .today-recent-item { scroll-snap-align: start; }
+    .today-pulse { padding: 13px 12px 12px; }
+    .today-pulse-head small { max-width: 58%; }
+    .today-pulse-water { grid-template-columns: 27px minmax(0,1fr); gap: 7px; }
+    .today-pulse-events { gap: 6px; }
     .today-evidence { grid-template-columns: repeat(3,minmax(0,1fr)); }
     .rhythm-row { grid-template-columns: minmax(0,1fr) auto; }
     .rhythm-row .today-small-btn { grid-column: 1 / -1; width: 100%; }
@@ -1103,7 +1210,7 @@
   .guide-actions { display: flex; gap: 10px; margin-top: 18px; }
   .guide-actions button { flex: 1; padding: 11px 0; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
     border: none; cursor: pointer; transition: all .15s; }
-  .guide-start { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 14px rgba(10,110,168,.35); }
+  .guide-start { background: var(--ocean); color: var(--text-on-brand); box-shadow: 0 4px 14px color-mix(in srgb,var(--brand-primary) 34%,transparent); }
   .guide-start:hover { background: var(--ocean-deep); }
   .guide-later { background: var(--surface-soft); color: var(--ink-soft); }
   .guide-later:hover { background: var(--surface-hover); }
@@ -1113,8 +1220,7 @@
   html[data-theme="dark"] .tank-identity { background: var(--surface-glass); border-color: var(--border); box-shadow: var(--shadow); }
   html[data-theme="dark"] .group-card,
   html[data-theme="dark"] .dose-card,
-  html[data-theme="dark"] .wq-card,
-  html[data-theme="dark"] .today-board { box-shadow: var(--shadow); }
+  html[data-theme="dark"] .wq-card { box-shadow: var(--shadow); }
   html[data-theme="dark"] input,
   html[data-theme="dark"] select,
   html[data-theme="dark"] textarea,
@@ -1150,10 +1256,7 @@
     background: var(--danger);
     color: var(--text-on-risk);
   }
-  html[data-theme="dark"] .today-action.is-primary {
-    border-color: var(--border-strong);
-    background: linear-gradient(135deg,var(--surface-input),rgba(79,210,197,.12));
-  }
+  html[data-theme="dark"] .today-action.is-primary { border-color: var(--border-strong); }
   html[data-theme="dark"] .auto-strip,
   html[data-theme="dark"] .manual-record-details,
   html[data-theme="dark"] .dose-log-menu .dlm-head,
@@ -1166,7 +1269,7 @@
   html[data-theme="dark"] .data-table tr:hover td { background: var(--surface-hover); }
   html[data-theme="dark"] .dose-result,
   html[data-theme="dark"] .dose-row .d-read.hot,
-  html[data-theme="dark"] .calc-row .result { background: linear-gradient(135deg,rgba(79,210,197,.12),rgba(99,175,255,.1)); }
+  html[data-theme="dark"] .calc-row .result { background: linear-gradient(135deg,rgba(158,219,201,.12),rgba(101,105,170,.12)); }
   html[data-theme="dark"] .dose-row .d-read { background: var(--surface-input); }
   html[data-theme="dark"] .seg-btn.active,
   html[data-theme="dark"] .mode-switch .ms-slider { background: var(--surface-raised); box-shadow: none; }
@@ -1180,33 +1283,36 @@
   html[data-theme="dark"] .badge-adv { background: rgba(99,175,255,.13); color: var(--info); }
   html[data-theme="dark"] .badge-other,
   html[data-theme="dark"] .wq-status.no_data { background: rgba(145,174,179,.12); color: var(--ink-faint); }
-  html[data-theme="dark"] .tank-focus-item { background: rgba(79,210,197,.1); color: var(--brand-primary); }
+  html[data-theme="dark"] .tank-focus-item { background: rgba(158,219,201,.1); color: var(--brand-primary); }
   html[data-theme="dark"] .tank-target,
   html[data-theme="dark"] .today-action,
   html[data-theme="dark"] .today-evidence-item,
   html[data-theme="dark"] .rhythm-row { background: var(--surface-input); }
   html[data-theme="dark"] .tank-setup-note { background: var(--surface-note); color: var(--warn); }
-  html[data-theme="dark"] .today-board { background: linear-gradient(145deg,var(--surface-primary),var(--surface-secondary)); }
+  html[data-theme="dark"] .today-action.is-primary { background: linear-gradient(125deg,rgba(158,219,201,.13),var(--surface-input) 64%); }
+  html[data-theme="dark"] .today-queue { background: rgba(10,16,31,.58); }
   html[data-theme="dark"] .today-status,
-  html[data-theme="dark"] .today-metric,
   html[data-theme="dark"] .today-detail-note,
   html[data-theme="dark"] .today-rhythm-summary,
-  html[data-theme="dark"] .guide-truth { background: rgba(7,31,40,.7); }
-  html[data-theme="dark"] .tone-ok .today-status { color: var(--ok); border-color: rgba(79,210,197,.28); background: var(--ok-bg); }
+  html[data-theme="dark"] .guide-truth { background: rgba(10,16,31,.7); }
+  html[data-theme="dark"] .tone-ok .today-status { color: var(--ok); border-color: rgba(119,207,178,.28); background: var(--ok-bg); }
   html[data-theme="dark"] .tone-warn .today-status { color: var(--warn); border-color: rgba(241,183,91,.3); background: var(--warn-bg); }
   html[data-theme="dark"] .tone-danger .today-status { color: var(--danger); border-color: rgba(255,123,107,.3); background: var(--danger-bg); }
   html[data-theme="dark"] .today-empty-action { background: var(--ok-bg); color: var(--ok); }
-  html[data-theme="dark"] .today-tide { background: linear-gradient(90deg,#28424a 0 20%,#28776f 20% 62%,#9b7437 62% 82%,#995047 82%); }
-  html[data-theme="dark"] .today-tide-marker { border-color: var(--surface-primary); box-shadow: 0 0 0 2px rgba(79,210,197,.12); }
+  html[data-theme="dark"] .today-pulse { border-color: var(--border); background: linear-gradient(145deg,rgba(10,18,34,.92),rgba(15,28,45,.82)); }
+  html[data-theme="dark"] .today-pulse-dot { border-color: var(--surface-primary); animation: reefPulseGlow 2.8s ease-in-out infinite; }
+  html[data-theme="dark"] .today-pulse-event::before { border-color: var(--surface-primary); }
+  html[data-theme="dusk"] .today-pulse { background: linear-gradient(145deg,rgba(255,249,243,.9),rgba(245,232,230,.82)); }
+  @keyframes reefPulseGlow { 50% { filter: drop-shadow(0 0 5px var(--brand-mint)); } }
   html[data-theme="dark"] .d-read.over,
   html[data-theme="dark"] .dose-result.over { background: var(--surface-risk) !important; border-color: var(--danger) !important; }
   html[data-theme="dark"] .guide-num { border-color: var(--bg-elevated); color: var(--text-on-brand); background: var(--brand-primary); }
   html[data-theme="dark"] .guide-map button { background: var(--surface-input); }
   html[data-theme="dark"] .guide-map button:hover { background: var(--surface-hover); }
-  html[data-theme="dark"] .salt-wheel-current { background: linear-gradient(90deg,transparent,rgba(79,210,197,.13),transparent); }
+  html[data-theme="dark"] .salt-wheel-current { background: linear-gradient(90deg,transparent,rgba(158,219,201,.13),transparent); }
   html[data-theme="dark"] .salt-target-picker { box-shadow: none; }
   html[data-theme="dark"] .data-table th { color: var(--text-on-brand); }
-  html[data-theme="dark"] .tabs { background: rgba(196,224,226,.08); }
+  html[data-theme="dark"] .tabs { background: rgba(209,215,229,.08); }
   @media (max-width: 560px) {
     html[data-theme="dark"] .app-header { background: var(--surface-glass-strong); }
     html[data-theme="dark"] .tabs { background: var(--surface-glass-strong); border-color: var(--border); box-shadow: 0 -5px 20px rgba(0,8,12,.28); }
@@ -1236,21 +1342,10 @@
   <div class="brand">
     <div class="logo">
       <span class="mark">
-        <svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
-          <defs>
-            <linearGradient id="lgMark" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
-              <stop offset="1" stop-color="#d8ecf7" stop-opacity=".8"/>
-            </linearGradient>
-          </defs>
-          <path d="M8 30 C 14 22, 20 36, 26 28 S 38 20, 42 26" fill="none" stroke="url(#lgMark)" stroke-width="2.6" stroke-linecap="round"/>
-          <circle cx="14" cy="18" r="2.4" fill="url(#lgMark)"/>
-          <circle cx="34" cy="34" r="1.6" fill="url(#lgMark)" opacity=".7"/>
-        </svg>
+        <img src="/static/brand/reefpal-mark-d4.png" alt="">
       </span>
-      <span class="brand-copy"><span class="brand-name">ReefPal</span><span class="brand-sub">海水缸助手</span></span>
+      <span class="brand-copy"><span class="brand-name"><span>Reef</span><span class="brand-pal">Pal</span></span><span class="brand-sub">海水缸助手</span></span>
     </div>
-    <div class="tagline">WATER QUALITY · DOSING · REEF CARE</div>
   </div>
   <div class="toolbar" aria-label="主题、帮助与数据工具">
     <div class="theme-control">
@@ -1260,13 +1355,16 @@
       </button>
       <div class="theme-menu" id="themeMenu" role="menu" hidden onclick="event.stopPropagation()">
         <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="system" aria-checked="false" onclick="setThemePreference('system')">
-          <span class="theme-choice-icon">◐</span><span><strong>跟随系统</strong><small>随手机或电脑切换</small></span><span class="theme-choice-check">✓</span>
+          <span class="theme-choice-icon">◐</span><span><strong>跟随时段</strong><small>日光、黄昏、夜潜自动切换</small></span><span class="theme-choice-check">✓</span>
         </button>
         <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="light" aria-checked="false" onclick="setThemePreference('light')">
-          <span class="theme-choice-icon">☼</span><span><strong>阳光潮池</strong><small>清亮，适合白天查看</small></span><span class="theme-choice-check">✓</span>
+          <span class="theme-choice-icon">☼</span><span><strong>晴海日光</strong><small>明亮清爽，适合白天</small></span><span class="theme-choice-check">✓</span>
+        </button>
+        <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="dusk" aria-checked="false" onclick="setThemePreference('dusk')">
+          <span class="theme-choice-icon">◒</span><span><strong>珊瑚黄昏</strong><small>蓝紫水面带一点夕阳</small></span><span class="theme-choice-check">✓</span>
         </button>
         <button class="theme-choice" type="button" role="menuitemradio" data-theme-choice="dark" aria-checked="false" onclick="setThemePreference('dark')">
-          <span class="theme-choice-icon">☾</span><span><strong>午夜礁盘</strong><small>沉静，适合夜间维护</small></span><span class="theme-choice-check">✓</span>
+          <span class="theme-choice-icon">☾</span><span><strong>蓝灯夜潜</strong><small>低亮度，适合夜间维护</small></span><span class="theme-choice-check">✓</span>
         </button>
       </div>
     </div>
@@ -1305,11 +1403,30 @@
         <div><div class="today-eyebrow">本缸今日海况</div><div class="today-date" id="todayDate">正在读取这口缸的记录…</div></div>
         <div class="today-status" id="todayStatus">准备中</div>
       </div>
-      <div class="today-tide" aria-hidden="true"><span class="today-tide-marker"></span></div>
       <div class="today-summary" id="todaySummary">正在整理水质、换水和维护记录。</div>
       <div class="today-metrics" id="todayMetrics"></div>
       <div class="today-actions" id="todayActions"></div>
-      <div class="today-recent" id="todayRecent"></div>
+      <section class="today-pulse" id="todayPulse" aria-labelledby="todayPulseTitle">
+        <div class="today-pulse-head"><strong id="todayPulseTitle">礁况脉搏</strong><small id="todayPulseFreshness">正在整理趋势与最近操作</small></div>
+        <div class="today-pulse-water">
+          <span class="today-pulse-axis">水质</span>
+          <div class="today-pulse-chart">
+            <div class="today-pulse-chart-plot">
+              <svg id="todayPulseChart" viewBox="0 0 260 54" preserveAspectRatio="none" role="img" aria-label="所选水质参数趋势">
+                <rect class="today-pulse-band" id="todayPulseBand" x="0" y="18" width="260" height="20" rx="3"></rect>
+                <polyline class="today-pulse-line" id="todayPulseLine" points="0,36 52,34 104,35 156,29 208,31 260,27"></polyline>
+              </svg>
+              <span class="today-pulse-dot" id="todayPulseDot" aria-hidden="true"></span>
+            </div>
+            <div class="today-pulse-chart-foot"><span id="todayPulseStart">较早</span><strong id="todayPulseValue">正在读取</strong><span id="todayPulseEnd">最近</span></div>
+          </div>
+        </div>
+        <div class="today-pulse-focus">
+          <div><strong id="todayPulseFocusTitle">趋势正在整理</strong><p id="todayPulseFocusCopy">记录越连续，这条线越有参考价值。</p></div>
+          <div class="today-pulse-focus-side"><time id="todayPulseFocusTime">—</time><button class="today-pulse-deep" id="todayPulseDetail" type="button" onclick="openTodayPulseDetail()">看完整趋势</button></div>
+        </div>
+        <div class="today-pulse-events" id="todayPulseEvents" aria-label="最近操作时间线"></div>
+      </section>
       <button class="today-expand" id="todayExpand" type="button" onclick="toggleTodayDetail()" aria-expanded="false">
         <span>查看判断依据与维护节奏</span><span id="todayExpandArrow">⌄</span>
       </button>
@@ -1684,7 +1801,7 @@
     <div id="wqSimple">
       <div id="wqSimpleCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px"></div>
       <div class="dose-card" id="wqSimpleAdvice">
-        <div class="dc-title">💡 这缸怎么看</div>
+        <div class="dc-title">💡 本缸近况</div>
         <div id="wqSimpleAdviceBody" style="font-size:13px;color:var(--ink-soft);line-height:1.8;min-height:30px">这里还空着。记下第一组数据，后面就能慢慢看到趋势了。</div>
       </div>
 
@@ -1963,11 +2080,14 @@
 <script>
 let groupData = null;
 const THEME_KEY = 'reefpal_theme';
-const THEME_META_COLORS = { light: '#F4F8F7', dark: '#061820' };
+const THEME_META_COLORS = { light: '#F4F5F7', dusk: '#D9B3AD', dark: '#090E1C' };
 
 function resolvedTheme(preference) {
-  const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return preference === 'dark' || (preference === 'system' && systemDark) ? 'dark' : 'light';
+  if (['light', 'dusk', 'dark'].includes(preference)) return preference;
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 17) return 'light';
+  if (hour >= 17 && hour < 20) return 'dusk';
+  return 'dark';
 }
 
 function syncThemeControls(preference, resolved) {
@@ -1977,16 +2097,16 @@ function syncThemeControls(preference, resolved) {
   if (meta) meta.setAttribute('content', THEME_META_COLORS[resolved]);
   const button = document.getElementById('themeButton');
   const label = document.getElementById('themeButtonLabel');
-  const choiceNames = { system: '跟随系统', light: '阳光潮池', dark: '午夜礁盘' };
+  const choiceNames = { system: '跟随时段', light: '晴海日光', dusk: '珊瑚黄昏', dark: '蓝灯夜潜' };
   if (button) button.setAttribute('aria-label', '选择显示主题，当前' + choiceNames[preference]);
-  if (label) label.textContent = preference === 'system' ? '主题' : choiceNames[preference];
+  if (label) label.textContent = preference === 'system' ? '时段' : choiceNames[preference];
   document.querySelectorAll('[data-theme-choice]').forEach(el => {
     el.setAttribute('aria-checked', el.dataset.themeChoice === preference ? 'true' : 'false');
   });
 }
 
 function applyThemePreference(preference, persist, refreshCharts) {
-  if (!['system', 'light', 'dark'].includes(preference)) preference = 'system';
+  if (!['system', 'light', 'dusk', 'dark'].includes(preference)) preference = 'system';
   if (persist) localStorage.setItem(THEME_KEY, preference);
   syncThemeControls(preference, resolvedTheme(preference));
   if (refreshCharts && wqChartInstance && waterMode === 'pro') renderWaterChart();
@@ -2011,8 +2131,8 @@ function closeThemeMenu() {
 function setThemePreference(preference) {
   applyThemePreference(preference, true, true);
   closeThemeMenu();
-  const names = { system: '跟随系统', light: '阳光潮池', dark: '午夜礁盘' };
-  toast('已切换为' + names[preference], 'info');
+  const names = { system: '跟随时段', light: '晴海日光', dusk: '珊瑚黄昏', dark: '蓝灯夜潜' };
+  toast(preference === 'system' ? '已经按当前时段换好颜色' : '已切换为' + names[preference], 'info');
 }
 
 applyThemePreference(document.documentElement.dataset.themePreference || 'system', false, false);
@@ -2022,14 +2142,11 @@ document.addEventListener('click', event => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeThemeMenu();
 });
-const reefpalSystemTheme = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-if (reefpalSystemTheme) {
-  const followSystemTheme = () => {
-    if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyThemePreference('system', false, true);
-  };
-  if (reefpalSystemTheme.addEventListener) reefpalSystemTheme.addEventListener('change', followSystemTheme);
-  else if (reefpalSystemTheme.addListener) reefpalSystemTheme.addListener(followSystemTheme);
+function refreshAmbientTheme() {
+  if ((localStorage.getItem(THEME_KEY) || 'system') === 'system') applyThemePreference('system', false, true);
 }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAmbientTheme(); });
+setInterval(refreshAmbientTheme, 5 * 60 * 1000);
 
 /* ═══ 数字滚动动画：数值变化时从旧值滚到新值（活力感） ═══ */
 let _numAnim = {}; // pre -> 当前显示值
@@ -2226,7 +2343,8 @@ function todayTaskButtons(task, prominent) {
 function todayActionCard(task, index) {
   const prominent = index === 0;
   return '<div class="today-action ' + (prominent ? 'is-primary' : 'is-secondary') + '"><div class="today-action-icon">' + escapeToday(task.icon || '·') + '</div>' +
-    '<div><div class="today-action-title">' + escapeToday(task.title) + ' · ' + escapeToday(task.timing) + '</div>' +
+    '<div>' + (prominent ? '<div class="today-action-kicker">今天先看这件事</div>' : '') +
+    '<div class="today-action-title"><span>' + escapeToday(task.title) + '</span><time>' + escapeToday(task.timing) + '</time></div>' +
     '<div class="today-action-reason">' + escapeToday(task.reason || task.category) + '</div></div>' +
     '<div class="today-action-buttons">' + todayTaskButtons(task, prominent) + '</div></div>';
 }
@@ -2240,10 +2358,10 @@ function renderTodayActions(actions) {
   }
   const primary = todayActionCard(actions[0], 0);
   const secondary = actions.slice(1);
-  wrap.innerHTML = '<div class="today-actions-title">今天先看这件事 <small>其余安排接着往下放</small></div>' +
-    '<div class="today-action-list">' + primary +
-    (secondary.length ? '<div class="today-next-label">接下来还有 ' + secondary.length + ' 项</div>' +
-      secondary.map((task, index) => todayActionCard(task, index + 1)).join('') : '') + '</div>';
+  const queueNames = secondary.map(task => escapeToday(task.title)).join(' · ');
+  wrap.innerHTML = '<div class="today-action-list">' + primary +
+    (secondary.length ? '<details class="today-queue"><summary><b>接下来还有 ' + secondary.length + ' 项</b><span>' + queueNames + '</span></summary>' +
+      '<div class="today-queue-list">' + secondary.map((task, index) => todayActionCard(task, index + 1)).join('') + '</div></details>' : '') + '</div>';
 }
 
 function recentEventDate(value) {
@@ -2257,18 +2375,92 @@ function recentEventDate(value) {
   return Number(date.slice(5, 7)) + '月' + Number(date.slice(8, 10)) + '日';
 }
 
-function renderTodayRecent(items) {
-  const wrap = document.getElementById('todayRecent');
-  if (!items || items.length === 0) {
-    wrap.hidden = true;
-    wrap.innerHTML = '';
+let todayPulseElement = null;
+
+function pulseDate(value) {
+  const date = String(value || '').slice(0, 10);
+  if (!date) return '—';
+  return Number(date.slice(5, 7)) + '.' + Number(date.slice(8, 10));
+}
+
+function pulseValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  if (Math.abs(number) < 0.1) return number.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  if (Math.abs(number) < 10) return number.toFixed(1).replace(/\.0$/, '');
+  return String(Math.round(number * 10) / 10);
+}
+
+function renderTodayPulseEvents(items) {
+  const wrap = document.getElementById('todayPulseEvents');
+  const events = (items || []).slice(0, 3).reverse();
+  if (!events.length) {
+    wrap.innerHTML = '<div class="today-pulse-event"><strong>还没有操作记录</strong><span>从今天开始也不晚</span></div>';
     return;
   }
-  wrap.hidden = false;
-  wrap.innerHTML = '<div class="today-recent-head">最近发生 <small>从现有记录自动整理</small></div><div class="today-recent-list">' +
-    items.map(item => '<div class="today-recent-item"><div class="today-recent-icon">' + escapeToday(item.icon || '·') + '</div><div>' +
-      '<div class="today-recent-title">' + escapeToday(item.title) + '</div>' +
-      '<div class="today-recent-meta">' + escapeToday(item.detail) + ' · ' + escapeToday(recentEventDate(item.recorded_at)) + '</div></div></div>').join('') + '</div>';
+  wrap.innerHTML = events.map(item => '<div class="today-pulse-event kind-' + escapeToday(item.kind || 'other') + '">' +
+    '<strong>' + escapeToday(item.title) + '</strong><span>' + escapeToday(recentEventDate(item.recorded_at)) + '</span></div>').join('');
+}
+
+function openTodayPulseDetail() {
+  if (!todayPulseElement) return;
+  showTab('water');
+  jumpToTrend(todayPulseElement);
+  setTimeout(() => {
+    const detail = document.getElementById('wqPro');
+    if (detail) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function renderTodayPulse(data) {
+  const pulse = document.getElementById('todayPulse');
+  const analysis = waterAnalysis || {};
+  const keys = ['KH', '钙', '镁', 'NO3', 'PO4'].filter(key => analysis[key] && (analysis[key].records || []).length);
+  renderTodayPulseEvents(data.recent_events || []);
+  if (!keys.length) {
+    pulse.classList.add('is-empty');
+    document.getElementById('todayPulseFreshness').textContent = '记下两次读数后，这里会开始连线';
+    document.getElementById('todayPulseFocusTitle').textContent = '还没有可画的水质趋势';
+    document.getElementById('todayPulseFocusCopy').textContent = '先从最常测的一项开始，下一次记录就能和今天对照。';
+    document.getElementById('todayPulseFocusTime').textContent = '';
+    document.getElementById('todayPulseDetail').hidden = true;
+    return;
+  }
+  pulse.classList.remove('is-empty');
+  todayPulseElement = keys.slice().sort((a, b) => Number(analysis[b].advice?.priority || 0) - Number(analysis[a].advice?.priority || 0))[0];
+  const item = analysis[todayPulseElement];
+  const records = (item.records || []).slice(-9);
+  const ideal = item.ideal || { low: 0, high: 1, unit: '' };
+  const values = records.map(record => Number(record.value)).filter(Number.isFinite);
+  const idealSpan = Math.max(Number(ideal.high) - Number(ideal.low), .001);
+  const min = Math.min(...values, Number(ideal.low)) - idealSpan * .18;
+  const max = Math.max(...values, Number(ideal.high)) + idealSpan * .18;
+  const range = Math.max(max - min, .001);
+  const y = value => 48 - (Number(value) - min) / range * 42;
+  const points = records.map((record, index) => (records.length === 1 ? 130 : index * 260 / (records.length - 1)) + ',' + y(record.value)).join(' ');
+  const last = records[records.length - 1];
+  const lastX = records.length === 1 ? 130 : 260;
+  document.getElementById('todayPulseLine').setAttribute('points', points);
+  const pulseDot = document.getElementById('todayPulseDot');
+  pulseDot.style.left = (lastX / 260 * 100) + '%';
+  pulseDot.style.top = (y(last.value) / 54 * 100) + '%';
+  const bandTop = Math.max(4, y(ideal.high));
+  const bandBottom = Math.min(49, y(ideal.low));
+  document.getElementById('todayPulseBand').setAttribute('y', bandTop);
+  document.getElementById('todayPulseBand').setAttribute('height', Math.max(3, bandBottom - bandTop));
+  const labelMap = { KH: 'KH', '钙': 'Ca', '镁': 'Mg', NO3: 'NO₃', PO4: 'PO₄' };
+  document.getElementById('todayPulseStart').textContent = pulseDate(records[0].date);
+  document.getElementById('todayPulseEnd').textContent = pulseDate(last.date);
+  document.getElementById('todayPulseValue').textContent = labelMap[todayPulseElement] + ' ' + pulseValue(item.current) + ' ' + (ideal.unit || '');
+  document.getElementById('todayPulseChart').setAttribute('aria-label', (item.display || labelMap[todayPulseElement]) + '最近趋势');
+  const evidence = (data.evidence || []).find(entry => entry.element === todayPulseElement);
+  document.getElementById('todayPulseFreshness').textContent = (evidence ? evidence.state_label + ' · ' : '') + (data.coverage?.label || '记录已读取');
+  document.getElementById('todayPulseFocusTitle').textContent = (item.display || labelMap[todayPulseElement]) + ' · ' + (item.signals?.direction_cn || '暂时看不出方向');
+  document.getElementById('todayPulseFocusCopy').textContent = item.advice?.summary || item.signals?.level_msg || '再多几次同条件记录，这条趋势会更有参考价值。';
+  document.getElementById('todayPulseFocusTime').textContent = evidence ? evidence.age_days + ' 天前' : '最近记录';
+  const detailButton = document.getElementById('todayPulseDetail');
+  detailButton.hidden = false;
+  detailButton.setAttribute('aria-label', '查看' + (item.display || labelMap[todayPulseElement]) + '完整趋势');
 }
 
 function renderTodayRhythm(items) {
@@ -2304,7 +2496,7 @@ function renderTodayDashboard(data) {
     '<div class="today-metric"><span class="today-metric-label">最近水质</span><span class="today-metric-value">' + escapeToday(data.coverage.latest_date || '还没记录') + '</span></div>' +
     '<div class="today-metric"><span class="today-metric-label">下一节奏</span><span class="today-metric-value">' + escapeToday(next ? next.title + ' · ' + next.timing : '待建立') + '</span></div>';
   renderTodayActions(data.actions || []);
-  renderTodayRecent(data.recent_events || []);
+  renderTodayPulse(data);
   renderTodayEvidence(data.evidence || []);
   document.getElementById('todayInsights').innerHTML = (data.insights || []).map(item => '<div class="today-insight">' + escapeToday(item) + '</div>').join('');
   renderTodayRhythm(rhythm);
@@ -3825,7 +4017,7 @@ function onWqElChange() {
 function getChartTheme() {
   const styles = getComputedStyle(document.documentElement);
   const value = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
-  const dark = document.documentElement.dataset.theme === 'dark';
+  const lowLight = document.documentElement.dataset.theme === 'dark';
   return {
     text: value('--text-primary', '#123b47'),
     muted: value('--chart-axis', '#5c7a8c'),
@@ -3840,9 +4032,9 @@ function getChartTheme() {
     green: value('--chart-green', '#2e8b57'),
     violet: value('--chart-violet', '#7b1fa2'),
     red: value('--chart-red', '#c0392b'),
-    zoomFiller: dark ? 'rgba(79,210,197,.14)' : 'rgba(11,113,128,.1)',
-    areaTop: dark ? 'rgba(99,175,255,.28)' : 'rgba(10,110,168,.25)',
-    areaBottom: dark ? 'rgba(99,175,255,.015)' : 'rgba(10,110,168,.02)'
+    zoomFiller: lowLight ? 'rgba(158,219,201,.14)' : 'rgba(158,219,201,.16)',
+    areaTop: lowLight ? 'rgba(146,152,228,.28)' : 'rgba(75,79,136,.25)',
+    areaBottom: lowLight ? 'rgba(146,152,228,.015)' : 'rgba(75,79,136,.02)'
   };
 }
 

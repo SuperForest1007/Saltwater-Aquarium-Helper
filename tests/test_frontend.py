@@ -233,7 +233,7 @@ class TestFrontend:
             assert stale_copy not in html
 
         for expected_copy in [
-            "这缸怎么看",
+            "本缸近况",
             "这次补多少，宁可分两回",
             "滴定的本事不在滴得多",
             "保守提醒线",
@@ -268,11 +268,13 @@ class TestFrontend:
     def test_light_theme_shell_and_compact_secondary_status(self):
         """阳光潮池骨架存在，次级模块使用紧凑礁况条而非重复完整首页。"""
         html = _read_index()
-        assert '--bg-canvas: #f4f8f7' in html
-        assert '--brand-primary: #0b7180' in html
+        assert '--bg-canvas: #f4f5f7' in html
+        assert '--brand-primary: #4b4f88' in html
         assert '<header class="app-header">' in html
+        assert '/static/brand/reefpal-mark-d4.png' in html
+        assert '先看生命，再看数字' not in html
         assert 'id="themeColorMeta"' in html
-        assert 'content="#F4F8F7"' in html
+        assert 'content="#F4F5F7"' in html
         assert 'id="todayCompactSummary"' in html
         assert '.today-board.is-compact .today-main' in html
         assert "board.classList.toggle('is-compact', tabName !== 'water')" in html
@@ -290,8 +292,17 @@ class TestFrontend:
         for label in ["今日", "换水", "补充", "滴定"]:
             assert f"<span>{label}</span>" in tabs
         assert "navigateMainTab('water')" in tabs
-        assert 'id="todayRecent"' in html
-        assert 'function renderTodayRecent(items)' in html
+        assert 'id="todayPulse"' in html
+        assert 'id="todayPulseChart"' in html
+        assert 'class="today-pulse-dot" id="todayPulseDot"' in html
+        assert "pulseDot.style.top" in html
+        assert 'function renderTodayPulse(data)' in html
+        assert 'function renderTodayPulseEvents(items)' in html
+        assert 'function openTodayPulseDetail()' in html
+        assert 'id="todayPulseDetail"' in html
+        assert 'id="todayPulseTabs"' not in html
+        assert "jumpToTrend(todayPulseElement)" in html
+        assert 'item.ideal' in html
         assert "recent_events" in html
         assert '今天先看这件事' in html
         assert 'is-primary' in html and 'is-secondary' in html
@@ -300,13 +311,15 @@ class TestFrontend:
         assert "returnToTodayAfterRecord('salt')" in html
 
     def test_midnight_reef_theme_is_tokenized_and_persistent(self):
-        """午夜礁盘使用语义 Token、三态选择和主题化图表，而不是简单反色。"""
+        """三时段主题使用语义 Token、四态选择和主题化图表，而不是简单反色。"""
         html = _read_index()
         for token in [
-            '--bg-canvas: #061820',
-            '--surface-primary: #103642',
-            '--text-primary: #e7f2f2',
-            '--brand-primary: #4fd2c5',
+            '--bg-canvas: #090e1c',
+            '--surface-primary: #161f35',
+            '--text-primary: #f2f2f5',
+            '--brand-primary: #9edbc9',
+            '--brand-violet: #6569aa',
+            '--brand-coral: #ff8069',
             '--signal-risk: #ff7b6b',
         ]:
             assert token in html
@@ -316,10 +329,12 @@ class TestFrontend:
         assert "function getChartTheme()" in html
         assert "backgroundColor: chartTheme.tooltip" in html
         assert "backgroundColor: '#fff'" not in html
-        for choice in ['system', 'light', 'dark']:
+        for choice in ['system', 'light', 'dusk', 'dark']:
             assert f'data-theme-choice="{choice}"' in html
-        for label in ["跟随系统", "阳光潮池", "午夜礁盘"]:
+        for label in ["跟随时段", "晴海日光", "珊瑚黄昏", "蓝灯夜潜"]:
             assert label in html
+        assert '--bg-canvas: #e4dfe7' in html
+        assert "hour >= 17 && hour < 20" in html
         # 深色通用背景覆盖不能吃掉高优先级按钮的反色文字。
         assert 'html[data-theme="dark"] .today-small-btn.primary' in html
         assert 'html[data-theme="dark"] .mix-ref .mr-btn.active' in html
