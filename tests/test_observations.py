@@ -52,7 +52,7 @@ class TestReefObservations:
             "status": "good", "tags": [], "note": "今天整体开得很好",
         })
         backup = test_client.get("/api/export/json").json()
-        assert backup["schema_version"] == 6
+        assert backup["schema_version"] == 7
         assert len(backup["reef_observations"]) == 1
         assert backup["reef_observations"][0]["recorded_at"].startswith(date.today().isoformat())
 

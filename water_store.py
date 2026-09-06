@@ -16,6 +16,10 @@ DOSING_ACTIONS = ("start", "end", "adjust")
 ELEMENT_UNITS = {"KH": "dKH", "钙": "ppm", "镁": "ppm", "NO3": "ppm", "PO4": "ppm"}
 OBSERVATION_STATUSES = ("good", "changed", "watch")
 OBSERVATION_TAGS = ("coral", "fish", "algae", "equipment", "other")
+SUPPLEMENT_STATUSES = ("awaiting_test", "retested", "resolved", "cancelled")
+SUPPLEMENT_FORMS = ("powder", "solution")
+SUPPLEMENT_RESULT_CODES = ("in_range", "improved", "flat", "overshoot", "opposite", "unknown")
+SUPPLEMENT_TOLERANCE = {"KH": 0.2, "钙": 10.0, "镁": 20.0, "NO3": 0.5, "PO4": 0.01}
 
 
 def get_db():
@@ -460,6 +464,166 @@ def init_observations():
     conn.close()
 
 
+def init_supplements():
+    """初始化一次性补充事件；它和长期滴定方案是两条不同的记录链。"""
+    conn = get_db()
+    tank_id = _ensure_active_tank(conn)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS supplement_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tank_id INTEGER NOT NULL,
+            element TEXT NOT NULL,
+            additive_name TEXT NOT NULL,
+            product_name TEXT,
+            dose_form TEXT NOT NULL,
+            calculated_amount REAL NOT NULL,
+            actual_amount REAL NOT NULL,
+            amount_unit TEXT NOT NULL,
+            pre_value REAL NOT NULL,
+            target_value REAL,
+            reference_low REAL NOT NULL,
+            reference_high REAL NOT NULL,
+            recorded_at TEXT NOT NULL,
+            recommended_retest_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'awaiting_test',
+            retest_record_id INTEGER,
+            result_code TEXT,
+            result_summary TEXT,
+            note TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_supplement_tank_status_retest "
+        "ON supplement_events(tank_id, status, recommended_retest_at)"
+    )
+    conn.execute("UPDATE supplement_events SET tank_id=? WHERE tank_id IS NULL", (tank_id,))
+    conn.commit()
+    conn.close()
+
+
+def _supplement_result(element, pre_value, retest_value, reference_low, reference_high):
+    """描述补充前后的读数变化，只陈述关联，不把单次变化写成确定因果。"""
+    tolerance = SUPPLEMENT_TOLERANCE.get(element, 0.0)
+    if reference_low <= retest_value <= reference_high:
+        return "in_range", f"复测 {retest_value:g}，已经回到参考范围"
+    if retest_value > reference_high:
+        return "overshoot", f"复测 {retest_value:g}，高于这口缸的参考上限"
+    change = retest_value - pre_value
+    if abs(change) <= tolerance:
+        return "flat", f"复测 {retest_value:g}，和补充前相差不大"
+    if change > 0:
+        return "improved", f"复测 {retest_value:g}，比补充前高了 {change:g}，还没到参考下限"
+    if change < 0:
+        return "opposite", f"复测 {retest_value:g}，比补充前低了 {abs(change):g}，先别急着继续加"
+    return "unknown", f"复测 {retest_value:g}，这次变化还不够明确"
+
+
+def add_supplement_event(element, additive_name, dose_form, calculated_amount, actual_amount,
+                         pre_value, reference_low, reference_high, recorded_at,
+                         recommended_retest_at, target_value=None, product_name="", note="",
+                         tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    now = _now()
+    amount_unit = "ml" if dose_form == "solution" else "g"
+    cur = conn.execute(
+        """INSERT INTO supplement_events
+           (tank_id, element, additive_name, product_name, dose_form, calculated_amount,
+            actual_amount, amount_unit, pre_value, target_value, reference_low, reference_high,
+            recorded_at, recommended_retest_at, status, note, created_at, updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'awaiting_test',?,?,?)""",
+        (tank_id, element, additive_name, product_name, dose_form, calculated_amount,
+         actual_amount, amount_unit, pre_value, target_value, reference_low, reference_high,
+         recorded_at, recommended_retest_at, note, now, now),
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    row = conn.execute("SELECT * FROM supplement_events WHERE id=?", (rid,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
+def get_supplement_events(status=None, limit=500, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    params = [tank_id]
+    where = "tank_id=?"
+    if status:
+        where += " AND status=?"
+        params.append(status)
+    params.append(limit)
+    rows = conn.execute(
+        f"SELECT * FROM supplement_events WHERE {where} ORDER BY recorded_at DESC, id DESC LIMIT ?",
+        params,
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
+def get_pending_supplement_events(tank_id=None):
+    return get_supplement_events("awaiting_test", tank_id=tank_id)
+
+
+def cancel_supplement_event(rid):
+    conn = get_db()
+    tank_id = get_active_tank_id(conn)
+    cur = conn.execute(
+        """UPDATE supplement_events SET status='cancelled', updated_at=?
+           WHERE id=? AND tank_id=? AND status='awaiting_test'""",
+        (_now(), rid, tank_id),
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM supplement_events WHERE id=? AND tank_id=?", (rid, tank_id)).fetchone()
+    conn.close()
+    return dict(row) if cur.rowcount and row else None
+
+
+def _as_store_datetime(value):
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).replace(tzinfo=None)
+    except (TypeError, ValueError):
+        return datetime.min
+
+
+def link_supplement_retest(rid, record_id):
+    conn = get_db()
+    tank_id = get_active_tank_id(conn)
+    event = conn.execute(
+        "SELECT * FROM supplement_events WHERE id=? AND tank_id=?", (rid, tank_id)
+    ).fetchone()
+    record = conn.execute(
+        "SELECT * FROM water_records WHERE id=? AND tank_id=?", (record_id, tank_id)
+    ).fetchone()
+    if not event or not record:
+        conn.close()
+        return None
+    if event["status"] != "awaiting_test":
+        conn.close()
+        raise ValueError("这次补充已经收过尾了")
+    if record["element"] != event["element"]:
+        conn.close()
+        raise ValueError("复测项目和这次补充的元素对不上")
+    if _as_store_datetime(record["recorded_at"]) < _as_store_datetime(event["recorded_at"]):
+        conn.close()
+        raise ValueError("复测时间不能早于补充时间")
+    result_code, summary = _supplement_result(
+        event["element"], float(event["pre_value"]), float(record["value"]),
+        float(event["reference_low"]), float(event["reference_high"]),
+    )
+    status = "resolved" if result_code == "in_range" else "retested"
+    conn.execute(
+        """UPDATE supplement_events SET status=?, retest_record_id=?, result_code=?,
+           result_summary=?, updated_at=? WHERE id=? AND tank_id=?""",
+        (status, record_id, result_code, summary, _now(), rid, tank_id),
+    )
+    conn.commit()
+    row = conn.execute("SELECT * FROM supplement_events WHERE id=?", (rid,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
 def ensure_maintenance_rules(defaults, tank_id=None):
     """写入默认规则；只更新未被用户自定义过的规则。"""
     conn = get_db()
@@ -652,7 +816,7 @@ def delete_water_change(rid):
 
 def export_all():
     return {
-        "schema_version": 6,
+        "schema_version": 7,
         "tank": get_active_tank(),
         "water_records": get_records(limit=100000),
         "dosing_log": get_dosing_logs(),
@@ -660,6 +824,7 @@ def export_all():
         "maintenance_rules": get_maintenance_rules(),
         "maintenance_events": get_maintenance_events(limit=100000),
         "reef_observations": get_observations(limit=100000),
+        "supplement_events": get_supplement_events(limit=100000),
     }
 
 
@@ -870,6 +1035,66 @@ def import_all(data):
                (tank_id, status, tags, note, recorded_at, created_at)
                VALUES (?,?,?,?,?,?)""",
             (tank_id, status, tags_json, note, recorded_at, _now()),
+        )
+        inserted += 1
+
+    for event in data.get("supplement_events") or []:
+        try:
+            element = str(event["element"])
+            additive_name = str(event["additive_name"]).strip()[:80]
+            dose_form = str(event["dose_form"])
+            calculated_amount = float(event["calculated_amount"])
+            actual_amount = float(event["actual_amount"])
+            pre_value = float(event["pre_value"])
+            reference_low = float(event["reference_low"])
+            reference_high = float(event["reference_high"])
+            target_raw = event.get("target_value")
+            target_value = float(target_raw) if target_raw not in (None, "") else None
+            recorded_at = str(event.get("recorded_at") or "")
+            recommended_retest_at = str(event.get("recommended_retest_at") or "")
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+            continue
+        finite_values = [calculated_amount, actual_amount, pre_value, reference_low, reference_high]
+        if target_value is not None:
+            finite_values.append(target_value)
+        try:
+            retest_date = datetime.fromisoformat(recommended_retest_at).date()
+            record_date = datetime.fromisoformat(recorded_at).date()
+        except ValueError:
+            skipped += 1
+            continue
+        if (element not in WATER_ELEMENTS or not additive_name or dose_form not in SUPPLEMENT_FORMS
+                or any(not math.isfinite(value) for value in finite_values)
+                or calculated_amount <= 0 or actual_amount <= 0 or pre_value < 0
+                or reference_low < 0 or reference_low >= reference_high
+                or record_date > datetime.now().date() or retest_date < record_date):
+            skipped += 1
+            continue
+        amount_unit = "ml" if dose_form == "solution" else "g"
+        if _count_matching(
+            conn, "supplement_events",
+            "tank_id=? AND element=? AND actual_amount=? AND amount_unit=? AND recorded_at=?",
+            (tank_id, element, actual_amount, amount_unit, recorded_at),
+        ):
+            skipped += 1
+            continue
+        status = str(event.get("status") or "awaiting_test")
+        if status not in SUPPLEMENT_STATUSES:
+            status = "awaiting_test"
+        result_code = event.get("result_code") if event.get("result_code") in SUPPLEMENT_RESULT_CODES else None
+        conn.execute(
+            """INSERT INTO supplement_events
+               (tank_id, element, additive_name, product_name, dose_form, calculated_amount,
+                actual_amount, amount_unit, pre_value, target_value, reference_low, reference_high,
+                recorded_at, recommended_retest_at, status, retest_record_id, result_code,
+                result_summary, note, created_at, updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (tank_id, element, additive_name, str(event.get("product_name") or "")[:80], dose_form,
+             calculated_amount, actual_amount, amount_unit, pre_value, target_value, reference_low,
+             reference_high, recorded_at, recommended_retest_at, status, None, result_code,
+             str(event.get("result_summary") or "")[:200], str(event.get("note") or "")[:200],
+             _now(), _now()),
         )
         inserted += 1
 

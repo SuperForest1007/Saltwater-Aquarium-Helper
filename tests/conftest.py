@@ -35,6 +35,7 @@ def test_client():
     water_store.init_water_change()
     water_store.init_maintenance()
     water_store.init_observations()
+    water_store.init_supplements()
 
     # 创建 TestClient
     from fastapi.testclient import TestClient

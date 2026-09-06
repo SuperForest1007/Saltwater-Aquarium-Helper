@@ -377,13 +377,50 @@ class TestFrontend:
         assert 'aria-pressed="true">KH</button>' in html
         assert "b.setAttribute('aria-pressed', String(selected))" in html
 
-    def test_today_is_the_first_task_hub_without_removing_existing_tools(self):
-        """IA-01A 先升级今日入口，现有换水、补充和滴定仍保持可达。"""
+    def test_primary_navigation_groups_records_tools_and_profile(self):
+        """正式底栏按任务分组，现有换水、补充和滴定仍可从工具页直达。"""
         html = _read_index()
         tabs = html.split('<!-- Tabs -->', 1)[1].split('</div>', 1)[0]
-        for label in ["今日", "换水", "补充", "滴定"]:
+        for label in ["今日", "记录", "工具", "我的"]:
             assert f"<span>{label}</span>" in tabs
-        assert "navigateMainTab('water')" in tabs
+        for tab in ["water", "record", "tools", "profile"]:
+            assert f"navigateMainTab('{tab}')" in tabs
+            assert f'id="panel-{tab}"' in html or tab == "water"
+        assert 'id="panel-record"' in html
+        assert 'id="panel-tools"' in html
+        assert 'id="panel-profile"' in html
+        for tool in ["换水配盐", "元素补充", "日常滴定", "水质深度"]:
+            assert tool in html
+        assert "openRecordTool('salt'" in html
+        assert "openRecordTool('calc'" in html
+        assert "openRecordTool('dosing'" in html
+
+    def test_mobile_navigation_stays_stable_and_low_frequency_tools_move_to_profile(self):
+        """手机不再使用整页横滑切页，品牌工具栏退出首屏，主题入口归入“我的”。"""
+        html = _read_index()
+        assert ".app-header { display: none; }" in html
+        assert ".panel.slide-in-right,.panel.slide-in-left { animation: panelFade" in html
+        assert "bindSwipeTabs" not in html
+        assert "手机整页滑动会与系统返回手势和横向图表冲突" in html
+        assert 'onclick="openThemeSheet(this)"' in html
+        assert 'id="profileThemeSummary"' in html
+
+    def test_touch_selects_use_themed_choice_sheet_without_replacing_native_values(self):
+        """触屏端以主题抽屉呈现全部单选下拉，同时保留原 select 与 change 事件。"""
+        html = _read_index()
+        for marker in [
+            'id="choiceSheet"',
+            'id="choiceSheetOptions"',
+            "function enhanceChoiceSelect(select)",
+            "function openSelectChoice(select, trigger)",
+            "select.dispatchEvent(new Event('change', { bubbles: true }))",
+            "root.querySelectorAll('select').forEach(enhanceChoiceSelect)",
+            "window.matchMedia('(pointer: coarse)').matches",
+        ]:
+            assert marker in html
+        assert ".choice-sheet-option[aria-checked=\"true\"]" in html
+        assert 'function loadFormalRecordPage()' in html
+        assert 'function buildFormalRecordData(' in html
         assert 'id="todayPulse"' in html
         assert 'id="todayReefWindow"' in html
         assert 'id="todayPatrolButton"' in html
@@ -426,6 +463,21 @@ class TestFrontend:
         assert 'class="dose-card wq-simple-advice"' in html
         assert '展开查看各项判断' in html
         assert 'inputmode="decimal"' in html
+
+    def test_one_off_supplement_flow_is_connected_across_pages(self):
+        """一次性补充可确认实加量、回到来源、进入今日复测并显示在记录和趋势中。"""
+        html = _read_index()
+        assert 'id="supplementModal"' in html
+        assert 'id="supplementActual"' in html
+        assert "api('/api/supplement/events'" in html
+        assert "action_type === 'retest'" in html
+        assert 'function goToTodayRetest(' in html
+        assert "'/link-retest'" in html
+        assert 'id="calcToolReturn"' in html
+        assert 'function returnFromTool()' in html
+        assert 'supplementEventsCache' in html
+        assert 'id="wqChartSupplement"' in html
+        assert "type: 'supplement'" in html
 
     def test_reef_round_is_progressive_and_updates_the_pulse(self):
         """巡缸不依赖生物档案；只有状态选择后才展开可选细节。"""

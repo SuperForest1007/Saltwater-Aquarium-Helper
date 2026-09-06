@@ -112,7 +112,8 @@ def _observation_context(observations, now):
     }
 
 
-def _build_recent_events(records_by_element, water_changes, dosing_logs, observations=None, now=None):
+def _build_recent_events(records_by_element, water_changes, dosing_logs, observations=None,
+                         supplement_events=None, now=None):
     """把现有记录投影成今日页的轻量时间线，不另存一份事件数据。"""
     recent = []
     measurements = []
@@ -167,6 +168,18 @@ def _build_recent_events(records_by_element, water_changes, dosing_logs, observa
             "kind": "observation", "icon": "◉", "title": "看过一圈",
             "detail": observation["label"] + " · " + observation["summary"],
             "recorded_at": observation["recorded_at"],
+        })
+
+    valid_supplements = [(item, _as_datetime(item.get("recorded_at"))) for item in supplement_events or []]
+    valid_supplements = [(item, recorded_at) for item, recorded_at in valid_supplements if recorded_at]
+    if valid_supplements:
+        item, recorded_at = max(valid_supplements, key=lambda entry: (entry[1], int(entry[0].get("id") or 0)))
+        amount = float(item.get("actual_amount") or 0)
+        unit = item.get("amount_unit") or ""
+        recent.append({
+            "kind": "supplement", "icon": "+", "title": f"补了 {item.get('element') or ''}".strip(),
+            "detail": f"{amount:g} {unit} · 等复测",
+            "recorded_at": recorded_at.isoformat(),
         })
 
     recent.sort(key=lambda item: _as_datetime(item["recorded_at"]) or datetime.min, reverse=True)
@@ -239,7 +252,7 @@ def build_maintenance_rhythm(rules, events, latest_elements, water_changes, now=
 
 
 def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosing_logs, rules, events,
-                          observations=None, now=None):
+                          observations=None, supplement_events=None, now=None):
     now = now or datetime.now()
     if not tank.get("setup_complete"):
         return {
@@ -325,6 +338,32 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
     observation = _observation_context(observations, now)
     due_tasks = [item for item in rhythm if item["state"] in ("overdue", "due")]
     actions = due_tasks[:3]
+    pending_retests = []
+    for item in supplement_events or []:
+        if item.get("status") != "awaiting_test":
+            continue
+        retest_at = _as_datetime(item.get("recommended_retest_at"))
+        recorded_at = _as_datetime(item.get("recorded_at"))
+        if not retest_at or retest_at.date() > now.date() + timedelta(days=1):
+            continue
+        delta = (retest_at.date() - now.date()).days
+        amount = float(item.get("actual_amount") or 0)
+        unit = item.get("amount_unit") or ""
+        pending_retests.append({
+            "task_key": f"supplement_retest_{item.get('id')}",
+            "title": "复测 " + ELEMENT_LABELS.get(item.get("element"), item.get("element") or "水质"),
+            "category": "补充回看", "icon": "↻",
+            "state": "overdue" if delta < 0 else ("due" if delta == 0 else "soon"),
+            "timing": _days_text(delta),
+            "reason": (
+                (recorded_at.strftime("%m月%d日") + "补过 " if recorded_at else "上次补过 ")
+                + f"{amount:g} {unit} {item.get('additive_name') or ''}，看看这次读数怎么走"
+            ),
+            "action_type": "retest", "target_tab": "water",
+            "element": item.get("element"), "supplement_event_id": item.get("id"),
+        })
+    pending_retests.sort(key=lambda item: (0 if item["state"] == "overdue" else 1, item["task_key"]))
+    actions = (pending_retests + actions)[:3]
     action_finding = severe[0] if severe else (warnings[0] if warnings and warnings[0]["priority"] >= 50 else None)
     if action_finding:
         actions.insert(0, {"task_key": "water_warning", "title": "复核 " + ELEMENT_LABELS.get(action_finding["element"], action_finding["element"]),
@@ -357,7 +396,9 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
         "status": status,
         "coverage": {"count": fresh_count, "total": len(ELEMENT_ORDER), "latest_date": latest_date, "label": coverage_label},
         "evidence": evidence, "actions": actions, "rhythm": rhythm, "insights": insights,
-        "recent_events": _build_recent_events(records_by_element, water_changes, dosing_logs, observations, now),
+        "recent_events": _build_recent_events(
+            records_by_element, water_changes, dosing_logs, observations, supplement_events, now
+        ),
         "observation": observation,
         "basis_note": (
             f"参考范围按 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 生成，只看已经记下的数据。"

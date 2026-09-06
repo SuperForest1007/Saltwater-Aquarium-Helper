@@ -34,6 +34,8 @@ from water_store import (
     init_maintenance, ensure_maintenance_rules, get_maintenance_rules,
     update_maintenance_rule, add_maintenance_event, get_maintenance_events,
     init_observations, add_observation, get_observations,
+    init_supplements, add_supplement_event, get_supplement_events,
+    get_pending_supplement_events, cancel_supplement_event, link_supplement_retest,
     TANK_TYPES, TANK_STAGES,
 )
 
@@ -45,6 +47,7 @@ init_dosing_log()
 init_water_change()
 init_maintenance()
 init_observations()
+init_supplements()
 
 # 项目根目录（基于文件位置，避免工作目录不同导致找不到文件）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -197,6 +200,7 @@ def api_today():
         rules=rules,
         events=get_maintenance_events(),
         observations=get_observations(limit=30),
+        supplement_events=get_pending_supplement_events(),
     )
 
 
@@ -241,6 +245,85 @@ def api_observation_add(req: ReefObservationRequest):
     tags = list(dict.fromkeys(req.tags))
     rid = add_observation(req.status, tags, req.note)
     return {"ok": True, "id": rid, "observation": get_observations(limit=1)[0]}
+
+
+class SupplementEventRequest(BaseModel):
+    element: WaterElement
+    additive_name: str = Field(min_length=1, max_length=80)
+    product_name: str = Field(default="", max_length=80)
+    dose_form: Literal["powder", "solution"]
+    calculated_amount: PositiveFiniteFloat
+    actual_amount: PositiveFiniteFloat
+    pre_value: NonNegativeFiniteFloat
+    target_value: Optional[NonNegativeFiniteFloat] = None
+    reference_low: NonNegativeFiniteFloat
+    reference_high: PositiveFiniteFloat
+    recorded_at: str = Field(default="", max_length=10)
+    recommended_retest_at: str = Field(max_length=10)
+    note: str = Field(default="", max_length=200)
+
+
+class SupplementRetestRequest(BaseModel):
+    record_id: int = Field(gt=0)
+
+
+def _validate_retest_date(recorded_at: str, recommended_retest_at: str):
+    _validate_recorded_at(recorded_at)
+    try:
+        start = date.fromisoformat(recorded_at or date.today().isoformat())
+        retest = date.fromisoformat(recommended_retest_at)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="复测日期格式应为 YYYY-MM-DD") from exc
+    if retest < start:
+        raise HTTPException(status_code=422, detail="复测日期不能早于补充日期")
+    if retest > start + timedelta(days=30):
+        raise HTTPException(status_code=422, detail="这次复测先放在 30 天内更合适")
+
+
+@app.post("/api/supplement/events")
+def api_supplement_event_add(req: SupplementEventRequest):
+    if req.reference_low >= req.reference_high:
+        raise HTTPException(status_code=422, detail="参考范围需要满足下限小于上限")
+    _validate_retest_date(req.recorded_at, req.recommended_retest_at)
+    event = add_supplement_event(
+        req.element, req.additive_name.strip(), req.dose_form,
+        req.calculated_amount, req.actual_amount, req.pre_value,
+        req.reference_low, req.reference_high,
+        req.recorded_at or date.today().isoformat(), req.recommended_retest_at,
+        req.target_value, req.product_name.strip(), req.note.strip(),
+    )
+    return {"ok": True, "id": event["id"], "event": event}
+
+
+@app.get("/api/supplement/events")
+def api_supplement_events(status: Optional[Literal["awaiting_test", "retested", "resolved", "cancelled"]] = None):
+    return {"events": get_supplement_events(status=status)}
+
+
+@app.get("/api/supplement/events/pending")
+def api_supplement_pending():
+    return {"events": get_pending_supplement_events()}
+
+
+@app.post("/api/supplement/events/{rid}/cancel")
+def api_supplement_cancel(rid: int):
+    event = cancel_supplement_event(rid)
+    if not event:
+        raise HTTPException(status_code=404, detail="没有找到等待复测的补充记录")
+    return {"ok": True, "event": event}
+
+
+@app.post("/api/supplement/events/{rid}/link-retest")
+def api_supplement_link_retest(rid: int, req: SupplementRetestRequest):
+    try:
+        event = link_supplement_retest(rid, req.record_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not event:
+        raise HTTPException(status_code=404, detail="没有找到这次补充或复测记录")
+    return {"ok": True, "event": event, "result": {
+        "code": event["result_code"], "summary": event["result_summary"], "status": event["status"],
+    }}
 
 class AdditiveRequest(BaseModel):
     water_liters: PositiveFiniteFloat       # 水量(升)
