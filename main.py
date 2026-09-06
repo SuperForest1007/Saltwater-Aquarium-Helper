@@ -33,16 +33,18 @@ from water_store import (
     update_dosing_mix,
     init_maintenance, ensure_maintenance_rules, get_maintenance_rules,
     update_maintenance_rule, add_maintenance_event, get_maintenance_events,
+    init_observations, add_observation, get_observations,
     TANK_TYPES, TANK_STAGES,
 )
 
-app = FastAPI(title="海水缸管理App", version="0.5.0")
+app = FastAPI(title="海水缸管理App", version="0.5.1")
 
 # 初始化数据库
 init_db()
 init_dosing_log()
 init_water_change()
 init_maintenance()
+init_observations()
 
 # 项目根目录（基于文件位置，避免工作目录不同导致找不到文件）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +59,8 @@ NonNegativeFiniteFloat = confloat(ge=0, allow_inf_nan=False)
 WaterElement = Literal["KH", "钙", "镁", "NO3", "PO4"]
 DosingElement = Literal["KH", "钙", "镁"]
 DosingAction = Literal["start", "end", "adjust"]
+ObservationStatus = Literal["good", "changed", "watch"]
+ObservationTag = Literal["coral", "fish", "algae", "equipment", "other"]
 
 
 def _validate_recorded_at(value: str):
@@ -167,6 +171,12 @@ class MaintenanceEventRequest(BaseModel):
     note: str = Field(default="", max_length=200)
 
 
+class ReefObservationRequest(BaseModel):
+    status: ObservationStatus
+    tags: list[ObservationTag] = Field(default_factory=list, max_length=5)
+    note: str = Field(default="", max_length=200)
+
+
 def _maintenance_context():
     tank = get_active_tank()
     rules = ensure_maintenance_rules(maintenance_defaults(tank))
@@ -186,6 +196,7 @@ def api_today():
         dosing_logs=get_dosing_logs(),
         rules=rules,
         events=get_maintenance_events(),
+        observations=get_observations(limit=30),
     )
 
 
@@ -218,6 +229,18 @@ def api_maintenance_event_add(req: MaintenanceEventRequest):
         snooze_until = (date.today() + timedelta(days=req.snooze_days)).isoformat()
     rid = add_maintenance_event(req.task_key, req.action, req.note, snooze_until=snooze_until)
     return {"ok": True, "id": rid, "snooze_until": snooze_until}
+
+
+@app.get("/api/observations")
+def api_observations():
+    return {"observations": get_observations(limit=100)}
+
+
+@app.post("/api/observations")
+def api_observation_add(req: ReefObservationRequest):
+    tags = list(dict.fromkeys(req.tags))
+    rid = add_observation(req.status, tags, req.note)
+    return {"ok": True, "id": rid, "observation": get_observations(limit=1)[0]}
 
 class AdditiveRequest(BaseModel):
     water_liters: PositiveFiniteFloat       # 水量(升)

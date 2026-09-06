@@ -7,6 +7,11 @@ from water_quality import analyze_all
 
 ELEMENT_ORDER = ("KH", "钙", "镁", "NO3", "PO4")
 ELEMENT_LABELS = {"KH": "KH", "钙": "钙", "镁": "镁", "NO3": "NO₃", "PO4": "PO₄"}
+OBSERVATION_LABELS = {"good": "状态不错", "changed": "有点变化", "watch": "需要留意"}
+OBSERVATION_TAG_LABELS = {
+    "coral": "珊瑚状态", "fish": "鱼只 / 摄食", "algae": "藻相",
+    "equipment": "水流 / 设备", "other": "其他",
+}
 
 
 def maintenance_defaults(tank):
@@ -79,7 +84,35 @@ def _latest_by_element(records_by_element):
     return latest
 
 
-def _build_recent_events(records_by_element, water_changes, dosing_logs):
+def _observation_context(observations, now):
+    valid = [(item, _as_datetime(item.get("recorded_at"))) for item in observations or []]
+    valid = [(item, recorded_at) for item, recorded_at in valid if recorded_at]
+    if not valid:
+        return None
+    item, recorded_at = max(valid, key=lambda entry: (entry[1], int(entry[0].get("id") or 0)))
+    status = item.get("status") if item.get("status") in OBSERVATION_LABELS else "changed"
+    tags = [tag for tag in item.get("tags") or [] if tag in OBSERVATION_TAG_LABELS]
+    note = str(item.get("note") or "").strip()
+    if note:
+        summary = note
+    elif tags:
+        summary = "、".join(OBSERVATION_TAG_LABELS[tag] for tag in tags)
+    else:
+        summary = {
+            "good": "整体看着和平时差不多",
+            "changed": "有些地方和平时不太一样",
+            "watch": "有一处想接着观察",
+        }[status]
+    age_days = max(0, (now.date() - recorded_at.date()).days)
+    return {
+        "id": item.get("id"), "status": status, "label": OBSERVATION_LABELS[status],
+        "tags": tags, "note": note, "summary": summary,
+        "recorded_at": recorded_at.isoformat(), "age_days": age_days,
+        "is_today": recorded_at.date() == now.date(),
+    }
+
+
+def _build_recent_events(records_by_element, water_changes, dosing_logs, observations=None, now=None):
     """把现有记录投影成今日页的轻量时间线，不另存一份事件数据。"""
     recent = []
     measurements = []
@@ -126,6 +159,14 @@ def _build_recent_events(records_by_element, water_changes, dosing_logs):
             "kind": "dosing", "icon": "∿", "title": f"{action} {log.get('element') or ''} 滴定".replace("  ", " ").strip(),
             "detail": f"{dose:g} ml/天" if dose else "方案已更新",
             "recorded_at": logged_at.isoformat(),
+        })
+
+    observation = _observation_context(observations, now or datetime.now())
+    if observation:
+        recent.append({
+            "kind": "observation", "icon": "◉", "title": "看过一圈",
+            "detail": observation["label"] + " · " + observation["summary"],
+            "recorded_at": observation["recorded_at"],
         })
 
     recent.sort(key=lambda item: _as_datetime(item["recorded_at"]) or datetime.min, reverse=True)
@@ -197,7 +238,8 @@ def build_maintenance_rhythm(rules, events, latest_elements, water_changes, now=
     return rhythm
 
 
-def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosing_logs, rules, events, now=None):
+def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosing_logs, rules, events,
+                          observations=None, now=None):
     now = now or datetime.now()
     if not tank.get("setup_complete"):
         return {
@@ -205,6 +247,7 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
                        "summary": "实际水量、主要类型和当前阶段填好后，这口缸的维护节奏就能排起来了。"},
             "coverage": {"count": 0, "total": len(ELEMENT_ORDER), "latest_date": None, "label": "尚未开始"},
             "evidence": [], "actions": [], "rhythm": [], "insights": [], "recent_events": [],
+            "observation": None,
             "basis_note": "现在的记录还不够，先不急着下结论。",
         }
 
@@ -279,6 +322,7 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
                   "summary": "记下第一组关键水质，后面的每次测试都会让这口缸更好读懂。"}
 
     rhythm = build_maintenance_rhythm(rules, events, latest, water_changes, now)
+    observation = _observation_context(observations, now)
     due_tasks = [item for item in rhythm if item["state"] in ("overdue", "due")]
     actions = due_tasks[:3]
     action_finding = severe[0] if severe else (warnings[0] if warnings and warnings[0]["priority"] >= 50 else None)
@@ -286,6 +330,21 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
         actions.insert(0, {"task_key": "water_warning", "title": "复核 " + ELEMENT_LABELS.get(action_finding["element"], action_finding["element"]),
                            "category": "水质复核", "icon": "!", "state": "due", "timing": "优先" if severe else "建议复核",
                            "reason": action_finding["summary"], "action_type": "record", "target_tab": "water"})
+        actions = actions[:3]
+
+    if not observation or not observation["is_today"]:
+        if observation:
+            timing = f"上次 {observation['age_days']} 天前"
+            reason = "再扫一眼，看看和上次有没有变化"
+        else:
+            timing = ""
+            reason = "看看珊瑚、鱼和设备，记下今天的状态"
+        reef_round = {
+            "task_key": "reef_round", "title": "看一圈", "category": "整缸观察",
+            "icon": "◉", "state": "due", "timing": timing, "reason": reason,
+            "action_type": "observe", "target_tab": None,
+        }
+        actions.insert(1 if action_finding else 0, reef_round)
         actions = actions[:3]
 
     insights = [item["summary"] for item in priority_findings[:3] if item.get("summary")]
@@ -298,6 +357,12 @@ def build_today_dashboard(tank, ideals, records_by_element, water_changes, dosin
         "status": status,
         "coverage": {"count": fresh_count, "total": len(ELEMENT_ORDER), "latest_date": latest_date, "label": coverage_label},
         "evidence": evidence, "actions": actions, "rhythm": rhythm, "insights": insights,
-        "recent_events": _build_recent_events(records_by_element, water_changes, dosing_logs),
-        "basis_note": f"参考范围按 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 生成，只看已经记下的数据。生物状态和设备运行，还是得一起观察。",
+        "recent_events": _build_recent_events(records_by_element, water_changes, dosing_logs, observations, now),
+        "observation": observation,
+        "basis_note": (
+            f"参考范围按 {tank.get('tank_type', '当前')} · {tank.get('stage', '当前阶段')} 生成，只看已经记下的数据。"
+            + ("今天的整缸观察也已经放进礁况里；它记录的是当时所见，不替代逐项排查。"
+               if observation and observation["is_today"]
+               else "最近还没有整缸观察，生物状态和设备运行要留在判断里。")
+        ),
     }

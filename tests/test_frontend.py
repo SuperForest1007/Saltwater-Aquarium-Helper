@@ -11,6 +11,7 @@ import re
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX = os.path.join(PROJECT_ROOT, "static", "index.html")
 ECHARTS = os.path.join(PROJECT_ROOT, "static", "echarts.min.js")
+REEF_WINDOW_DEMO = os.path.join(PROJECT_ROOT, "static", "reef-window-home-demo.html")
 
 
 def _read_index():
@@ -24,6 +25,25 @@ class TestFrontend:
         assert os.path.exists(ECHARTS), "echarts.min.js 不存在"
         size = os.path.getsize(ECHARTS)
         assert size > 100000, f"echarts.min.js 异常小: {size}"
+
+    def test_reef_window_home_demo_keeps_the_visual_contract(self):
+        """独立首页稿保留礁窗、真实数据、三时段主题和低动态模式。"""
+        assert os.path.exists(REEF_WINDOW_DEMO)
+        with open(REEF_WINDOW_DEMO, "r", encoding="utf-8") as f:
+            html = f.read()
+        for marker in [
+            "forest-reef-portrait.jpg",
+            "forest-reef-wide.jpg",
+            "reefpal-mark-d4.png",
+            "fetch('/api/today')",
+            "fetch('/api/tank')",
+            "fetch('/api/water/analysis')",
+            "themeOrder=['day','dusk','night']",
+            "@media(prefers-reduced-motion:reduce)",
+            'aria-label="主要功能"',
+        ]:
+            assert marker in html
+        assert '.icon-btn{width:44px;height:44px' in html
 
     def test_js_syntax(self):
         """JS语法正确（node --check）。"""
@@ -75,6 +95,8 @@ class TestFrontend:
             "todayRhythm",      # 智能维护节奏
             "maintenanceModal", # 周期调整
             "completeMaintenance",
+            "reefRoundModal",   # 整缸观察
+            "saveReefRound",    # 观察记录回写
         ]
         for c in checks:
             assert c in html, f"缺少关键元素: {c}"
@@ -119,8 +141,8 @@ class TestFrontend:
         assert 'class="est-row est-dim-row"' in html
         assert 'class="est-dim-inputs"' in html
         assert 'class="today-board tone-neutral"' in html
-        assert "今天先看这件事" in html
-        assert "查看判断依据与维护节奏" in html
+        assert "整缸观察" in html
+        assert "看判断依据" in html
 
     def test_public_beta_stability_guards(self):
         """网络中断、零基准与历史内容都有明确保护。"""
@@ -188,13 +210,16 @@ class TestFrontend:
         assert 'id="wqBalance"' not in simple
         assert 'id="wqLinkage"' in pro
         assert 'id="wqBalance"' in pro
-        assert "一次纠偏" in html
-        assert "长期维持" in html
+        assert "本次补充" in html
+        assert "日常滴定" in html
 
         salt = html[html.index('id="panel-salt"'):html.index('id="panel-water"')]
         assert 'class="dose-card salt-calculator-card"' in salt
         assert 'class="dose-card water-change-history-card"' in salt
         assert '<details class="manual-record-details">' in salt
+        assert 'id="wcHistoryMeta"' in salt
+        assert salt.index('salt-calculator-card') < salt.index('water-change-history-card')
+        assert '#panel-salt .tool-page-head { order: 0; }' in html
         assert "#panel-salt .salt-calculator-card { order: 1; }" in html
         assert "#panel-salt .water-change-history-card { order: 2; }" in html
 
@@ -207,6 +232,27 @@ class TestFrontend:
         assert 'id="g_f" value=' not in html
         assert 'id="m_f" value=' not in html
 
+    def test_supplement_tool_focuses_one_element_and_keeps_precision_progressive(self):
+        """补充页先完成一次实测判断，精确计算按需展开且保留元素间快速切换。"""
+        html = _read_index()
+        calc = html[html.index('id="panel-calc"'):html.index('id="panel-dosing"')]
+        assert 'id="calcElementNav"' in calc
+        assert 'aria-label="选择要补充的元素"' in calc
+        assert '<details class="calc-manual-details">' in html
+        assert "function selectCalcElement(gi, ei, shouldScroll)" in html
+        assert "localStorage.setItem('reefpal_calc_focus'" in html
+        assert "button.setAttribute('aria-pressed', 'false')" in html
+        assert "secondaryDetails.className = 'calc-secondary-details'" in html
+        assert '<strong>其他元素</strong><small>进阶 · 微量 · 营养盐</small>' in html
+        assert "['is-core', 'is-advanced', 'is-trace', 'is-nutrient']" in html
+        assert "if (secondaryDetails && gi > 0) secondaryDetails.open = true" in html
+        assert ".calc-priority-group.is-core .calc-element-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr));" in html
+        assert "inputmode=\"decimal\"" in html
+        assert "填入刚测到的数，先看看是否需要补" in html
+        assert "这次补多少，宁可分两回" in html
+        assert "btn.closest('.calc-primary')" in html
+        assert "toggleGroup" not in html
+
     def test_dosing_copy_describes_plan_state_not_device_control(self):
         html = _read_index()
         assert "下方按钮只记方案状态，设备仍在滴定泵端设置" in html
@@ -214,6 +260,42 @@ class TestFrontend:
         assert "停用此方案" in html
         assert "const actionMap = { start: '启用方案', end: '停用方案', adjust: '调整剂量' }" in html
         assert "days > 14" not in html
+
+    def test_dosing_tool_prioritizes_calculation_then_daily_plan(self):
+        """滴定页先完成本次测算与方案确认，低频配液设置默认收起。"""
+        html = _read_index()
+        dosing = html[html.index('id="panel-dosing"'):html.index('id="panel-salt"')]
+        assert 'id="dosingCalcCard"' in dosing
+        assert 'id="dosingResultCard"' in dosing
+        assert '<details class="dose-card dosing-config-card" id="dosingConfigCard">' in dosing
+        assert "function arrangeDosingFlow()" in html
+        assert "panel.insertBefore(calc, config)" in html
+        assert "panel.insertBefore(result, config)" in html
+        assert "先算真实消耗，再决定每天滴多少" in dosing
+        assert "带入最近记录" in dosing
+        assert 'role="tablist" aria-label="选择滴定测算方式"' in dosing
+        assert 'class="dose-row consume-row element-kh"' in dosing
+        assert "consumeTab.setAttribute('aria-selected', String(isConsume))" in html
+        assert "下方按钮只记方案状态，设备仍在滴定泵端设置" in dosing
+        assert 'id="dosingPrecisionHint"' in dosing
+        assert "按当前配液算下来不足 1ml/天" in html
+        assert "最近两笔在同一天，先不算日耗" in html
+
+    def test_mobile_dosing_mix_is_compact_and_tool_pages_have_visual_roles(self):
+        """低频配液在手机端保持单行扫读，三个工具页各有克制的主题色角色。"""
+        html = _read_index()
+        assert ".dose-row.mix-row { grid-template-columns: 44px minmax(0,1fr) minmax(0,1fr) 72px;" in html
+        assert ".dose-head.mix-head { grid-template-columns: 44px minmax(0,1fr) minmax(0,1fr) 72px;" in html
+        assert ".dose-head.mix-head::before { content: '元素';" in html
+        assert "<strong>' + concentration + '</strong><small>克/ml · 1:'" in html
+        assert 'aria-label="KH 分析纯粉末克数" inputmode="decimal"' in html
+        assert 'class="dose-result element-kh"' in html
+        assert 'class="dose-result element-ca"' in html
+        assert 'class="dose-result element-mg"' in html
+        assert "#panel-calc { --module-accent: var(--brand-coral);" in html
+        assert "#panel-dosing { --module-accent: var(--brand-mint);" in html
+        assert "#panel-salt { --module-accent: var(--brand-violet);" in html
+        assert "html[data-theme=\"dark\"] .dosing-result-card .dose-result" in html
 
     def test_copy_voice_is_human_and_precise(self):
         """高频界面文案保持自然，也不把经验线说成绝对结论。"""
@@ -265,8 +347,8 @@ class TestFrontend:
         for stale_copy in ["这是什么？", "怎么开始？", "还能做什么？", "开始使用 →"]:
             assert stale_copy not in guide
 
-    def test_light_theme_shell_and_compact_secondary_status(self):
-        """阳光潮池骨架存在，次级模块使用紧凑礁况条而非重复完整首页。"""
+    def test_light_theme_shell_and_tool_page_focus(self):
+        """阳光潮池骨架存在，工具页不再重复首页海况摘要。"""
         html = _read_index()
         assert '--bg-canvas: #f4f5f7' in html
         assert '--brand-primary: #4b4f88' in html
@@ -275,27 +357,40 @@ class TestFrontend:
         assert '先看生命，再看数字' not in html
         assert 'id="themeColorMeta"' in html
         assert 'content="#F4F5F7"' in html
-        assert 'id="todayCompactSummary"' in html
-        assert '.today-board.is-compact .today-main' in html
-        assert "board.classList.toggle('is-compact', tabName !== 'water')" in html
-        assert 'function openTodayHome()' in html
+        assert 'id="todayCompactSummary"' not in html
+        assert '.today-board.is-compact .today-main' not in html
+        assert "board.hidden = tabName !== 'water'" in html
+        assert 'function openTodayHome()' not in html
+        for heading in ['配盐与换水', '本次补充', '日常滴定']:
+            assert heading in html
         # 主导航图标固定为项目内 SVG，避免不同系统 Emoji 形态漂移。
-        tabs = html[html.index('<!-- Tabs -->'):html.index('<!-- 计算仍使用')]
+        tabs = html.split('<!-- Tabs -->', 1)[1].split('</div>', 1)[0]
         assert tabs.count('<svg viewBox="0 0 24 24"') == 4
         for emoji in ['📈', '🔄', '🧪', '💧']:
             assert emoji not in tabs
 
+    def test_water_element_selector_has_clear_and_accessible_selected_state(self):
+        """水质元素直选使用品牌实色，并同步 aria-pressed。"""
+        html = _read_index()
+        assert '#wqElSeg .seg-btn.active { background: var(--brand-primary); color: var(--text-on-brand)' in html
+        assert 'html[data-theme="dark"] #wqElSeg .seg-btn.active' in html
+        assert 'aria-pressed="true">KH</button>' in html
+        assert "b.setAttribute('aria-pressed', String(selected))" in html
+
     def test_today_is_the_first_task_hub_without_removing_existing_tools(self):
         """IA-01A 先升级今日入口，现有换水、补充和滴定仍保持可达。"""
         html = _read_index()
-        tabs = html[html.index('<!-- Tabs -->'):html.index('<!-- 计算仍使用')]
+        tabs = html.split('<!-- Tabs -->', 1)[1].split('</div>', 1)[0]
         for label in ["今日", "换水", "补充", "滴定"]:
             assert f"<span>{label}</span>" in tabs
         assert "navigateMainTab('water')" in tabs
         assert 'id="todayPulse"' in html
-        assert 'id="todayPulseChart"' in html
-        assert 'class="today-pulse-dot" id="todayPulseDot"' in html
-        assert "pulseDot.style.top" in html
+        assert 'id="todayReefWindow"' in html
+        assert 'id="todayPatrolButton"' in html
+        assert 'id="todayReefKicker"' in html
+        assert '/static/demo-assets/forest-reef-portrait.jpg' in html
+        assert 'id="todayPulseChart"' not in html
+        assert 'id="todayPulseDot"' not in html
         assert 'function renderTodayPulse(data)' in html
         assert 'function renderTodayPulseEvents(items)' in html
         assert 'function openTodayPulseDetail()' in html
@@ -304,11 +399,53 @@ class TestFrontend:
         assert "jumpToTrend(todayPulseElement)" in html
         assert 'item.ideal' in html
         assert "recent_events" in html
-        assert '今天先看这件事' in html
+        assert '整缸观察' in html
         assert 'is-primary' in html and 'is-secondary' in html
+        assert 'class="today-reef-stage"' in html
+        assert 'class="today-action-dock"' in html
+        assert 'class="today-core"' not in html
+        assert '@keyframes reefSignalBreath' in html
+        assert '@keyframes reefSignalTrace' in html
+        assert '.today-pulse-events::before' in html
+        assert '.today-actions { width: 100%; min-width: 0;' in html
+        assert html.index('class="today-reef-stage"') < html.index('id="todayPulse"')
+        assert html.index('id="todayDetail"') < html.index('id="todayMetrics"')
+        assert 'id="waterWorkspaceBody"' in html
         assert 'function returnToTodayAfterRecord(targetTab)' in html
         assert "returnToTodayAfterRecord('water')" in html
         assert "returnToTodayAfterRecord('salt')" in html
+
+    def test_mobile_today_keeps_context_and_water_entry_compact(self):
+        """手机首页缩短鱼缸上下文和水质输入，低频信息仍可按需展开。"""
+        html = _read_index()
+        assert '.tank-identity { width: fit-content; max-width: calc(100% - 44px);' in html
+        assert '.tank-edit-hint { display: none; }' in html
+        assert 'class="wq-record-value-row"' in html
+        assert 'class="wq-record-more"' in html
+        assert '<summary>日期与备注 <small>选填</small></summary>' in html
+        assert 'class="dose-card wq-simple-advice"' in html
+        assert '展开查看各项判断' in html
+        assert 'inputmode="decimal"' in html
+
+    def test_reef_round_is_progressive_and_updates_the_pulse(self):
+        """巡缸不依赖生物档案；只有状态选择后才展开可选细节。"""
+        html = _read_index()
+        assert 'id="reefRoundModal"' in html
+        assert 'role="radiogroup" aria-label="整缸状态"' in html
+        for status, label in [("good", "状态不错"), ("changed", "有点变化"), ("watch", "需要留意")]:
+            assert f'data-status="{status}"' in html
+            assert label in html
+        for tag in ["coral", "fish", "algae", "equipment", "other"]:
+            assert f'data-tag="{tag}"' in html
+        assert 'id="reefRoundDetails" hidden' in html
+        assert "tags.hidden = status === 'good'" in html
+        assert "method: 'POST'" in html
+        assert "api('/api/observations'" in html
+        assert "renderTodayObservation(data.observation || null)" in html
+        assert 'id="todayPatrolLabel"' in html
+        assert "label.textContent = hasTodayObservation ? '再看一次' : '看一圈'" in html
+        assert 'id="todayPulseLife"' not in html
+        assert "static/blue-hour-demo" not in html
 
     def test_midnight_reef_theme_is_tokenized_and_persistent(self):
         """三时段主题使用语义 Token、四态选择和主题化图表，而不是简单反色。"""

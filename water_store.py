@@ -14,6 +14,8 @@ WATER_ELEMENTS = ("KH", "钙", "镁", "NO3", "PO4")
 DOSING_ELEMENTS = ("KH", "钙", "镁")
 DOSING_ACTIONS = ("start", "end", "adjust")
 ELEMENT_UNITS = {"KH": "dKH", "钙": "ppm", "镁": "ppm", "NO3": "ppm", "PO4": "ppm"}
+OBSERVATION_STATUSES = ("good", "changed", "watch")
+OBSERVATION_TAGS = ("coral", "fish", "algae", "equipment", "other")
 
 
 def get_db():
@@ -435,6 +437,29 @@ def init_maintenance():
     conn.close()
 
 
+def init_observations():
+    """初始化整缸观察记录；首版不依赖逐只生物档案。"""
+    conn = get_db()
+    tank_id = _ensure_active_tank(conn)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS reef_observations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tank_id INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '[]',
+            note TEXT,
+            recorded_at TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_observation_tank_time "
+        "ON reef_observations(tank_id, recorded_at)"
+    )
+    conn.commit()
+    conn.close()
+
+
 def ensure_maintenance_rules(defaults, tank_id=None):
     """写入默认规则；只更新未被用户自定义过的规则。"""
     conn = get_db()
@@ -529,6 +554,51 @@ def get_maintenance_events(limit=500, tank_id=None):
     return [dict(row) for row in rows]
 
 
+def add_observation(status, tags=None, note="", recorded_at=None, tank_id=None):
+    if status not in OBSERVATION_STATUSES:
+        raise ValueError("不支持的观察状态")
+    clean_tags = []
+    for tag in tags or []:
+        if tag not in OBSERVATION_TAGS:
+            raise ValueError("观察标签不正确")
+        if tag not in clean_tags:
+            clean_tags.append(tag)
+    recorded_at = recorded_at or datetime.now().strftime("%Y-%m-%d %H:%M")
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    cur = conn.execute(
+        """INSERT INTO reef_observations
+           (tank_id, status, tags, note, recorded_at, created_at)
+           VALUES (?,?,?,?,?,?)""",
+        (tank_id, status, json.dumps(clean_tags, ensure_ascii=False, separators=(",", ":")),
+         (note or "").strip()[:200], recorded_at, _now()),
+    )
+    conn.commit()
+    rid = cur.lastrowid
+    conn.close()
+    return rid
+
+
+def get_observations(limit=100, tank_id=None):
+    conn = get_db()
+    tank_id = tank_id or get_active_tank_id(conn)
+    rows = conn.execute(
+        """SELECT * FROM reef_observations WHERE tank_id=?
+           ORDER BY recorded_at DESC, id DESC LIMIT ?""",
+        (tank_id, limit),
+    ).fetchall()
+    conn.close()
+    result = []
+    for row in rows:
+        item = dict(row)
+        try:
+            item["tags"] = json.loads(item.get("tags") or "[]")
+        except (TypeError, json.JSONDecodeError):
+            item["tags"] = []
+        result.append(item)
+    return result
+
+
 def add_water_change(water_liters, salt_brand="", note="", recorded_at=None, tank_id=None, salt_grams=None):
     conn = get_db()
     tank_id = tank_id or get_active_tank_id(conn)
@@ -582,13 +652,14 @@ def delete_water_change(rid):
 
 def export_all():
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "tank": get_active_tank(),
         "water_records": get_records(limit=100000),
         "dosing_log": get_dosing_logs(),
         "water_change": get_water_changes(limit=100000),
         "maintenance_rules": get_maintenance_rules(),
         "maintenance_events": get_maintenance_events(limit=100000),
+        "reef_observations": get_observations(limit=100000),
     }
 
 
@@ -763,6 +834,42 @@ def import_all(data):
                VALUES (?,?,?,?,?,?,?)""",
             (tank_id, task_key, action, str(event.get("note") or "")[:200], recorded_at,
              event.get("snooze_until"), _now()),
+        )
+        inserted += 1
+
+    for observation in data.get("reef_observations") or []:
+        status = str(observation.get("status") or "")
+        tags = observation.get("tags") or []
+        note = str(observation.get("note") or "")[:200]
+        recorded_at = str(observation.get("recorded_at") or "")
+        if (status not in OBSERVATION_STATUSES or not isinstance(tags, list)
+                or len(tags) > len(OBSERVATION_TAGS) or not valid_date(recorded_at)):
+            skipped += 1
+            continue
+        clean_tags = []
+        invalid_tag = False
+        for tag in tags:
+            if tag not in OBSERVATION_TAGS:
+                invalid_tag = True
+                break
+            if tag not in clean_tags:
+                clean_tags.append(tag)
+        if invalid_tag:
+            skipped += 1
+            continue
+        tags_json = json.dumps(clean_tags, ensure_ascii=False, separators=(",", ":"))
+        if _count_matching(
+            conn, "reef_observations",
+            "tank_id=? AND status=? AND tags=? AND note=? AND recorded_at=?",
+            (tank_id, status, tags_json, note, recorded_at),
+        ):
+            skipped += 1
+            continue
+        conn.execute(
+            """INSERT INTO reef_observations
+               (tank_id, status, tags, note, recorded_at, created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (tank_id, status, tags_json, note, recorded_at, _now()),
         )
         inserted += 1
 

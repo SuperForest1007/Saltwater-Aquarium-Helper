@@ -123,7 +123,7 @@ class TestTodayDashboard:
         test_client.get("/api/today")
         test_client.post("/api/maintenance/event", json={"task_key": "skimmer_cup", "action": "complete"})
         backup = test_client.get("/api/export/json").json()
-        assert backup["schema_version"] == 5
+        assert backup["schema_version"] == 6
         assert len(backup["maintenance_rules"]) == 5
         assert backup["maintenance_events"][0]["task_key"] == "skimmer_cup"
 
