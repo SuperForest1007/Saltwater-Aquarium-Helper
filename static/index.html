@@ -1732,6 +1732,9 @@
     .record-page-head { align-items: center; }.record-page-head p { max-width: 250px; }.record-quick-grid { gap: 6px; }.record-quick-grid > button { min-height: 86px; }.record-quick-grid small { display: none; }.record-chain-more { grid-template-columns: 70px minmax(0,1fr); }.hub-grid button { min-height: 126px; padding: 15px; }
   }
 </style>
+<link rel="stylesheet" href="/static/record-visual.css?v=4">
+<link rel="stylesheet" href="/static/home-visual.css?v=1">
+<script src="/static/home-visual.js?v=1"></script>
 </head>
 <body>
 <!-- 海洋装饰 -->
@@ -1793,14 +1796,6 @@
 </header>
 
 <div class="wrap">
-  <button class="tank-identity" id="tankIdentity" type="button" onclick="openTankSetup(true)" aria-label="查看或编辑我的鱼缸">
-    <span class="tank-avatar">◒</span>
-    <span class="tank-identity-main">
-      <span class="tank-identity-name" id="tankIdentityName">我的鱼缸</span>
-      <span class="tank-identity-meta" id="tankIdentityMeta">设置实际水量和缸型，让所有功能围绕同一口缸运转</span>
-    </span>
-    <span class="tank-edit-hint" id="tankEditHint">开始设置</span>
-  </button>
 
   <!-- Tabs -->
   <div class="tabs">
@@ -1814,13 +1809,10 @@
     <div class="today-main">
       <section class="today-reef-stage" aria-label="今日礁窗与下一步">
         <div class="today-reef-window" id="todayReefWindow" aria-labelledby="todayHeadline">
-          <img src="/static/demo-assets/forest-reef-portrait.jpg" alt="我的海水缸">
+          <img src="/static/demo-assets/forest-reef-portrait.jpg" alt="海水缸旧照">
           <div class="today-reef-top">
             <div class="today-date" id="todayDate">正在读取今天的记录…</div>
-            <button class="today-patrol" id="todayPatrolButton" type="button" onclick="openReefRound()" aria-label="看一圈并记录鱼缸状态">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>
-              <span id="todayPatrolLabel">看一圈</span>
-            </button>
+            <span class="home-photo-label">旧照</span>
           </div>
           <div class="today-reef-copy">
             <div class="today-reef-kicker" id="todayReefKicker">今晚的礁窗</div>
@@ -1830,20 +1822,21 @@
           <div class="today-status" id="todayStatus">准备中</div>
         </div>
         <div class="today-action-dock">
-          <div class="today-actions" id="todayActions"><div class="today-empty-action">正在整理今天的下一步…</div></div>
+          <button class="today-patrol" id="todayPatrolButton" type="button" onclick="openReefRound()" aria-label="看一圈并记录鱼缸状态"><span id="todayPatrolLabel">看一圈</span></button>
+          <button class="home-water-entry" id="homeWaterEntry" type="button" onclick="openHomeWaterEntry()">记一笔水质</button>
+          <span class="home-friend" aria-hidden="true"><img src="/static/brand/d4-anemone-front-layer.png" alt=""><img class="home-fish" src="/static/brand/d4-fish-layer.png" alt=""><img class="home-front" src="/static/brand/d4-anemone-front-layer.png" alt=""></span>
         </div>
       </section>
       <section class="today-pulse" id="todayPulse" aria-labelledby="todayPulseTitle">
         <div class="today-pulse-head"><strong id="todayPulseTitle">礁况脉搏</strong><small id="todayPulseFreshness">正在整理最近的记录</small></div>
         <div class="today-pulse-summary">
-          <div class="today-pulse-signal" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></div>
           <div class="today-pulse-focus">
-            <div class="today-pulse-label">现在值得留意</div>
             <strong id="todayPulseFocusTitle">判断正在整理</strong>
+            <div class="home-pulse-change" id="homePulseChange"></div>
             <p id="todayPulseFocusCopy">记录越连续，判断就会越贴近这口缸。</p>
           </div>
+          <div class="home-pulse-chart" id="homePulseChart"></div>
         </div>
-        <div class="today-pulse-events" id="todayPulseEvents" aria-label="最近三件事"></div>
         <div class="today-pulse-actions">
           <button class="today-expand" id="todayExpand" type="button" onclick="toggleTodayDetail()" aria-expanded="false">
             <span>看判断依据</span><span id="todayExpandArrow">⌄</span>
@@ -1851,11 +1844,15 @@
           <button class="today-pulse-deep" id="todayPulseDetail" type="button" onclick="openTodayPulseDetail()" hidden>打开分析</button>
         </div>
       </section>
+      <section class="home-water" aria-labelledby="homeWaterTitle"><div class="home-section-head"><h2 id="homeWaterTitle">最近水质</h2><small>各项最新读数</small></div><div class="home-readings" id="homeReadings">正在读取水质…</div><p class="home-data-note">点读数查看趋势与本缸参考范围</p></section>
+      <section class="home-next"><div class="today-actions" id="todayActions"><div class="today-empty-action">正在整理今天的下一步…</div></div></section>
+      <section class="home-recent"><div class="home-section-head"><h2>最近发生</h2><button type="button" onclick="navigateMainTab('record')">全部记录 →</button></div><div class="today-pulse-events" id="todayPulseEvents" aria-label="最近三件事"></div></section>
     </div>
     <div class="today-detail" id="todayDetail" hidden>
       <div class="today-section">
         <div class="today-section-head"><div><div class="today-section-title">判断依据</div><div class="today-section-sub">最新读数与数据新鲜度</div></div></div>
         <div class="today-metrics" id="todayMetrics"></div>
+        <p class="today-insight" id="homePulseAdvice"></p>
         <div class="today-evidence" id="todayEvidence"></div>
         <div class="today-insights" id="todayInsights"></div>
       </div>
@@ -1872,16 +1869,22 @@
 
   <div id="panel-record" class="panel record-panel" aria-labelledby="recordPageTitle">
     <div class="record-page-head">
-      <div><span>礁缸记录</span><h1 id="recordPageTitle">给变化留个底</h1><p>测了什么、做过什么，过几天回来看会更清楚。</p></div>
-    </div>
-    <div class="record-quick-grid" aria-label="快捷记录">
-      <button type="button" onclick="openRecordTool('water','wqElSeg')"><span class="record-quick-icon water"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11Z"/></svg></span><strong>水质</strong><small>记一组读数</small></button>
-      <button type="button" onclick="openRecordTool('salt','wcCalculator')"><span class="record-quick-icon change"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-2 11H7L5 8Z"/><path d="M8 13c2-1 6-1 8 0"/></svg></span><strong>换水</strong><small>把实做记下</small></button>
-      <button type="button" onclick="openRecordTool('calc','supplementCalc')"><span class="record-quick-icon supplement"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 8a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-8V3"/></svg></span><strong>补充</strong><small>算这次用量</small></button>
-      <button type="button" onclick="openRecordTool('dosing','dosingCalc')"><span class="record-quick-icon dosing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6v4H9zM8 7h8v14H8z"/></svg></span><strong>滴定</strong><small>调每天方案</small></button>
+      <div><span>礁缸记录</span><h1 id="recordPageTitle">给变化留个底</h1><p>测了什么、做过什么，过几天回来看会更清楚。</p><div class="record-compose-entry"><button id="recordComposeTrigger" type="button" onclick="openRecordComposer()">＋ 记一笔</button></div></div>
+      <span class="record-d4" aria-hidden="true">
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;pointer-events:none">
+    <defs>
+      <clipPath id="record-d4-front" clipPathUnits="objectBoundingBox">
+        <path d="M 0,.75 L .19,.75 C .22,.71 .25,.695 .285,.70 C .325,.704 .35,.729 .365,.758 C .383,.734 .412,.729 .446,.734 C .49,.737 .526,.768 .551,.811 C .568,.845 .566,.869 .58,.882 C .594,.844 .621,.811 .65,.794 C .689,.772 .724,.787 .758,.807 C .786,.823 .80,.838 .811,.847 C .816,.827 .814,.816 .824,.801 C .849,.762 .886,.733 .918,.732 L .95,.732 C .951,.699 .958,.671 .974,.644 C .985,.625 .992,.599 1,.582 L 1,1 L 0,1 Z"/>
+      </clipPath>
+    </defs>
+  </svg>
+        <img class="record-d4-back" src="/static/brand/d4-anemone-front-layer.png" alt="" width="76" height="76">
+        <img class="record-d4-fish" src="/static/brand/d4-fish-layer.png" alt="" width="76" height="76">
+        <img class="record-d4-front" src="/static/brand/d4-anemone-front-layer.png" alt="" width="76" height="76">
+      </span>
     </div>
     <section class="record-chains" aria-labelledby="recordChainsTitle">
-      <div class="record-section-head"><div><small id="recordWeekCount">最近 7 天</small><h2 id="recordChainsTitle">最近在留意</h2></div><span id="recordChainCount">读取中</span></div>
+      <div class="record-section-head"><div><small id="recordWeekCount">最近 7 天</small><h2 id="recordChainsTitle">最近在留意</h2></div></div>
       <div id="recordChains"><div class="record-loading">正在翻最近的记录…</div></div>
     </section>
     <section class="record-history" aria-labelledby="recordHistoryTitle">
@@ -1908,7 +1911,7 @@
 
   <div id="panel-profile" class="panel profile-hub" aria-labelledby="profilePageTitle">
     <div class="hub-head"><span>我的 ReefPal</span><h1 id="profilePageTitle">这口缸的资料</h1><p>鱼缸档案、维护习惯和数据备份都放在这里。</p></div>
-    <button class="profile-tank-card" type="button" onclick="openTankSetup(true)"><span class="profile-tank-mark">◒</span><span><strong id="profileTankName">我的鱼缸</strong><small id="profileTankMeta">查看水量、类型与阶段</small></span><b>编辑 ›</b></button>
+    <button class="profile-tank-card" id="tankIdentity" type="button" onclick="openTankSetup(true)" aria-label="查看或编辑我的鱼缸"><span class="profile-tank-mark">◒</span><span><strong id="profileTankName">我的鱼缸</strong><small id="profileTankMeta">查看水量、类型与阶段</small></span><b id="tankEditHint">编辑 ›</b></button>
     <div class="profile-list">
       <button type="button" onclick="openMaintenanceSettings()"><span>维护节奏</span><small>清洁、换水与设备周期</small><b>›</b></button>
       <button type="button" onclick="openThemeSheet(this)"><span>显示主题</span><small id="profileThemeSummary">跟随时段</small><b>›</b></button>
@@ -3123,6 +3126,7 @@ function todayActionCard(task, index) {
 
 function renderTodayActions(actions, data) {
   const wrap = document.getElementById('todayActions');
+  actions = (actions || []).filter(task => task.action_type !== 'observe');
   const coverage = (data && data.coverage) || {};
   const missingCount = Math.max(0, Number(coverage.total || 0) - Number(coverage.count || 0));
   if ((!actions || actions.length === 0) && missingCount > 0) {
@@ -3190,6 +3194,7 @@ function openTodayPulseDetail() {
   if (!todayPulseElement) return;
   showTab('water');
   jumpToTrend(todayPulseElement);
+  syncChoiceTrigger(document.getElementById('wqChartEl'));
   setTimeout(() => {
     const detail = document.getElementById('wqPro');
     if (detail) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3210,7 +3215,12 @@ function renderTodayPulse(data) {
   const keys = ['KH', '钙', '镁', 'NO3', 'PO4'].filter(key => analysis[key] && (analysis[key].records || []).length);
   renderTodayObservation(data.observation || null);
   renderTodayPulseEvents(data.recent_events || []);
+  renderHomeReadings(analysis, data.evidence || []);
+  document.getElementById('homePulseChart').innerHTML = '';
+  document.getElementById('homePulseChange').textContent = '';
+  document.getElementById('homePulseAdvice').textContent = '';
   if (!keys.length) {
+    todayPulseElement = null;
     pulse.classList.add('is-empty');
     document.getElementById('todayPulseFreshness').textContent = '还没有水质记录';
     document.getElementById('todayPulseFocusTitle').textContent = '先留下一组基础读数';
@@ -3227,14 +3237,16 @@ function renderTodayPulse(data) {
   const display = item.display || labelMap[todayPulseElement];
   const value = labelMap[todayPulseElement] + ' ' + pulseValue(item.current) + (ideal.unit ? ' ' + ideal.unit : '');
   const stale = evidence && ['stale', 'missing'].includes(evidence.state);
+  renderHomePulseChart(item, todayPulseElement, stale);
   document.getElementById('todayPulseFreshness').textContent = evidence && evidence.measured_at
     ? '最近水质 · ' + recentEventDate(evidence.measured_at)
     : (data.coverage?.label || '记录已读取');
   document.getElementById('todayPulseFocusTitle').textContent = stale
-    ? value + '，先复测确认'
-    : value + ' · ' + (item.signals?.direction_cn || '暂时看不出方向');
+    ? labelMap[todayPulseElement] + ' · 先复测确认'
+    : labelMap[todayPulseElement] + ' · ' + (item.signals?.direction_cn || '暂时看不出方向');
   const rawSummary = item.advice?.summary || item.signals?.level_msg || '再多几次同条件记录，方向会更有参考价值。';
-  document.getElementById('todayPulseFocusCopy').textContent = String(rawSummary).replace(/^[^\p{L}\p{N}]+/u, '');
+  document.getElementById('homePulseAdvice').textContent = String(rawSummary).replace(/^[^\p{L}\p{N}]+/u, '');
+  document.getElementById('todayPulseFocusCopy').textContent = ({low:'最近读数偏低',high:'最近读数偏高',ok:'最近读数在参考范围内'}[item.status] || '参考范围待确认') + (stale ? '，以复测为准' : '');
   const detailButton = document.getElementById('todayPulseDetail');
   detailButton.hidden = false;
   detailButton.setAttribute('aria-label', '打开' + display + '深度分析');
@@ -3409,6 +3421,7 @@ async function saveReefRound() {
     buzz(12);
     toast('记下了，今天这一眼已经放进礁况里 ✓', 'ok');
     await loadTodayDashboard();
+    if (document.getElementById('panel-record').classList.contains('active')) await loadFormalRecordPage();
   } catch (error) {
     reefRoundSaving = false;
     save.disabled = false;
@@ -3511,10 +3524,6 @@ function applyTankTargetsToGroups() {
 function renderTankIdentity() {
   if (!tankProfile) return;
   const ready = !!tankProfile.setup_complete;
-  document.getElementById('tankIdentityName').textContent = tankProfile.name || '我的鱼缸';
-  document.getElementById('tankIdentityMeta').textContent = ready
-    ? tankProfile.tank_type + ' · ' + tankProfile.stage + ' · 实际水量 ' + Number(tankProfile.water_liters).toFixed(0) + ' L'
-    : '设置实际水量和缸型，让所有功能围绕同一口缸运转';
   document.getElementById('tankEditHint').textContent = ready ? '编辑' : '开始设置';
   const profileName = document.getElementById('profileTankName');
   const profileMeta = document.getElementById('profileTankMeta');
@@ -4298,7 +4307,6 @@ function renderFormalRecordChains() {
   const target = document.getElementById('recordChains');
   if (!target) return;
   const active = recordChains.find(item => item.kind === 'active'), closed = recordChains.filter(item => item.kind === 'closed');
-  document.getElementById('recordChainCount').textContent = active ? '1 件还在看' : '这会儿挺稳';
   if (!active && !closed.length) { target.innerHTML = '<div class="record-empty">还没有哪段需要单独拎出来，先照常养着。</div>'; return; }
   const path = active ? '<div class="record-chain-path">' + active.steps.map(step => '<span class="record-chain-step ' + step.state + '"><i></i><time>' + escapeToday(step.date) + '</time><b>' + escapeToday(step.label) + '</b></span>').join('') + '</div>' : '';
   const main = active ? '<details class="record-chain-main"><summary><span class="record-chain-top"><span>这段先记着</span><span>' + escapeToday(active.status) + '</span></span><h3>' + escapeToday(active.title) + '</h3><p>' + escapeToday(active.copy) + '</p>' + path + '</summary><dl class="record-chain-more">' + active.more.map(item => '<dt>' + escapeToday(item[0]) + '</dt><dd>' + escapeToday(item[1]) + '</dd>').join('') + '</dl></details>' : '';
@@ -6083,5 +6091,6 @@ showTab('water');
 })();
 loadData();
 </script>
+<script src="/static/record-compose.js?v=1"></script>
 </body>
 </html>
